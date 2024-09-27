@@ -1,0 +1,149 @@
+{% extends "tax_form/base.html" %}
+{% load humanize %}
+
+{% block title %}Form 1120-H{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Form 1120-H</h2>
+
+<form method="post" class="mb-4">
+    {% csrf_token %}
+    <div class="row g-3">
+        <div class="col-md-4">
+            {{ form.association.label_tag }}
+            {{ form.association }}
+        </div>
+        <div class="col-md-4">
+            {{ form.tax_year.label_tag }}
+            {{ form.tax_year }}
+        </div>
+        <div class="col-md-4">
+            {{ form.preparer.label_tag }}
+            {{ form.preparer }}
+        </div>
+    </div>
+    <div class="mt-3">
+        <button type="submit" class="btn btn-primary">Calculate</button>
+        <button type="submit" name="download_pdf" class="btn btn-secondary">Download PDF</button>
+    </div>
+</form>
+
+{% if financial_info %}
+    <div class="card mt-4">
+        <div class="card-header">
+            <h3>Financial Information for {{ association.association_name }} ({{ financial.tax_year }})</h3>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h4>Income</h4>
+                    <table class="table table-striped">
+                        <tr>
+                            <th>Total Exempt Income:</th>
+                            <td class="text-end">${{ financial_info.total_exempt_income|intcomma }}</td>
+                        </tr>
+                        <tr>
+                            <th>Interest Income:</th>
+                            <td class="text-end">${{ financial_info.interest_income|intcomma }}</td>
+                        </tr>
+                        <tr>
+                            <th>Dividend Income:</th>
+                            <td class="text-end">${{ financial_info.dividend_income|intcomma }}</td>
+                        </tr>
+                        <tr>
+                            <th>Rental Income:</th>
+                            <td class="text-end">${{ financial_info.rental_income|intcomma }}</td>
+                        </tr>
+                        <tr>
+                            <th>Total Other Income:</th>
+                            <td class="text-end">${{ financial_info.total_other_income|intcomma }}</td>
+                        </tr>
+                        <tr>
+                            <th>Gross Income:</th>
+                            <td class="text-end">${{ financial_info.gross_income|intcomma }}</td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <h4>Expenses and Deductions</h4>
+                    <table class="table table-striped">
+                        <tr>
+                            <th>Total Expenses:</th>
+                            <td class="text-end">${{ financial_info.total_expenses|intcomma }}</td>
+                        </tr>
+                        <tr>
+                            <th>Expenses (90% Test):</th>
+                            <td class="text-end">${{ financial_info.expenses_lineC|intcomma }}</td>
+                        </tr>
+                        <tr>
+                            <th>Other Deductions:</th>
+                            <td class="text-end">${{ financial_info.other_deductions|intcomma }}</td>
+                        </tr>
+                        <tr>
+                            <th>Total Deductions:</th>
+                            <td class="text-end">${{ financial_info.total_deductions|intcomma }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <h4>Tax Calculations</h4>
+                    <table class="table table-striped">
+                        <tr>
+                            <th>Taxable Income (Before $100 Deduction):</th>
+                            <td class="text-end">${{ financial_info.taxable_income_before_100|intcomma }}</td>
+                        </tr>
+                        <tr>
+                            <th>Taxable Income:</th>
+                            <td class="text-end">${{ financial_info.taxable_income|intcomma }}</td>
+                        </tr>
+                        <tr>
+                            <th>Total Tax:</th>
+                            <td class="text-end">${{ financial_info.total_tax|intcomma }}</td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <h4>Payments and Balance</h4>
+                    <table class="table table-striped">
+                        <tr>
+                            <th>Total Payments:</th>
+                            <td class="text-end">${{ financial_info.total_payments|intcomma }}</td>
+                        </tr>
+                        <tr>
+                            <th>Amount Owed:</th>
+                            <td class="text-end">${{ financial_info.amount_owed|intcomma }}</td>
+                        </tr>
+                        <tr>
+                            <th>Overpayment:</th>
+                            <td class="text-end">${{ financial_info.overpayment|intcomma }}</td>
+                        </tr>
+                        <tr>
+                            <th>Refunded Amount:</th>
+                            <td class="text-end">${{ financial_info.refunded|intcomma }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endif %}
+
+{% if preparer %}
+    <div class="card mt-4">
+        <div class="card-header">
+            <h3>Preparer Information</h3>
+        </div>
+        <div class="card-body">
+            <p><strong>Name:</strong> {{ preparer.name }}</p>
+            <p><strong>PTIN:</strong> {{ preparer.ptin }}</p>
+            <p><strong>Firm Name:</strong> {{ preparer.firm_name }}</p>
+            <p><strong>Firm EIN:</strong> {{ preparer.firm_ein }}</p>
+            <p><strong>Firm Address:</strong> {{ preparer.firm_address }}</p>
+            <p><strong>Firm Phone:</strong> {{ preparer.firm_phone }}</p>
+        </div>
+    </div>
+{% endif %}
+
+{% endblock %}

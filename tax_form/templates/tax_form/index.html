@@ -1,0 +1,40 @@
+{% extends "tax_form/base.html" %}
+
+{% block title %}HOA Tax Form - Home{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="mb-4">Welcome to HOA Tax Form</h1>
+    <p class="lead">Simplify your Homeowners Association tax filing process with our easy-to-use tool.</p>
+    
+    <div class="row mt-5">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Create Association</h5>
+                    <p class="card-text">Add a new Homeowners Association to the system.</p>
+                    <a href="{% url 'create_association' %}" class="btn btn-primary">Create Association</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Enter Financial Data</h5>
+                    <p class="card-text">Input financial information for an existing association.</p>
+                    <a href="{% url 'create_financial' %}" class="btn btn-primary">Enter Data</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Generate 1120-H Form</h5>
+                    <p class="card-text">Create and view the 1120-H tax form for an association.</p>
+                    <a href="{% url 'form_1120h' %}" class="btn btn-primary">Generate Form</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

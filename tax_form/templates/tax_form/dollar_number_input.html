@@ -1,0 +1,4 @@
+<div class="input-group">
+    <span class="input-group-text">$</span>
+    <input type="{{ widget.type }}" name="{{ widget.name }}"{% if widget.value != None %} value="{{ widget.value|stringformat:'d' }}"{% endif %}{% include "django/forms/widgets/attrs.html" %}>
+</div>

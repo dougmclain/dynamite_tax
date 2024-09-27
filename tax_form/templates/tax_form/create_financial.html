@@ -1,0 +1,244 @@
+{% extends "tax_form/base.html" %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}{% if is_update %}Update{% else %}Create{% endif %} Financial Information{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">{% if is_update %}Update{% else %}Create{% endif %} Financial Information</h2>
+
+{% if not association or not tax_year %}
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get">
+            <div class="row">
+                <div class="col-md-5">
+                    {{ form.association|as_crispy_field }}
+                </div>
+                <div class="col-md-5">
+                    {{ form.tax_year|as_crispy_field }}
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary">Select</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+{% if association and tax_year %}
+<form method="post" class="mb-4">
+    {% csrf_token %}
+    
+    <div class="card">
+        <div class="card-header">
+            <h3>General Information</h3>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Association:</strong> {{ association.association_name }}</p>
+                    <input type="hidden" name="association" value="{{ association.id }}">
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Tax Year:</strong> {{ tax_year }}</p>
+                    <input type="hidden" name="tax_year" value="{{ tax_year }}">
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    {{ form.name_change|as_crispy_field }}
+                </div>
+                <div class="col-md-6">
+                    {{ form.address_change|as_crispy_field }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mt-4">
+        <div class="card-header">
+            <h3>Exempt Income</h3>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    {{ form.member_assessments|as_crispy_field }}
+                </div>
+                <div class="col-md-4">
+                    {{ form.capital_contribution|as_crispy_field }}
+                </div>
+                <div class="col-md-4">
+                    {{ form.moving_fees|as_crispy_field }}
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-md-4">
+                    {{ form.utilities|as_crispy_field }}
+                </div>
+                <div class="col-md-4">
+                    {{ form.late_fees|as_crispy_field }}
+                </div>
+                <div class="col-md-4">
+                    {{ form.fines|as_crispy_field }}
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-md-12">
+                    {{ form.other_exempt_income|as_crispy_field }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mt-4">
+        <div class="card-header">
+            <h3>Non-Exempt Income</h3>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    {{ form.interest|as_crispy_field }}
+                </div>
+                <div class="col-md-4">
+                    {{ form.dividends|as_crispy_field }}
+                </div>
+                <div class="col-md-4">
+                    {{ form.rentals|as_crispy_field }}
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    {{ form.non_exempt_income_description1|as_crispy_field }}
+                </div>
+                <div class="col-md-6">
+                    {{ form.non_exempt_income_amount1|as_crispy_field }}
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    {{ form.non_exempt_income_description2|as_crispy_field }}
+                </div>
+                <div class="col-md-6">
+                    {{ form.non_exempt_income_amount2|as_crispy_field }}
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    {{ form.non_exempt_income_description3|as_crispy_field }}
+                </div>
+                <div class="col-md-6">
+                    {{ form.non_exempt_income_amount3|as_crispy_field }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mt-4">
+        <div class="card-header">
+            <h3>Expenses</h3>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    {{ form.total_expenses|as_crispy_field }}
+                </div>
+                <div class="col-md-6">
+                    {{ form.tax_preparation|as_crispy_field }}
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-md-4">
+                    {{ form.management_fees|as_crispy_field }}
+                </div>
+                <div class="col-md-4">
+                    {{ form.administration_fees|as_crispy_field }}
+                </div>
+                <div class="col-md-4">
+                    {{ form.audit_fees|as_crispy_field }}
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-md-12">
+                    {{ form.allocated_rental_expenses|as_crispy_field }}
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    {{ form.non_exempt_expense_description1|as_crispy_field }}
+                </div>
+                <div class="col-md-6">
+                    {{ form.non_exempt_expense_amount1|as_crispy_field }}
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    {{ form.non_exempt_expense_description2|as_crispy_field }}
+                </div>
+                <div class="col-md-6">
+                    {{ form.non_exempt_expense_amount2|as_crispy_field }}
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    {{ form.non_exempt_expense_description3|as_crispy_field }}
+                </div>
+                <div class="col-md-6">
+                    {{ form.non_exempt_expense_amount3|as_crispy_field }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mt-4">
+        <div class="card-header">
+            <h3>Payments</h3>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    {{ form.prior_year_over_payment|as_crispy_field }}
+                </div>
+                <div class="col-md-4">
+                    {{ form.extension_payment|as_crispy_field }}
+                </div>
+                <div class="col-md-4">
+                    {{ form.estimated_payment|as_crispy_field }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <button type="submit" class="btn btn-primary">
+            {% if is_update %}Update{% else %}Save{% endif %} Financial Information
+        </button>
+    </div>
+</form>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/financial_form.js' %}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const dollarInputFields = [
+            'member_assessments', 'capital_contribution', 'moving_fees', 'utilities', 'late_fees', 'fines',
+            'other_exempt_income', 'interest', 'dividends', 'rentals', 'non_exempt_income_amount1',
+            'non_exempt_income_amount2', 'non_exempt_income_amount3', 'total_expenses', 'tax_preparation',
+            'management_fees', 'administration_fees', 'audit_fees', 'allocated_rental_expenses',
+            'non_exempt_expense_amount1', 'non_exempt_expense_amount2', 'non_exempt_expense_amount3',
+            'prior_year_over_payment', 'extension_payment', 'estimated_payment'
+        ];
+
+        dollarInputFields.forEach(function(fieldName) {
+            const element = document.getElementById('id_' + fieldName);
+            if (element) {
+                element.classList.add('dollar-input');
+            }
+        });
+    });
+</script>
+{% endblock %}

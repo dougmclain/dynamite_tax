@@ -7,6 +7,7 @@ logger = logging.getLogger(__name__)
 def calculate_financial_info(financial, association):
     """Calculate all financial information needed for the form."""
     return {
+        'tax_year': financial.tax_year,  # Add this line
         'total_exempt_income': calculate_total_exempt_income(financial),
         'expenses_lineC': calculate_expenses_lineC(financial),
         'total_expenses': calculate_total_expenses(financial),
@@ -101,6 +102,8 @@ def get_statement_details(financial):
 
     return statement_details
 
+
+
 def prepare_pdf_data(financial_info, association, preparer):
     """Prepare data for PDF generation."""
     return {
@@ -110,32 +113,33 @@ def prepare_pdf_data(financial_info, association, preparer):
         "f1_4": f"{association.city}, {association.state} {association.zipcode}",
         "f1_5": association.formation_date.strftime("%m/%d/%Y"),
         
-        # Checkboxes
-        "name_change": "Yes" if financial_info.get('name_change') else "Off",
-        "address_change": "Yes" if financial_info.get('address_change') else "Off",
-        "condo": "Yes" if financial_info.get('condo') else "Off",
-        "homeowners": "Yes" if financial_info.get('homeowners') else "Off",
+        # Checkboxes as booleans
+        "name_change": financial_info.get('name_change', False),
+        "address_change": financial_info.get('address_change', False),
+        "condo": financial_info.get('condo', False),
+        "homeowners": financial_info.get('homeowners', False),
         
-        "f1_6": format_number(financial_info.get('total_exempt_income')),
-        "f1_7": format_number(financial_info.get('expenses_lineC')),
-        "f1_8": format_number(financial_info.get('total_expenses')),
-        "f1_9": format_number(financial_info.get('dividend_income')),
-        "f1_10": format_number(financial_info.get('interest_income')),
-        "f1_11": format_number(financial_info.get('rental_income')),
-        "f1_15": format_number(financial_info.get('total_other_income')),
-        "f1_16": format_number(financial_info.get('gross_income')),
-        "f1_23": format_number(financial_info.get('other_deductions')),
-        "f1_24": format_number(financial_info.get('total_deductions')),
-        "f1_25": format_number(financial_info.get('taxable_income_before_100')),
-        "f1_27": format_number(financial_info.get('taxable_income')),
-        "f1_28": format_number(financial_info.get('total_tax')),
-        "f1_30": format_number(financial_info.get('total_tax')),
-        "f1_31": format_number(financial_info.get('estimated_payments')),
-        "f1_32": format_number(financial_info.get('extension_payment')),
-        "f1_35": format_number(financial_info.get('total_payments')),
-        "f1_36": format_number(financial_info.get('amount_owed')),
-        "f1_37": format_number(financial_info.get('overpayment')),
-        "f1_38": format_number(financial_info.get('refunded')),
+        # Use raw numbers instead of formatted strings
+        "f1_6": financial_info.get('total_exempt_income'),
+        "f1_7": financial_info.get('expenses_lineC'),
+        "f1_8": financial_info.get('total_expenses'),
+        "f1_9": financial_info.get('dividend_income'),
+        "f1_10": financial_info.get('interest_income'),
+        "f1_11": financial_info.get('rental_income'),
+        "f1_15": financial_info.get('total_other_income'),
+        "f1_16": financial_info.get('gross_income'),
+        "f1_23": financial_info.get('other_deductions'),
+        "f1_24": financial_info.get('total_deductions'),
+        "f1_25": financial_info.get('taxable_income_before_100'),
+        "f1_27": financial_info.get('taxable_income'),
+        "f1_28": financial_info.get('total_tax'),
+        "f1_30": financial_info.get('total_tax'),
+        "f1_31": financial_info.get('estimated_payments'),
+        "f1_32": financial_info.get('extension_payment'),
+        "f1_35": financial_info.get('total_payments'),
+        "f1_36": financial_info.get('amount_owed'),
+        "f1_37": financial_info.get('overpayment'),
+        "f1_38": financial_info.get('refunded'),
         
         # Preparer information
         "f1_39": preparer.name if preparer else '',

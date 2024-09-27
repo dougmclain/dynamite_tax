@@ -151,7 +151,7 @@ LOGGING = {
 
 PDF_TEMPLATE_DIR = BASE_DIR / 'tax_form' / 'pdf_templates'
 PDF_TEMP_DIR = BASE_DIR / 'temp_pdfs'
-PDF_TEMPLATE_NAME = '1120H IRS template edited for program.pdf'
+PDF_TEMPLATE_NAME = 'template_1120h.pdf'
 
 # Ensure the directories exist
 os.makedirs(PDF_TEMPLATE_DIR, exist_ok=True)

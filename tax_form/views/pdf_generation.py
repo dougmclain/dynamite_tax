@@ -5,11 +5,14 @@ from io import BytesIO
 from django.http import HttpResponse
 from django.conf import settings
 from PyPDF2 import PdfReader, PdfWriter
-from PyPDF2.generic import NameObject
+from PyPDF2.generic import NameObject, TextStringObject, BooleanObject, NumberObject, ArrayObject
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.pdfgen import canvas
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 from ..models import Financial, Association, Preparer
 from .helpers import format_number, get_statement_details, prepare_pdf_data
 
@@ -57,39 +60,137 @@ def generate_pdf(financial_info, association, preparer, tax_year):
         logger.error(f"Error in PDF generation: {str(e)}")
         raise
 
+logger = logging.getLogger(__name__)
+
+def to_pdf_object(value):
+    if isinstance(value, bool):
+        return BooleanObject(value)
+    elif isinstance(value, int):
+        return NumberObject(value)
+    elif isinstance(value, float):
+        return NumberObject(value)
+    elif isinstance(value, str):
+        return TextStringObject(value)
+    else:
+        return TextStringObject(str(value))
+
+def inspect_pdf_template(template_path):
+    reader = PdfReader(template_path)
+    logger.info(f"Inspecting PDF template: {template_path}")
+    logger.info(f"Number of pages: {len(reader.pages)}")
+    
+    for field_name, field in reader.get_fields().items():
+        rect = field.get('/Rect')
+        field_type = field.get('/FT')
+        logger.info(f"Field: {field_name}, Type: {field_type}, Rect: {rect}")
+
+
+FIELD_POSITIONS = {
+    'f1_1': (75, 675),   # Name
+    'f1_2': (450, 675),  # Employer identification number
+    'f1_3': (75, 650),   # Number, street, and room or suite no.
+    'f1_4': (75, 627),   # City or town, state or province, country, and ZIP
+    'f1_5': (450, 627),  # Date association formed
+    'name_change': (227, 615),      # Name change checkbox
+    'address_change': (357, 615),  # Address change checkbox
+    'condo': (213, 602),            # Condominium management association checkbox
+    'homeowners': (357, 602),      # Residential real estate association checkbox
+    'f1_6': (495, 590),  # B Total exempt function income
+    'f1_7': (495, 578),  # C Total expenditures (90% test)
+    'f1_8': (495, 566),  # D Association's total expenditures
+    'f1_9': (495, 530),  # 1 Dividends
+    'f1_10': (495, 518), # 2 Taxable interest
+    'f1_11': (495, 506), # 3 Gross rents
+    'f1_15': (495, 458), # 7 Other income
+    'f1_16': (495, 446), # 8 Gross income
+    'f1_23': (495, 350), # 15 Other deductions
+    'f1_24': (495, 338), # 16 Total deductions
+    'f1_25': (495, 326),  # 17 Taxable income before specific deduction
+    'f1_27': (495, 290),  # 19 Taxable income
+    'f1_28': (495, 278),   # 20 Tax (30% of line 19)
+    'f1_30': (495, 254), # 22 Total tax
+    'f1_31': (395, 242), # 23b Current year's estimated tax payments
+    'f1_32': (395, 230), # 23c Tax deposited with Form 7004
+    'f1_35': (495, 170), # 23g Total payments and credits
+    'f1_36': (495, 158), # 24 Amount owed
+    'f1_37': (495, 146), # 25 Overpayment
+    'f1_38': (495, 134), # 26 Refunded
+    'f1_39': (100, 62),  # Preparer's name
+    'f1_40': (520, 62), # Preparer's PTIN
+    'f1_41': (145, 50),  # Firm's name
+    'f1_42': (500, 50), # Firm's EIN
+    'f1_43': (145, 38),  # Firm's address
+    'f1_44': (500, 38), # Firm's phone number
+    'f1_45': (410, 62),  # Date
+    'f1_46': (270, 62), # Preparer's signature
+}
+
+
+
+
+
+NUMERIC_COLUMN_WIDTH = 80  # width in points
+
+def format_number(value):
+    """Format number without decimals and with commas for thousands."""
+    return f"{int(value):,}"
+
+def right_justify_text(can, text, x, y, width):
+    text_width = pdfmetrics.stringWidth(text, 'Courier', 10)
+    adjusted_x = x + width - text_width
+    can.drawString(adjusted_x, y, text)
+
 def generate_1120h_pdf(financial_info, association, preparer, template_path, output_path):
-    """Generate the 1120-H PDF form."""
     data = prepare_pdf_data(financial_info, association, preparer)
-
-    # Convert checkbox values to NameObject
-    for key in ['name_change', 'address_change', 'condo', 'homeowners']:
-        data[key] = NameObject("/Yes") if data[key] == "Yes" else NameObject("/Off")
-
-    logger.debug(f"PDF data being sent: {data}")
-    logger.debug("Checkbox values:")
-    logger.debug(f"name_change: '{data['name_change']}'")
-    logger.debug(f"address_change: '{data['address_change']}'")
-    logger.debug(f"condo: '{data['condo']}'")
-    logger.debug(f"homeowners: '{data['homeowners']}'")
 
     try:
         reader = PdfReader(template_path)
         writer = PdfWriter()
         page = reader.pages[0]
+
+        packet = BytesIO()
+        can = canvas.Canvas(packet, pagesize=letter)
+
+        for key, value in data.items():
+            if key in FIELD_POSITIONS:
+                x, y = FIELD_POSITIONS[key]
+                if isinstance(value, bool):
+                    # Handle checkboxes
+                    if value:
+                        can.setFont('Helvetica', 10)
+                        can.drawString(x, y, 'X')
+                    # Do nothing if the value is False
+                elif isinstance(value, (int, float)):
+                    # Format and right-justify numeric values
+                    can.setFont('Courier', 10)  # Use built-in Courier font for numbers
+                    formatted_value = format_number(value)
+                    right_justify_text(can, formatted_value, x, y, NUMERIC_COLUMN_WIDTH)
+                else:
+                    # Draw other fields normally
+                    can.setFont('Helvetica', 10)
+                    can.drawString(x, y, str(value))
+                
+                logger.debug(f"Drew field {key} with value {value} at position ({x}, {y})")
+
+        can.save()
+
+        packet.seek(0)
+        new_pdf = PdfReader(packet)
+        page.merge_page(new_pdf.pages[0])
+
         writer.add_page(page)
-        writer.update_page_form_field_values(writer.pages[0], data)
-        
-        # Check if we need to add a statement
+
+        # Add statement page if needed
         if financial_info.get('total_other_income', 0) > 0 or financial_info.get('other_deductions', 0) > 0:
             statement_page = generate_statement_page(financial_info, association)
             writer.add_page(statement_page)
-        
+
         with open(output_path, "wb") as output_file:
             writer.write(output_file)
-        
+
         logger.info(f"PDF generated successfully at {output_path}")
     except Exception as e:
-        logger.error(f"Error generating PDF: {str(e)}")
+        logger.error(f"Error generating PDF: {str(e)}", exc_info=True)
         raise
 
 def generate_statement_page(financial_info, association):
@@ -129,7 +230,7 @@ def generate_statement_page(financial_info, association):
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
             ('FONTSIZE', (0, 0), (-1, 0), 12),
             ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.whitesmoke),
             ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
             ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
             ('FONTSIZE', (0, 1), (-1, -1), 10),
@@ -160,7 +261,7 @@ def generate_statement_page(financial_info, association):
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
             ('FONTSIZE', (0, 0), (-1, 0), 12),
             ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.whitesmoke),
             ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
             ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
             ('FONTSIZE', (0, 1), (-1, -1), 10),

@@ -1,0 +1,31 @@
+{% load static %}
+<header>
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="{% url 'index' %}">
+                <img src="{% static 'images/hoatax_logo.png' %}" alt="HOA Tax Help Logo" class="me-2" style="height: 40px;">
+                <span>HOA Tax Help</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'index' %}">Home</a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'create_association' %}">Create Association</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'create_financial' %}">Create Financial</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'form_1120h' %}">Form 1120-H</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+</header>

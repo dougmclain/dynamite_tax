@@ -1,3 +1,94 @@
+/* Custom variables */
+:root {
+    --tax-purple: #8C35B4;
+    --tax-green: #5DB435;
+    --tax-gray: #62626D;
+    --tax-blue: #3C8DBC;
+    --tax-dark-gray: #3C3C41;
+    --tax-light-gray: #F5F5F5;
+    --tax-yellow: #FFDD57;
+}
+
+/* Body styles */
+body {
+    background-color: var(--tax-light-gray);
+    color: var(--tax-gray);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* Navbar customization */
+.navbar {
+    background-color: var(--tax-light-gray);
+}
+
+.navbar-brand, .nav-link {
+    color: var(--tax-dark-gray) !important;
+}
+
+.navbar-brand img {
+    height: 40px;
+    margin-right: 10px;
+}
+
+/* Navbar link hover color */
+.navbar-nav .nav-link:hover {
+    color: var(--tax-purple) !important;
+}
+
+/* Button customization */
+.btn-primary {
+    background-color: var(--tax-green);
+    border-color: var(--tax-green);
+    color: var(--tax-light-gray);
+}
+
+.btn-primary:hover {
+    background-color: var(--tax-blue);
+    border-color: var(--tax-blue);
+    color: var(--tax-light-gray);
+}
+
+/* Layout */
+main {
+    flex: 1 0 auto;
+}
+
+/* Card customization */
+.card {
+    border-color: var(--tax-purple);
+    transition: transform 0.3s ease-in-out;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+.card-title {
+    color: var(--tax-purple);
+}
+
+/* Footer customization */
+footer {
+    background-color: var(--tax-purple);
+    color: var(--tax-light-gray);
+}
+
+/* Headers */
+h1, h2, h3, h4, h5, h6 {
+    color: var(--tax-purple);
+}
+
+/* Links */
+a {
+    color: var(--tax-blue);
+}
+
+a:hover {
+    color: var(--tax-yellow);
+}
+
 /* Custom styles for your project */
 .dollar-input {
     text-align: right;

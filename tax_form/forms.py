@@ -1,6 +1,9 @@
 from django import forms
 from .models import Association, Financial, Preparer
 from django.forms.widgets import NumberInput, TextInput
+import logging
+
+logger = logging.getLogger(__name__)
 
 class TaxFormSelectionForm(forms.Form):
     association = forms.ModelChoiceField(queryset=Association.objects.all(), empty_label=None)
@@ -13,15 +16,19 @@ class TaxFormSelectionForm(forms.Form):
         self.fields['tax_year'].widget.attrs['class'] = 'form-select'
         self.fields['preparer'].widget.attrs['class'] = 'form-select'
 
+        logger.debug(f"Form initialized with data: {self.data}")
+
         association_id = self.data.get('association')
         if not association_id and Association.objects.exists():
             association_id = Association.objects.first().id
 
         if association_id:
             financial_years = Financial.objects.filter(association_id=association_id).values_list('tax_year', flat=True).distinct()
-            self.fields['tax_year'].choices = [(year, year) for year in financial_years]
+            self.fields['tax_year'].choices = [(str(year), str(year)) for year in financial_years]
+            logger.debug(f"Tax years for association {association_id}: {self.fields['tax_year'].choices}")
         else:
             self.fields['tax_year'].choices = []
+            logger.debug("No association selected, tax year choices empty")
 
 class AssociationForm(forms.ModelForm):
     class Meta:

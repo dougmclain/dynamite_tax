@@ -1,0 +1,61 @@
+{% extends "tax_form/base.html" %}
+
+{% block title %}Association Details{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="mb-4">Association Details</h1>
+
+    <form method="get" class="mb-4">
+        <div class="row">
+            <div class="col-md-6">
+                <label for="association_id" class="form-label">Select an Association:</label>
+                <select name="association_id" id="association_id" class="form-select" onchange="this.form.submit()">
+                    <option value="">-- Select an Association --</option>
+                    {% for association in associations %}
+                        <option value="{{ association.id }}" {% if selected_association.id == association.id %}selected{% endif %}>
+                            {{ association.association_name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label for="tax_year" class="form-label">Select Tax Year:</label>
+                <select name="tax_year" id="tax_year" class="form-select" onchange="this.form.submit()">
+                    {% for year in available_tax_years %}
+                        <option value="{{ year }}" {% if selected_tax_year == year %}selected{% endif %}>
+                            {{ year }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </form>
+
+    {% if selected_association %}
+        <div class="card mt-4">
+            <div class="card-header">
+                <h2>{{ selected_association.association_name }} - Tax Year {{ selected_tax_year }}</h2>
+            </div>
+            <div class="card-body">
+                <p><strong>Fiscal Year End:</strong> {{ selected_association.get_fiscal_year_end_month_display }} {{ selected_tax_year }}</p>
+                <p><strong>Tax Return Due Date:</strong> {{ tax_return_due_date|date:"F d, Y" }}</p>
+                <p><strong>Extended Due Date:</strong> {{ extended_due_date|date:"F d, Y" }}</p>
+                <p><strong>Extension Filed:</strong> 
+                    {% if extension_data %}
+                        Yes (Filed on {{ extension_data.filed_date|date:"F d, Y" }})
+                    {% else %}
+                        No
+                    {% endif %}
+                </p>
+                {% if financial_data %}
+                    <p><strong>Total Exempt Income:</strong> ${{ financial_data.total_exempt_income|floatformat:2 }}</p>
+                    <p><strong>Total Expenses:</strong> ${{ financial_data.total_expenses|floatformat:2 }}</p>
+                {% else %}
+                    <p>No financial data available for the selected tax year.</p>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

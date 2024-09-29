@@ -33,10 +33,16 @@ class TaxFormSelectionForm(forms.Form):
 class AssociationForm(forms.ModelForm):
     class Meta:
         model = Association
-        fields = ['association_name', 'mailing_address', 'city', 'state', 'zipcode', 'zoned', 'ein', 'formation_date', 'association_type']
+        fields = [
+            'association_name', 'mailing_address', 'city', 'state', 'zipcode', 
+            'zoned', 'ein', 'formation_date', 'association_type',
+            'fiscal_year_end_month',
+            'contact_first_name', 'contact_last_name', 'contact_email'
+        ]
         widgets = {
             'formation_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'association_type': forms.Select(attrs={'class': 'form-select'}),
+            'fiscal_year_end_month': forms.Select(attrs={'class': 'form-select'}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -45,6 +51,11 @@ class AssociationForm(forms.ModelForm):
             if field != 'zoned':
                 self.fields[field].widget.attrs['class'] = 'form-control'
         self.fields['zoned'].widget.attrs['class'] = 'form-check-input'
+
+        self.fields['contact_first_name'].widget.attrs['placeholder'] = 'First Name'
+        self.fields['contact_last_name'].widget.attrs['placeholder'] = 'Last Name'
+        self.fields['contact_email'].widget.attrs['placeholder'] = 'Email'
+        self.fields['fiscal_year_end_month'].label = 'Fiscal Year End Month'
 
 class DollarNumberInput(NumberInput):
     template_name = 'tax_form/dollar_number_input.html'

@@ -13,7 +13,7 @@
             <button type="submit" class="btn btn-primary">Create Association</button>
         </form>
     </div>
-    
+
     <div class="col-md-6">
         <h2 class="mb-4">Existing Associations</h2>
         {% if associations %}
@@ -23,7 +23,9 @@
                         <strong>{{ association.association_name }}</strong><br>
                         EIN: {{ association.ein }}<br>
                         Type: {{ association.get_association_type_display }}<br>
-                        Formed: {{ association.formation_date|date:"F j, Y" }}
+                        Formed: {{ association.formation_date|date:"F j, Y" }}<br>
+                        Fiscal Year End: {{ association.get_fiscal_year_end_month_display }}<br>
+                        Contact: {{ association.get_full_contact_name }} ({{ association.contact_email }})
                     </li>
                 {% endfor %}
             </ul>

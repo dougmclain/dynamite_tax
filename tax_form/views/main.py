@@ -13,7 +13,6 @@ def index(request):
     """View for the home page."""
     return render(request, 'tax_form/index.html')
 
-
 def form_1120h(request):
     logger.debug("form_1120h view called")
 

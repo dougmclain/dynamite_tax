@@ -40,21 +40,21 @@
             <div class="col-md-6">
                 <h4>Income</h4>
                 <table class="table">
-                    <tr><td>Total Exempt Income:</td><td>${{ financial_info.total_exempt_income|intcomma }}</td></tr>
-                    <tr><td>Interest Income:</td><td>${{ financial_info.interest_income|intcomma }}</td></tr>
-                    <tr><td>Dividend Income:</td><td>${{ financial_info.dividend_income|intcomma }}</td></tr>
-                    <tr><td>Rental Income:</td><td>${{ financial_info.rental_income|intcomma }}</td></tr>
-                    <tr><td>Total Other Income:</td><td>${{ financial_info.total_other_income|intcomma }}</td></tr>
-                    <tr><td><strong>Gross Income:</strong></td><td><strong>${{ financial_info.gross_income|intcomma }}</strong></td></tr>
+                    <tr><td>Total Non-Taxable Income:</td><td>${{ financial_info.total_exempt_income|default_if_none:0|intcomma }}</td></tr>
+                    <tr><td>Interest Income:</td><td>${{ financial_info.interest_income|default_if_none:0|intcomma }}</td></tr>
+                    <tr><td>Dividend Income:</td><td>${{ financial_info.dividend_income|default_if_none:0|intcomma }}</td></tr>
+                    <tr><td>Rental Income:</td><td>${{ financial_info.rental_income|default_if_none:0|intcomma }}</td></tr>
+                    <tr><td>Other Taxable Income:</td><td>${{ financial_info.total_other_income|default_if_none:0|intcomma }}</td></tr>
+                    <tr><td><strong>Total Taxable Income:</strong></td><td><strong>${{ financial_info.total_taxable_income|default_if_none:0|intcomma }}</strong></td></tr>
                 </table>
             </div>
             <div class="col-md-6">
                 <h4>Expenses and Deductions</h4>
                 <table class="table">
-                    <tr><td>Total Expenses:</td><td>${{ financial_info.total_expenses|intcomma }}</td></tr>
-                    <tr><td>Expenses (90% Test):</td><td>${{ financial_info.expenses_lineC|intcomma }}</td></tr>
-                    <tr><td>Other Deductions:</td><td>${{ financial_info.other_deductions|intcomma }}</td></tr>
-                    <tr><td><strong>Total Deductions:</strong></td><td><strong>${{ financial_info.total_deductions|intcomma }}</strong></td></tr>
+                    <tr><td>Total Expenses:</td><td>${{ financial_info.total_expenses|default_if_none:0|intcomma }}</td></tr>
+                    <tr><td>Expenses (90% Test):</td><td>${{ financial_info.expenses_lineC|default_if_none:0|intcomma }}</td></tr>
+                    <tr><td>Other Deductions:</td><td>${{ financial_info.other_deductions|default_if_none:0|intcomma }}</td></tr>
+                    <tr><td><strong>Total Deductions:</strong></td><td><strong>${{ financial_info.total_deductions|default_if_none:0|intcomma }}</strong></td></tr>
                 </table>
             </div>
         </div>
@@ -62,18 +62,18 @@
             <div class="col-md-6">
                 <h4>Tax Calculations</h4>
                 <table class="table">
-                    <tr><td>Taxable Income (Before $100 Deduction):</td><td>${{ financial_info.taxable_income_before_100|intcomma }}</td></tr>
-                    <tr><td>Taxable Income:</td><td>${{ financial_info.taxable_income|intcomma }}</td></tr>
-                    <tr><td><strong>Total Tax:</strong></td><td><strong>${{ financial_info.total_tax|intcomma }}</strong></td></tr>
+                    <tr><td>Taxable Income (Before $100 Deduction):</td><td>${{ financial_info.taxable_income_before_100|default_if_none:0|intcomma }}</td></tr>
+                    <tr><td>Taxable Income:</td><td>${{ financial_info.taxable_income|default_if_none:0|intcomma }}</td></tr>
+                    <tr><td><strong>Total Tax:</strong></td><td><strong>${{ financial_info.total_tax|default_if_none:0|intcomma }}</strong></td></tr>
                 </table>
             </div>
             <div class="col-md-6">
                 <h4>Payments and Balance</h4>
                 <table class="table">
-                    <tr><td>Total Payments:</td><td>${{ financial_info.total_payments|intcomma }}</td></tr>
-                    <tr><td>Amount Owed:</td><td>${{ financial_info.amount_owed|intcomma }}</td></tr>
-                    <tr><td>Overpayment:</td><td>${{ financial_info.overpayment|intcomma }}</td></tr>
-                    <tr><td>Refunded Amount:</td><td>${{ financial_info.refunded|intcomma }}</td></tr>
+                    <tr><td>Total Payments:</td><td>${{ financial_info.total_payments|default_if_none:0|intcomma }}</td></tr>
+                    <tr><td>Amount Owed:</td><td>${{ financial_info.amount_owed|default_if_none:0|intcomma }}</td></tr>
+                    <tr><td>Overpayment:</td><td>${{ financial_info.overpayment|default_if_none:0|intcomma }}</td></tr>
+                    <tr><td>Refunded Amount:</td><td>${{ financial_info.refunded|default_if_none:0|intcomma }}</td></tr>
                 </table>
             </div>
         </div>

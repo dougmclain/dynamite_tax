@@ -1,13 +1,14 @@
 import logging
 from datetime import date
 from ..tax_calculations import *
+from ..models import Extension  # Make sure this import is present
 
 logger = logging.getLogger(__name__)
 
 def calculate_financial_info(financial, association):
     """Calculate all financial information needed for the form."""
-    return {
-        'tax_year': financial.tax_year,  # Add this line
+    info = {
+        'tax_year': financial.tax_year,
         'total_exempt_income': calculate_total_exempt_income(financial),
         'expenses_lineC': calculate_expenses_lineC(financial),
         'total_expenses': calculate_total_expenses(financial),
@@ -32,6 +33,22 @@ def calculate_financial_info(financial, association):
         'condo': association.association_type == 'condo',
         'homeowners': association.association_type == 'homeowners',
     }
+
+    # Add extension information if it exists
+    try:
+        extension = financial.extension
+        if extension.filed and extension.form_7004:
+            info['extension_info'] = {
+                'tax_year': extension.tax_year,
+                'filed_date': extension.filed_date,
+                'form_7004_url': extension.form_7004.name,  # Use .name instead of .url
+            }
+    except Extension.DoesNotExist:
+        pass  # No extension exists for this financial record
+
+    return info
+
+# The rest of your helpers.py file remains unchanged
 
 def format_number(value):
     """Format a number with commas for thousands separators."""

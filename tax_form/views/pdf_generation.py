@@ -140,6 +140,7 @@ def right_justify_text(can, text, x, y, width):
     adjusted_x = x + width - text_width
     can.drawString(adjusted_x, y, text)
 
+
 def generate_1120h_pdf(financial_info, association, preparer, template_path, output_path):
     data = prepare_pdf_data(financial_info, association, preparer)
 
@@ -184,6 +185,17 @@ def generate_1120h_pdf(financial_info, association, preparer, template_path, out
         if financial_info.get('total_other_income', 0) > 0 or financial_info.get('other_deductions', 0) > 0:
             statement_page = generate_statement_page(financial_info, association)
             writer.add_page(statement_page)
+
+        # Add uploaded extension PDF if available
+        if 'extension_info' in financial_info and financial_info['extension_info'].get('form_7004_url'):
+            extension_path = os.path.join(settings.MEDIA_ROOT, financial_info['extension_info']['form_7004_url'])
+            if os.path.exists(extension_path):
+                extension_reader = PdfReader(extension_path)
+                for page in extension_reader.pages:
+                    writer.add_page(page)
+                logger.info(f"Extension PDF added from {extension_path}")
+            else:
+                logger.warning(f"Extension PDF file not found at {extension_path}")
 
         with open(output_path, "wb") as output_file:
             writer.write(output_file)
@@ -278,3 +290,53 @@ def generate_statement_page(financial_info, association):
     # Create a new PDF page from the buffer
     statement_pdf = PdfReader(BytesIO(buffer.getvalue()))
     return statement_pdf.pages[0]
+
+def generate_extension_page(extension_info, association):
+    """Generate an extension page."""
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter)
+    elements = []
+
+    styles = getSampleStyleSheet()
+    title_style = styles['Heading1']
+    subtitle_style = styles['Heading2']
+    normal_style = styles['Normal']
+
+    # Add title
+    elements.append(Paragraph("Extension Information", title_style))
+    elements.append(Paragraph(f"Association: {association.association_name}", normal_style))
+    elements.append(Paragraph(f"EIN: {association.ein}", normal_style))
+    elements.append(Paragraph(f"Tax Year: {extension_info['tax_year']}", normal_style))
+    elements.append(Spacer(1, 12))
+
+    # Extension details
+    elements.append(Paragraph("Form 7004 - Application for Automatic Extension of Time", subtitle_style))
+    extension_data = [
+        ['Filed Date', extension_info['filed_date'].strftime('%m/%d/%Y') if extension_info['filed_date'] else 'N/A'],
+        ['Form 7004', 'Uploaded' if extension_info['form_7004_url'] else 'Not Uploaded'],
+    ]
+    
+    extension_table = Table(extension_data, colWidths=[250, 200])
+    extension_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 12),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.whitesmoke),
+        ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 1), (-1, -1), 10),
+        ('TOPPADDING', (0, 1), (-1, -1), 6),
+        ('BOTTOMPADDING', (0, 1), (-1, -1), 6),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+    ]))
+    elements.append(extension_table)
+
+    # Build the PDF
+    doc.build(elements)
+    
+    # Create a new PDF page from the buffer
+    extension_pdf = PdfReader(BytesIO(buffer.getvalue()))
+    return extension_pdf.pages[0]

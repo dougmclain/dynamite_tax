@@ -94,4 +94,33 @@ a:hover {
     text-align: right;
 }
 
-/* Add any other custom styles you need */
+/* Custom styles for financial information card */
+.financial-info-card .table-sm td {
+    padding: 0.25rem;
+    border-bottom: 1px solid #dee2e6;  /* Add a light border bottom */
+}
+
+.financial-info-card .table-sm tr:last-child td {
+    border-bottom: none;  /* Remove border from last row */
+}
+
+.financial-info-card .table-sm {
+    margin-bottom: 1rem;  /* Add some space after each table */
+}
+
+.financial-info-card h4 {
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.financial-info-card .table-sm td:first-child {
+    width: 70%;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .financial-info-card .table-sm td:first-child {
+        width: 60%;
+    }
+}
+/* Add any other existing styles below */

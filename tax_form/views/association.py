@@ -1,12 +1,12 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib import messages
 from django.views import View
+from django.shortcuts import render, get_object_or_404
 from ..models import Association, Financial, Extension
-from ..forms import AssociationForm
+from ..tax_calculations import (
+    calculate_total_exempt_income, calculate_total_other_income,
+    calculate_other_deductions, calculate_total_tax,
+    calculate_total_payments, calculate_amount_owed, calculate_overpayment
+)
 from datetime import datetime
-
-class AssociationView(View):
-    template_name = 'tax_form/association.html'
 
 class AssociationView(View):
     template_name = 'tax_form/association.html'
@@ -31,23 +31,36 @@ class AssociationView(View):
             selected_association = get_object_or_404(Association, id=selected_association_id)
             context['selected_association'] = selected_association
 
-            # Get financial data for the selected tax year
             financial_data = Financial.objects.filter(
                 association=selected_association,
                 tax_year=selected_tax_year
             ).first()
-            context['financial_data'] = financial_data
 
-            # Get extension data for the selected tax year
             if financial_data:
-                extension_data = Extension.objects.filter(
-                    financial=financial_data
-                ).first()
-                context['extension_data'] = extension_data
+                context['financial_data'] = financial_data
+                context['extension_data'] = Extension.objects.filter(financial=financial_data).first()
+
+                # Calculate financial information
+                context['total_exempt_income'] = calculate_total_exempt_income(financial_data)
+                context['total_taxable_income'] = calculate_total_other_income(financial_data)
+                context['other_deductions'] = calculate_other_deductions(financial_data)
+                context['total_tax'] = calculate_total_tax(financial_data)
+                context['total_payments'] = calculate_total_payments(financial_data)
+                context['amount_owed'] = calculate_amount_owed(context['total_tax'], context['total_payments'])
+                context['overpayment'] = calculate_overpayment(context['total_tax'], context['total_payments'])
+
+                # Taxable income breakdown
+                context['taxable_income'] = {
+                    'interest': financial_data.interest,
+                    'dividends': financial_data.dividends,
+                    'rentals': financial_data.rentals,
+                    'non_exempt_income1': financial_data.non_exempt_income_amount1,
+                    'non_exempt_income2': financial_data.non_exempt_income_amount2,
+                    'non_exempt_income3': financial_data.non_exempt_income_amount3,
+                }
 
             # Calculate due dates
             context['tax_return_due_date'] = selected_association.get_tax_return_due_date(selected_tax_year)
             context['extended_due_date'] = selected_association.get_extended_due_date(selected_tax_year)
 
         return render(request, self.template_name, context)
-

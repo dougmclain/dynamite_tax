@@ -216,3 +216,33 @@ def calculate_overpayment(total_tax, total_payments):
 def calculate_refunded_amount(overpayment):
     """Calculate refunded amount."""
     return overpayment
+
+def calculate_financial_info(financial, association):
+    """Calculate all financial information needed for the form."""
+    return {
+        'tax_year': financial.tax_year,
+        'total_exempt_income': calculate_total_exempt_income(financial),
+        'expenses_lineC': calculate_expenses_lineC(financial),
+        'total_expenses': calculate_total_expenses(financial),
+        'interest_income': calculate_interest_income(financial),
+        'dividend_income': calculate_dividend_income(financial),
+        'rental_income': calculate_rental_income(financial),
+        'total_other_income': calculate_total_other_income(financial),
+        'total_taxable_income': calculate_taxable_income(financial),  # Add this line
+        'gross_income': calculate_gross_income(financial),
+        'other_deductions': calculate_other_deductions(financial),
+        'total_deductions': calculate_total_deductions(financial),
+        'taxable_income_before_100': calculate_taxable_income_before_100(financial),
+        'taxable_income': calculate_taxable_income(financial),
+        'total_tax': calculate_total_tax(financial),
+        'total_payments': calculate_total_payments(financial),
+        'amount_owed': calculate_amount_owed(calculate_total_tax(financial), calculate_total_payments(financial)),
+        'overpayment': calculate_overpayment(calculate_total_tax(financial), calculate_total_payments(financial)),
+        'refunded': calculate_refunded_amount(calculate_overpayment(calculate_total_tax(financial), calculate_total_payments(financial))),
+        'estimated_payments': financial.estimated_payment,
+        'extension_payment': financial.extension_payment,
+        'name_change': bool(financial.name_change),
+        'address_change': bool(financial.address_change),
+        'condo': association.association_type == 'condo',
+        'homeowners': association.association_type == 'homeowners',
+    }

@@ -250,6 +250,13 @@ def generate_statement_page(financial_info, association):
             ('BOTTOMPADDING', (0, 1), (-1, -1), 6),
             ('GRID', (0, 0), (-1, -1), 1, colors.black),
             ('LINEBELOW', (0, -2), (-1, -2), 1, colors.black),
+                    ('LINEBELOW', (0, -2), (-1, -2), 1, colors.black),
+        
+            # Bold "Total Other Deductions" row
+            ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, -1), (-1, -1), 12),
+            ('TEXTCOLOR', (0, -1), (-1, -1), colors.black),
+                
         ]))
         elements.append(other_income_table)
         elements.append(Spacer(1, 12))
@@ -260,7 +267,8 @@ def generate_statement_page(financial_info, association):
         other_deductions_data = [['Description', 'Amount']]
         other_deductions_data.extend([
             [item['description'], f"${item['amount']:,}"]
-            for item in financial_info.get('additional_expenses', [])
+            for item in financial_info.get('other_deductions_detail', [])
+            if item['amount'] > 0
         ])
         other_deductions_data.append(['Total Other Deductions', f"${financial_info['other_deductions']:,}"])
         
@@ -281,6 +289,10 @@ def generate_statement_page(financial_info, association):
             ('BOTTOMPADDING', (0, 1), (-1, -1), 6),
             ('GRID', (0, 0), (-1, -1), 1, colors.black),
             ('LINEBELOW', (0, -2), (-1, -2), 1, colors.black),
+                        # Bold "Total Other Deductions" row
+            ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, -1), (-1, -1), 12),
+            ('TEXTCOLOR', (0, -1), (-1, -1), colors.black),
         ]))
         elements.append(other_deductions_table)
 

@@ -1,7 +1,7 @@
 import logging
 from datetime import date
 from ..tax_calculations import *
-from ..models import Extension  # Make sure this import is present
+from ..models import Extension
 
 logger = logging.getLogger(__name__)
 
@@ -41,14 +41,31 @@ def calculate_financial_info(financial, association):
             info['extension_info'] = {
                 'tax_year': extension.tax_year,
                 'filed_date': extension.filed_date,
-                'form_7004_url': extension.form_7004.name,  # Use .name instead of .url
+                'form_7004_url': extension.form_7004.name,
             }
     except Extension.DoesNotExist:
         pass  # No extension exists for this financial record
 
-    return info
+    # Add detailed breakdown of other deductions
+    tax_prep_expenses = calculate_tax_prep_expenses(financial)
+    management_fees = calculate_management_fees(financial, tax_prep_expenses)
+    audit_fees = calculate_audit_fees(financial, tax_prep_expenses, management_fees)
+    rental_expenses = calculate_rental_expenses(financial)
+    other_nonexempt_expense1 = calculate_other_nonexempt_expense1(financial)
+    other_nonexempt_expense2 = calculate_other_nonexempt_expense2(financial)
+    other_nonexempt_expense3 = calculate_other_nonexempt_expense3(financial)
 
-# The rest of your helpers.py file remains unchanged
+    info['other_deductions_detail'] = [
+        {'description': 'Tax Preparation Expenses', 'amount': tax_prep_expenses},
+        {'description': 'Management Fees', 'amount': management_fees},
+        {'description': 'Audit Fees', 'amount': audit_fees},
+        {'description': 'Rental Expenses', 'amount': rental_expenses},
+        {'description': financial.non_exempt_expense_description1 or 'Other Non-Exempt Expense 1', 'amount': other_nonexempt_expense1},
+        {'description': financial.non_exempt_expense_description2 or 'Other Non-Exempt Expense 2', 'amount': other_nonexempt_expense2},
+        {'description': financial.non_exempt_expense_description3 or 'Other Non-Exempt Expense 3', 'amount': other_nonexempt_expense3},
+    ]
+
+    return info
 
 def format_number(value):
     """Format a number with commas for thousands separators."""
@@ -118,8 +135,6 @@ def get_statement_details(financial):
             })
 
     return statement_details
-
-
 
 def prepare_pdf_data(financial_info, association, preparer):
     """Prepare data for PDF generation."""

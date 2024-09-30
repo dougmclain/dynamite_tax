@@ -2,8 +2,8 @@ from django.views import View
 from django.shortcuts import render, get_object_or_404
 from ..models import Association, Financial, Extension
 from ..tax_calculations import (
-    calculate_total_exempt_income, calculate_total_other_income,
-    calculate_other_deductions, calculate_total_tax,
+    calculate_total_exempt_income, calculate_total_other_income, calculate_gross_income,
+    calculate_other_deductions, calculate_total_tax, calculate_expenses_lineC,
     calculate_total_payments, calculate_amount_owed, calculate_overpayment
 )
 from datetime import datetime
@@ -42,7 +42,10 @@ class AssociationView(View):
 
                 # Calculate financial information
                 context['total_exempt_income'] = calculate_total_exempt_income(financial_data)
+                context['expenses_lineC'] = calculate_expenses_lineC(financial_data)
                 context['total_taxable_income'] = calculate_total_other_income(financial_data)
+                context['gross_income'] = calculate_gross_income(financial_data)
+
                 context['other_deductions'] = calculate_other_deductions(financial_data)
                 context['total_tax'] = calculate_total_tax(financial_data)
                 context['total_payments'] = calculate_total_payments(financial_data)

@@ -74,6 +74,7 @@
                             <h3>Financial Information</h3>
                         </div>
                         <div class="card-body">
+                            <h4>Exempt </h4>
                             <table class="table table-sm">
                                 <tr>
                                     <td><strong>Total Exempt Function Income:</strong></td>
@@ -85,7 +86,7 @@
                                 </tr>
                             </table>
                             
-                            <h4>Non-Exempt Income</h4>
+                            <h4>Non-Exempt </h4>
                             <table class="table table-sm">
                                 {% for income_type, amount in taxable_income.items %}
                                     {% if amount > 0 %}
@@ -97,7 +98,7 @@
                                 {% endfor %}
                                 <tr>
                                     <td><strong>Total Non-Exempt Income:</strong></td>
-                                    <td class="text-end">${{ total_taxable_income|default_if_none:0|intcomma }}</td>
+                                    <td class="text-end">${{ gross_income|default_if_none:0|intcomma }}</td>
                                 </tr>
                             </table>
                             

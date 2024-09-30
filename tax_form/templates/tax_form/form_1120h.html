@@ -45,7 +45,7 @@
                     <tr><td>Dividend Income:</td><td>${{ financial_info.dividend_income|default_if_none:0|intcomma }}</td></tr>
                     <tr><td>Rental Income:</td><td>${{ financial_info.rental_income|default_if_none:0|intcomma }}</td></tr>
                     <tr><td>Other Taxable Income:</td><td>${{ financial_info.total_other_income|default_if_none:0|intcomma }}</td></tr>
-                    <tr><td><strong>Total Taxable Income:</strong></td><td><strong>${{ financial_info.total_taxable_income|default_if_none:0|intcomma }}</strong></td></tr>
+                    <tr><td><strong>Total Non-Exempt Income (Taxable):</strong></td><td><strong>${{ financial_info.gross_income|default_if_none:0|intcomma }}</strong></td></tr>
                 </table>
             </div>
             <div class="col-md-6">

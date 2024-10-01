@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import main, association, financial, create_association
+from .views import main, association, financial, create_association, dashboard
 
 urlpatterns = [
     path('', main.index, name='index'),
@@ -7,4 +7,5 @@ urlpatterns = [
     path('association/', association.AssociationView.as_view(), name='association'),
     path('create-association/', create_association.CreateAssociationView.as_view(), name='create_association'),
     path('create-financial/', financial.create_financial, name='create_financial'),
+    path('dashboard/', dashboard.DashboardView.as_view(), name='dashboard'),
 ]

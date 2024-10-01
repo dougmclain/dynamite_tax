@@ -1,6 +1,6 @@
 from django.views import View
 from django.shortcuts import render, get_object_or_404
-from ..models import Association, Financial, Extension
+from ..models import Association, Financial, Extension, CompletedTaxReturn
 from ..tax_calculations import (
     calculate_total_exempt_income, calculate_total_other_income, calculate_gross_income,
     calculate_other_deductions, calculate_total_tax, calculate_expenses_lineC,
@@ -39,6 +39,7 @@ class AssociationView(View):
             if financial_data:
                 context['financial_data'] = financial_data
                 context['extension_data'] = Extension.objects.filter(financial=financial_data).first()
+                context['completed_tax_return_data'] = CompletedTaxReturn.objects.filter(financial=financial_data).first()
 
                 # Calculate financial information
                 context['total_exempt_income'] = calculate_total_exempt_income(financial_data)

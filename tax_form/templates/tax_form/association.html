@@ -36,38 +36,75 @@
             </form>
 
             {% if selected_association %}
-                <div class="card mt-4">
-                    <div class="card-header">
-                        <h2>{{ selected_association.association_name }} - Tax Year {{ selected_tax_year }}</h2>
-                    </div>
-                    <div class="card-body">
-                        <table class="table table-sm">
-                            <tr>
-                                <td><strong>Fiscal Year End:</strong></td>
-                                <td>{{ selected_association.get_fiscal_year_end_month_display }} {{ selected_tax_year }}</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Tax Return Due Date:</strong></td>
-                                <td>{{ tax_return_due_date|date:"F d, Y" }}</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Extended Due Date:</strong></td>
-                                <td>{{ extended_due_date|date:"F d, Y" }}</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Extension Filed:</strong></td>
-                                <td>
-                                    {% if extension_data %}
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h2>{{ selected_association.association_name }} - Tax Year {{ selected_tax_year }}</h2>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <tr>
+                            <td><strong>Fiscal Year End:</strong></td>
+                            <td>{{ selected_association.get_fiscal_year_end_month_display }} {{ selected_tax_year }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Tax Return Due Date:</strong></td>
+                            <td>{{ tax_return_due_date|date:"F d, Y" }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Extended Due Date:</strong></td>
+                            <td>{{ extended_due_date|date:"F d, Y" }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Extension Filed:</strong></td>
+                            <td>
+                                {% if extension_data %}
+                                    {% if extension_data.filed %}
                                         Yes (Filed on {{ extension_data.filed_date|date:"F d, Y" }})
                                     {% else %}
                                         No
                                     {% endif %}
-                                </td>
-                            </tr>
-                        </table>
-                    </div>
+                                {% else %}
+                                    No information available
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Extension Form:</strong></td>
+                            <td>
+                                {% if extension_data and extension_data.form_7004 %}
+                                    <a href="{{ extension_data.form_7004.url }}" target="_blank" class="btn btn-sm btn-secondary">View Form 7004</a>
+                                {% else %}
+                                    Not available
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Tax Return Filed:</strong></td>
+                            <td>
+                                {% if completed_tax_return_data %}
+                                    {% if completed_tax_return_data.return_filed %}
+                                        Yes{% if completed_tax_return_data.date_prepared %} (Prepared on {{ completed_tax_return_data.date_prepared|date:"F d, Y" }}){% endif %}
+                                    {% else %}
+                                        No
+                                    {% endif %}
+                                {% else %}
+                                    No information available
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Tax Return PDF:</strong></td>
+                            <td>
+                                {% if completed_tax_return_data and completed_tax_return_data.tax_return_pdf %}
+                                    <a href="{{ completed_tax_return_data.tax_return_pdf.url }}" target="_blank" class="btn btn-sm btn-secondary">View Tax Return</a>
+                                {% else %}
+                                    Not available
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </table>
                 </div>
-
+            </div>
                 {% if financial_data %}
                     <div class="card mt-4 financial-info-card">
                         <div class="card-header">

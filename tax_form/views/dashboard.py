@@ -8,13 +8,11 @@ class DashboardView(View):
     template_name = 'tax_form/dashboard.html'
 
     def get(self, request):
-        # Get the range of available tax years
         year_range = Financial.objects.aggregate(Min('tax_year'), Max('tax_year'))
         min_year = year_range['tax_year__min'] or timezone.now().year
         max_year = max(year_range['tax_year__max'] or timezone.now().year, timezone.now().year)
-        available_years = range(max_year, min_year - 1, -1)  # Reverse order, include future year
+        available_years = range(max_year, min_year - 1, -1)
 
-        # Get the selected year from the query parameters, default to the current year
         selected_year = int(request.GET.get('tax_year', timezone.now().year))
 
         associations = Association.objects.all().order_by('association_name')
@@ -28,12 +26,12 @@ class DashboardView(View):
             dashboard_data.append({
                 'association': association,
                 'fiscal_year_end': association.get_fiscal_year_end(selected_year),
-                'tax_return_due_date': association.get_tax_return_due_date(selected_year),
-                'extended_due_date': association.get_extended_due_date(selected_year),
                 'extension_filed': extension.filed if extension else False,
                 'extension_filed_date': extension.filed_date if extension and extension.filed else None,
+                'extension_file_url': extension.form_7004.url if extension and extension.form_7004 else None,
                 'tax_return_filed': completed_tax_return.return_filed if completed_tax_return else False,
                 'tax_return_prepared_date': completed_tax_return.date_prepared if completed_tax_return and completed_tax_return.return_filed else None,
+                'tax_return_file_url': completed_tax_return.tax_return_pdf.url if completed_tax_return and completed_tax_return.tax_return_pdf else None,
             })
 
         context = {

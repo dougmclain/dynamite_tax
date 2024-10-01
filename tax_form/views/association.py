@@ -31,6 +31,20 @@ class AssociationView(View):
             selected_association = get_object_or_404(Association, id=selected_association_id)
             context['selected_association'] = selected_association
 
+            # Add new association information
+            context['association_info'] = {
+                'name': selected_association.association_name,
+                'mailing_address': selected_association.mailing_address,
+                'city': selected_association.city,
+                'state': selected_association.state,
+                'zipcode': selected_association.zipcode,
+                'ein': selected_association.ein,
+                'formation_date': selected_association.formation_date,
+                'association_type': selected_association.get_association_type_display(),
+                'contact_name': f"{selected_association.contact_first_name} {selected_association.contact_last_name}",
+                'contact_email': selected_association.contact_email,
+            }
+
             financial_data = Financial.objects.filter(
                 association=selected_association,
                 tax_year=selected_tax_year

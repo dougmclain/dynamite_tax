@@ -124,3 +124,8 @@ a:hover {
     }
 }
 /* Add any other existing styles below */
+@media (max-width: 991px) {
+    .card {
+        margin-bottom: 1rem;
+    }
+}

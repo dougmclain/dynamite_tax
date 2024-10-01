@@ -1,14 +1,12 @@
 {% extends "tax_form/base.html" %}
 {% load humanize %}
-
 {% block title %}Association Details{% endblock %}
-
 {% block content %}
 <div class="container mt-5">
     <h1 class="mb-4">Association Details</h1>
 
     <div class="row justify-content-center">
-        <div class="col-lg-8">
+        <div class="col-lg-10">
             <form method="get" class="mb-4">
                 <div class="row">
                     <div class="col-md-6">
@@ -36,27 +34,40 @@
             </form>
 
             {% if selected_association %}
-            <div class="card mt-4">
-                <div class="card-header">
-                    <h2>{{ selected_association.association_name }} - Tax Year {{ selected_tax_year }}</h2>
+            <div class="row">
+                <div class="col-lg-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h2 class="h4 mb-0">{{ selected_association.association_name }}</h2>
+                        </div>
+                        <div class="card-body">
+                            <h3 class="h5">Association Information</h3>
+                            <address>
+                                <strong>Address:</strong><br>
+                                {{ association_info.mailing_address }}<br>
+                                {{ association_info.city }}, {{ association_info.state }} {{ association_info.zipcode }}
+                            </address>
+                            <p><strong>EIN:</strong> {{ association_info.ein }}</p>
+                            <p><strong>Formation Date:</strong> {{ association_info.formation_date|date:"F d, Y" }}</p>
+                            <p><strong>Association Type:</strong> {{ association_info.association_type }}</p>
+                            
+                            <h3 class="h5 mt-4">Contact Information</h3>
+                            <p><strong>Name:</strong> {{ association_info.contact_name }}</p>
+                            <p><strong>Email:</strong> {{ association_info.contact_email }}</p>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <table class="table table-sm">
-                        <tr>
-                            <td><strong>Fiscal Year End:</strong></td>
-                            <td>{{ selected_association.get_fiscal_year_end_month_display }} {{ selected_tax_year }}</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Tax Return Due Date:</strong></td>
-                            <td>{{ tax_return_due_date|date:"F d, Y" }}</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Extended Due Date:</strong></td>
-                            <td>{{ extended_due_date|date:"F d, Y" }}</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Extension Filed:</strong></td>
-                            <td>
+                
+                <div class="col-lg-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h2 class="h4 mb-0">Tax Year {{ selected_tax_year }}</h2>
+                        </div>
+                        <div class="card-body">
+                            <p><strong>Fiscal Year End:</strong> {{ selected_association.get_fiscal_year_end_month_display }} {{ selected_tax_year }}</p>
+                            <p><strong>Tax Return Due Date:</strong> {{ tax_return_due_date|date:"F d, Y" }}</p>
+                            <p><strong>Extended Due Date:</strong> {{ extended_due_date|date:"F d, Y" }}</p>
+                            <p><strong>Extension Filed:</strong> 
                                 {% if extension_data %}
                                     {% if extension_data.filed %}
                                         Yes (Filed on {{ extension_data.filed_date|date:"F d, Y" }})
@@ -66,21 +77,15 @@
                                 {% else %}
                                     No information available
                                 {% endif %}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td><strong>Extension Form:</strong></td>
-                            <td>
+                            </p>
+                            <p><strong>Extension Form:</strong>
                                 {% if extension_data and extension_data.form_7004 %}
-                                    <a href="{{ extension_data.form_7004.url }}" target="_blank" class="btn btn-sm btn-secondary">View Form 7004</a>
+                                    <a href="{{ extension_data.form_7004.url }}" class="btn btn-sm btn-secondary" target="_blank">View Form 7004</a>
                                 {% else %}
                                     Not available
                                 {% endif %}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td><strong>Tax Return Filed:</strong></td>
-                            <td>
+                            </p>
+                            <p><strong>Tax Return Filed:</strong>
                                 {% if completed_tax_return_data %}
                                     {% if completed_tax_return_data.return_filed %}
                                         Yes{% if completed_tax_return_data.date_prepared %} (Prepared on {{ completed_tax_return_data.date_prepared|date:"F d, Y" }}){% endif %}
@@ -90,90 +95,93 @@
                                 {% else %}
                                     No information available
                                 {% endif %}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td><strong>Tax Return PDF:</strong></td>
-                            <td>
+                            </p>
+                            <p><strong>Tax Return PDF:</strong>
                                 {% if completed_tax_return_data and completed_tax_return_data.tax_return_pdf %}
-                                    <a href="{{ completed_tax_return_data.tax_return_pdf.url }}" target="_blank" class="btn btn-sm btn-secondary">View Tax Return</a>
+                                    <a href="{{ completed_tax_return_data.tax_return_pdf.url }}" class="btn btn-sm btn-secondary" target="_blank">View Tax Return</a>
                                 {% else %}
                                     Not available
                                 {% endif %}
-                            </td>
-                        </tr>
-                    </table>
+                            </p>
+                        </div>
+                    </div>
                 </div>
             </div>
-                {% if financial_data %}
-                    <div class="card mt-4 financial-info-card">
+
+            {% if financial_data %}
+            <div class="row">
+                <div class="col-lg-6 mb-4">
+                    <div class="card h-100">
                         <div class="card-header">
-                            <h3>Financial Information</h3>
+                            <h3 class="h4 mb-0">Financial Information</h3>
                         </div>
                         <div class="card-body">
-                            <h4>Exempt </h4>
+                            <h4>Exempt</h4>
                             <table class="table table-sm">
                                 <tr>
-                                    <td><strong>Total Exempt Function Income:</strong></td>
-                                    <td class="text-end">${{ total_exempt_income|default_if_none:0|intcomma }}</td>
+                                    <td>Total Exempt Function Income:</td>
+                                    <td>${{ total_exempt_income|default_if_none:0|intcomma }}</td>
                                 </tr>
                                 <tr>
-                                    <td><strong>Total Exempt Function Expenses:</strong></td>
-                                    <td class="text-end">${{ expenses_lineC|default_if_none:0|intcomma }}</td>
+                                    <td>Total Exempt Function Expenses:</td>
+                                    <td>${{ expenses_lineC|default_if_none:0|intcomma }}</td>
                                 </tr>
                             </table>
-                            
-                            <h4>Non-Exempt </h4>
+
+                            <h4>Non-Exempt</h4>
                             <table class="table table-sm">
                                 {% for income_type, amount in taxable_income.items %}
                                     {% if amount > 0 %}
                                         <tr>
-                                            <td><strong>{{ income_type|title }}:</strong></td>
-                                            <td class="text-end">${{ amount|intcomma }}</td>
+                                            <td>{{ income_type|title }}:</td>
+                                            <td>${{ amount|intcomma }}</td>
                                         </tr>
                                     {% endif %}
                                 {% endfor %}
                                 <tr>
-                                    <td><strong>Total Non-Exempt Income:</strong></td>
-                                    <td class="text-end">${{ gross_income|default_if_none:0|intcomma }}</td>
+                                    <td>Total Non-Exempt Income:</td>
+                                    <td>${{ gross_income|default_if_none:0|intcomma }}</td>
                                 </tr>
                             </table>
-                            
+
+                            <h4>Deductions and Tax</h4>
                             <table class="table table-sm">
                                 <tr>
-                                    <td><strong>Other Deductions:</strong></td>
-                                    <td class="text-end">${{ other_deductions|default_if_none:0|intcomma }}</td>
+                                    <td>Other Deductions:</td>
+                                    <td>${{ other_deductions|default_if_none:0|intcomma }}</td>
                                 </tr>
                                 <tr>
-                                    <td><strong>Total Tax:</strong></td>
-                                    <td class="text-end">${{ total_tax|default_if_none:0|intcomma }}</td>
+                                    <td>Total Tax:</td>
+                                    <td>${{ total_tax|default_if_none:0|intcomma }}</td>
                                 </tr>
                                 <tr>
-                                    <td><strong>Total Payments:</strong></td>
-                                    <td class="text-end">${{ total_payments|default_if_none:0|intcomma }}</td>
+                                    <td>Total Payments:</td>
+                                    <td>${{ total_payments|default_if_none:0|intcomma }}</td>
                                 </tr>
-                                {% if amount_owed > 0 %}
-                                    <tr>
-                                        <td><strong>Amount Owed:</strong></td>
-                                        <td class="text-end">${{ amount_owed|intcomma }}</td>
-                                    </tr>
-                                {% endif %}
-                                {% if overpayment > 0 %}
-                                    <tr>
-                                        <td><strong>Overpayment (Refund):</strong></td>
-                                        <td class="text-end">${{ overpayment|intcomma }}</td>
-                                    </tr>
-                                {% endif %}
                             </table>
+
+                            {% if amount_owed > 0 %}
+                                <p><strong>Amount Owed:</strong> ${{ amount_owed|intcomma }}</p>
+                            {% endif %}
+                            {% if overpayment > 0 %}
+                                <p><strong>Overpayment (Refund):</strong> ${{ overpayment|intcomma }}</p>
+                            {% endif %}
                         </div>
                     </div>
-                {% else %}
-                    <div class="card mt-4">
+                </div>
+            </div>
+            {% else %}
+            <div class="row">
+                <div class="col-lg-6 mb-4">
+                    <div class="card">
                         <div class="card-body">
                             <p>No financial data available for the selected tax year.</p>
                         </div>
                     </div>
-                {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
             {% endif %}
         </div>
     </div>

@@ -5,7 +5,6 @@
 {% block title %}Association Dashboard{% endblock %}
 
 
-
 {% block content %}
 <div class="container-fluid mt-5">
     <h1 class="mb-4">Association Dashboard</h1>
@@ -26,6 +25,23 @@
             </form>
 
             <h2 class="h4 mb-3">Tax Year {{ selected_year }}</h2>
+
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h3 class="card-title h5">Summary</h3>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <p><strong>Total Associations:</strong> {{ total_associations }}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <p><strong>Filed Tax Returns:</strong> {{ filed_returns }}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <p><strong>Unfiled Tax Returns:</strong> {{ unfiled_returns }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <div class="table-responsive">
                 <table class="table table-hover" id="associationTable">

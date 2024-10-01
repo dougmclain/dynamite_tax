@@ -162,6 +162,25 @@ class Extension(models.Model):
     @property
     def association(self):
         return self.financial.association
+    
+class CompletedTaxReturn(models.Model):
+    financial = models.OneToOneField('Financial', on_delete=models.CASCADE, related_name='completed_tax_return')
+    return_filed = models.BooleanField(default=False, help_text="Indicates whether the tax return has been filed")
+    date_prepared = models.DateField(null=True, blank=True, help_text="The date the tax return was prepared")
+    tax_return_pdf = models.FileField(upload_to='completed_tax_returns/', null=True, blank=True)
+
+    def __str__(self):
+        status = "Filed" if self.return_filed else "Not Filed"
+        date_info = f" on {self.date_prepared}" if self.date_prepared else ""
+        return f"{self.financial.association.association_name} - {self.financial.tax_year} Tax Return ({status}{date_info})"
+
+    @property
+    def tax_year(self):
+        return self.financial.tax_year
+
+    @property
+    def association(self):
+        return self.financial.association
 
 class Preparer(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)

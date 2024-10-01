@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.db import models
 from django.utils.html import format_html
 from django.contrib.humanize.templatetags.humanize import intcomma
-from .models import Association, Financial, Preparer, Extension
+from .models import Association, Financial, Preparer, Extension, CompletedTaxReturn
 
 # Inline for Financial records in Association admin (optional)
 class FinancialInline(admin.TabularInline):
@@ -19,6 +19,11 @@ class ExtensionInline(admin.StackedInline):
     model = Extension
     extra = 0
     fields = ('filed', 'filed_date', 'form_7004')
+    
+class CompletedTaxReturnInline(admin.StackedInline):
+    model = CompletedTaxReturn
+    extra = 0
+    fields = ('return_filed', 'date_prepared', 'tax_return_pdf')   
 
 @admin.register(Association)
 class AssociationAdmin(admin.ModelAdmin):
@@ -36,7 +41,7 @@ class FinancialAdmin(admin.ModelAdmin):
     list_display = ('association', 'tax_year', 'member_assessments_display', 'total_expenses_display', 'extension_filed')
     list_filter = ('tax_year', 'association__association_name')
     search_fields = ('association__association_name', 'tax_year')
-    inlines = [ExtensionInline]
+    inlines = [ExtensionInline, CompletedTaxReturnInline]
 
     def format_currency(self, value):
         return f"${intcomma(value)}"
@@ -139,6 +144,16 @@ class ExtensionInline(admin.StackedInline):
 class ExtensionAdmin(admin.ModelAdmin):
     list_display = ('financial', 'tax_year', 'filed', 'filed_date')
     list_filter = ('filed', 'filed_date')
+    search_fields = ('financial__association__association_name', 'financial__tax_year')
+
+    def tax_year(self, obj):
+        return obj.financial.tax_year
+    tax_year.short_description = 'Tax Year'
+    
+@admin.register(CompletedTaxReturn)
+class CompletedTaxReturnAdmin(admin.ModelAdmin):
+    list_display = ('financial', 'tax_year', 'return_filed', 'date_prepared')
+    list_filter = ('return_filed', 'date_prepared')
     search_fields = ('financial__association__association_name', 'financial__tax_year')
 
     def tax_year(self, obj):

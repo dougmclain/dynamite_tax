@@ -1,0 +1,20 @@
+{% extends "tax_form/base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}Edit Association - {{ association.association_name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <h1 class="mb-4">Edit Association: {{ association.association_name }}</h1>
+            <form method="post" class="mb-4">
+                {% csrf_token %}
+                {{ form|crispy }}
+                <button type="submit" class="btn btn-primary">Update Association</button>
+                <a href="{% url 'association' %}?association_id={{ association.id }}" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

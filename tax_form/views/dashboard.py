@@ -11,7 +11,7 @@ class DashboardView(View):
         year_range = Financial.objects.aggregate(Min('tax_year'), Max('tax_year'))
         min_year = year_range['tax_year__min'] or timezone.now().year
         max_year = max(year_range['tax_year__max'] or timezone.now().year, timezone.now().year)
-        available_years = range(max_year, min_year - 1, -1)
+        available_years = range(max_year, min_year - 2, -1)
 
         selected_year = int(request.GET.get('tax_year', timezone.now().year))
 

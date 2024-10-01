@@ -117,6 +117,171 @@ a:hover {
     width: 70%;
 }
 
+/* Existing styles */
+
+/* Existing styles */
+
+/* Existing styles */
+
+/* Updated styles for table layout */
+@media (min-width: 768px) {
+    .table-responsive {
+        max-width: none;
+        width: 100%;
+    }
+
+    #associationTable {
+        display: table;
+        width: 100%;
+        table-layout: fixed;
+    }
+
+    #associationTable th,
+    #associationTable td {
+        padding: 0.75rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    #associationTable th {
+        white-space: normal; /* Allow all header text to wrap */
+        hyphens: auto; /* Enable hyphenation for headers */
+        vertical-align: bottom; /* Align header text to bottom */
+    }
+
+    /* Column width adjustments */
+    #associationTable th:nth-child(1),
+    #associationTable td:nth-child(1) {
+        width: 25%; /* Association Name */
+    }
+
+    #associationTable th:nth-child(2),
+    #associationTable td:nth-child(2) {
+        width: 15%; /* Fiscal Year End */
+    }
+
+    #associationTable th:nth-child(3),
+    #associationTable td:nth-child(3) {
+        width: 20%; /* Extension Filed Date */
+    }
+
+    #associationTable th:nth-child(4),
+    #associationTable td:nth-child(4) {
+        width: 10%; /* Extension Form */
+    }
+
+    #associationTable th:nth-child(5),
+    #associationTable td:nth-child(5) {
+        width: 20%; /* Tax Return Filed Date */
+    }
+
+    #associationTable th:nth-child(6),
+    #associationTable td:nth-child(6) {
+        width: 10%; /* Tax Return PDF */
+    }
+}
+
+/* Tooltip styles for truncated text */
+#associationTable td {
+    position: relative;
+}
+
+#associationTable td:hover::after {
+    content: attr(title);
+    position: absolute;
+    left: 0;
+    top: 100%;
+    white-space: nowrap;
+    background: #fff;
+    border: 1px solid #ddd;
+    padding: 5px;
+    z-index: 1;
+}
+
+/* Rest of your existing styles */
+
+/* Adjust the existing styles for sortable columns */
+.sortable {
+    cursor: pointer;
+    position: relative;
+    padding-right: 18px; /* Make room for the arrow */
+}
+
+.sortable::after {
+    content: '\2195'; /* Unicode for up/down arrow */
+    position: absolute;
+    right: 5px;
+    bottom: 5px; /* Adjust position to bottom */
+    opacity: 0.5;
+}
+
+.sortable.asc::after {
+    content: '\2191'; /* Unicode for up arrow */
+    opacity: 1;
+}
+
+.sortable.desc::after {
+    content: '\2193'; /* Unicode for down arrow */
+    opacity: 1;
+}
+
+/* Rest of your existing styles */
+
+/* Rest of your existing styles */
+
+/* Updated styles for clickable rows */
+.clickable-row {
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.clickable-row:hover {
+    background-color: #f0f0f0;
+}
+
+.clickable-row td:first-child {
+    position: relative;
+}
+
+.clickable-row td:first-child::before {
+    content: '\1F517'; /* Unicode for link symbol */
+    position: absolute;
+    left: -20px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.clickable-row:hover td:first-child::before {
+    opacity: 1;
+}
+
+/* Ensure the table has some left padding for the link symbol */
+.table-responsive {
+    padding-left: 20px;
+}
+
+/* Add a tooltip for truncated text */
+@media (min-width: 768px) {
+    #associationTable td {
+        position: relative;
+    }
+
+    #associationTable td:hover::after {
+        content: attr(data-full-text);
+        position: absolute;
+        left: 0;
+        top: 100%;
+        white-space: nowrap;
+        background: #fff;
+        border: 1px solid #ddd;
+        padding: 5px;
+        z-index: 1;
+    }
+}
+/* Rest of your existing styles */
+
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
     .financial-info-card .table-sm td:first-child {

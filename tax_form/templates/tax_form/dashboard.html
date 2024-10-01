@@ -1,36 +1,17 @@
 {% extends "tax_form/base.html" %}
 {% load humanize %}
+{% load static %}
+
 {% block title %}Association Dashboard{% endblock %}
 
-{% block extra_css %}
-<style>
-    .clickable-row {
-        cursor: pointer;
-    }
-    .clickable-row:hover {
-        background-color: #f5f5f5;
-    }
-    @media (min-width: 768px) {
-        .table-responsive {
-            overflow-x: visible;
-        }
-    }
-    .file-link {
-        color: #007bff;
-        text-decoration: none;
-    }
-    .file-link:hover {
-        text-decoration: underline;
-    }
-</style>
-{% endblock %}
+
 
 {% block content %}
-<div class="container mt-5">
+<div class="container-fluid mt-5">
     <h1 class="mb-4">Association Dashboard</h1>
     
     <div class="row justify-content-center">
-        <div class="col-lg-12">
+        <div class="col-12">
             <form method="get" class="mb-4">
                 <div class="row">
                     <div class="col-md-6">
@@ -47,46 +28,46 @@
             <h2 class="h4 mb-3">Tax Year {{ selected_year }}</h2>
 
             <div class="table-responsive">
-                <table class="table table-hover">
+                <table class="table table-hover" id="associationTable">
                     <thead>
                         <tr>
-                            <th>Association Name</th>
+                            <th class="sortable" data-sort="name">Association Name</th>
                             <th>Fiscal Year End</th>
-                            <th>Extension Filed</th>
+                            <th class="sortable" data-sort="extension">Extension Filed Date</th>
                             <th>Extension Form</th>
-                            <th>Tax Return Filed</th>
+                            <th class="sortable" data-sort="return">Tax Return Filed Date</th>
                             <th>Tax Return PDF</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for data in dashboard_data %}
                         <tr class="clickable-row" data-href="{% url 'association' %}?association_id={{ data.association.id }}&tax_year={{ selected_year }}">
-                            <td>{{ data.association.association_name }}</td>
-                            <td>{{ data.fiscal_year_end|date:"F d, Y" }}</td>
-                            <td>
-                                {% if data.extension_filed %}
-                                    Yes{% if data.extension_filed_date %} ({{ data.extension_filed_date|date:"F d, Y" }}){% endif %}
+                            <td data-name="{{ data.association.association_name }}" title="{{ data.association.association_name }}">{{ data.association.association_name }}</td>
+                            <td title="{{ data.fiscal_year_end|date:'F d, Y' }}">{{ data.fiscal_year_end|date:"F d, Y" }}</td>
+                            <td data-extension="{{ data.extension_filed_date|date:'Y-m-d'|default:'9999-12-31' }}" title="{{ data.extension_filed_date|date:'F d, Y'|default:'Not Filed' }}">
+                                {% if data.extension_filed_date %}
+                                    {{ data.extension_filed_date|date:"F d, Y" }}
                                 {% else %}
-                                    No
+                                    Not Filed
                                 {% endif %}
                             </td>
                             <td>
                                 {% if data.extension_file_url %}
-                                    <a href="{{ data.extension_file_url }}" class="file-link" target="_blank">View Form 7004</a>
+                                    <a href="{{ data.extension_file_url }}" class="file-link" target="_blank">View</a>
                                 {% else %}
                                     N/A
                                 {% endif %}
                             </td>
-                            <td>
-                                {% if data.tax_return_filed %}
-                                    Yes{% if data.tax_return_prepared_date %} ({{ data.tax_return_prepared_date|date:"F d, Y" }}){% endif %}
+                            <td data-return="{{ data.tax_return_prepared_date|date:'Y-m-d'|default:'9999-12-31' }}" title="{{ data.tax_return_prepared_date|date:'F d, Y'|default:'Not Filed' }}">
+                                {% if data.tax_return_prepared_date %}
+                                    {{ data.tax_return_prepared_date|date:"F d, Y" }}
                                 {% else %}
-                                    No
+                                    Not Filed
                                 {% endif %}
                             </td>
                             <td>
                                 {% if data.tax_return_file_url %}
-                                    <a href="{{ data.tax_return_file_url }}" class="file-link" target="_blank">View Tax Return</a>
+                                    <a href="{{ data.tax_return_file_url }}" class="file-link" target="_blank">View</a>
                                 {% else %}
                                     N/A
                                 {% endif %}
@@ -102,16 +83,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const rows = document.querySelectorAll('.clickable-row');
-        rows.forEach(row => {
-            row.addEventListener('click', function(event) {
-                if (!event.target.classList.contains('file-link')) {
-                    window.location.href = this.dataset.href;
-                }
-            });
-        });
-    });
-</script>
+<script src="{% static 'js/dashboard.js' %}"></script>
 {% endblock %}

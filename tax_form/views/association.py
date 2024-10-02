@@ -14,7 +14,13 @@ class AssociationView(View):
     def get(self, request):
         associations = Association.objects.all().order_by('association_name')
         selected_association_id = request.GET.get('association_id')
-        selected_tax_year = int(request.GET.get('tax_year', datetime.now().year))
+        
+        # Handle the case where tax_year might be empty or not present
+        tax_year_param = request.GET.get('tax_year')
+        if tax_year_param and tax_year_param.strip():
+            selected_tax_year = int(tax_year_param)
+        else:
+            selected_tax_year = datetime.now().year
 
         context = {
             'associations': associations,
@@ -31,6 +37,7 @@ class AssociationView(View):
             selected_association = get_object_or_404(Association, id=selected_association_id)
             context['selected_association'] = selected_association
 
+            # Add new association information
             context['association_info'] = {
                 'name': selected_association.association_name,
                 'mailing_address': selected_association.mailing_address,
@@ -54,6 +61,7 @@ class AssociationView(View):
                 context['extension_data'] = Extension.objects.filter(financial=financial_data).first()
                 context['completed_tax_return_data'] = CompletedTaxReturn.objects.filter(financial=financial_data).first()
 
+                # Calculate financial information
                 context['total_exempt_income'] = calculate_total_exempt_income(financial_data)
                 context['expenses_lineC'] = calculate_expenses_lineC(financial_data)
                 context['total_taxable_income'] = calculate_total_other_income(financial_data)
@@ -65,6 +73,7 @@ class AssociationView(View):
                 context['amount_owed'] = calculate_amount_owed(context['total_tax'], context['total_payments'])
                 context['overpayment'] = calculate_overpayment(context['total_tax'], context['total_payments'])
 
+                # Taxable income breakdown
                 context['taxable_income'] = {
                     'interest': financial_data.interest,
                     'dividends': financial_data.dividends,
@@ -74,6 +83,7 @@ class AssociationView(View):
                     'non_exempt_income3': financial_data.non_exempt_income_amount3,
                 }
 
+            # Calculate due dates
             context['tax_return_due_date'] = selected_association.get_tax_return_due_date(selected_tax_year)
             context['extended_due_date'] = selected_association.get_extended_due_date(selected_tax_year)
 

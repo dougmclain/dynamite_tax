@@ -98,3 +98,5 @@ class FinancialForm(forms.ModelForm):
             for field_name, field in self.fields.items():
                 if isinstance(field.widget, TextInput) and field.widget.attrs.get('class') == 'dollar-input':
                     field.widget.attrs['data-original-value'] = getattr(self.instance, field_name) or ''
+                    
+

@@ -106,6 +106,9 @@
                                 {% else %}
                                     Not available
                                 {% endif %}
+                                <div class="container mt-4 d-flex justify-content-md-end">
+                                    <a href="{% url 'edit_tax_year_info' association_id=selected_association.id tax_year=selected_tax_year %}" class="btn btn-primary btn-sm">Edit</a>
+                                </div>
                             </p>
                         </div>
                     </div>
@@ -170,6 +173,7 @@
                             {% if overpayment > 0 %}
                                 <p><strong>Overpayment (Refund):</strong> ${{ overpayment|intcomma }}</p>
                             {% endif %}
+
                         </div>
                     </div>
                 </div>

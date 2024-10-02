@@ -1,0 +1,49 @@
+{% extends "tax_form/base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}Edit Tax Year Info - {{ association.association_name }} ({{ tax_year }}){% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <h1 class="mb-4">Edit Tax Year Info: {{ association.association_name }} ({{ tax_year }})</h1>
+            <form method="post" enctype="multipart/form-data" class="mb-4">
+                {% csrf_token %}
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="extension_filed" name="extension_filed" {% if extension.filed %}checked{% endif %}>
+                    <label class="form-check-label" for="extension_filed">Extension Filed</label>
+                </div>
+                <div class="mb-3">
+                    <label for="extension_filed_date" class="form-label">Extension Filed Date</label>
+                    <input type="date" class="form-control" id="extension_filed_date" name="extension_filed_date" value="{% if extension.filed_date %}{{ extension.filed_date|date:'Y-m-d' }}{% endif %}">
+                </div>
+                <div class="mb-3">
+                    <label for="extension_file" class="form-label">Extension File (PDF)</label>
+                    <input type="file" class="form-control" id="extension_file" name="extension_file" accept=".pdf">
+                    {% if extension.form_7004 %}
+                        <small class="form-text text-muted">Current file: {{ extension.form_7004.name }}</small>
+                    {% endif %}
+                </div>
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="tax_return_filed" name="tax_return_filed" {% if completed_tax_return.return_filed %}checked{% endif %}>
+                    <label class="form-check-label" for="tax_return_filed">Tax Return Filed</label>
+                </div>
+                <div class="mb-3">
+                    <label for="tax_return_filed_date" class="form-label">Tax Return Filed Date</label>
+                    <input type="date" class="form-control" id="tax_return_filed_date" name="tax_return_filed_date" value="{% if completed_tax_return.date_prepared %}{{ completed_tax_return.date_prepared|date:'Y-m-d' }}{% endif %}">
+                </div>
+                <div class="mb-3">
+                    <label for="tax_return_file" class="form-label">Tax Return File (PDF)</label>
+                    <input type="file" class="form-control" id="tax_return_file" name="tax_return_file" accept=".pdf">
+                    {% if completed_tax_return.tax_return_pdf %}
+                        <small class="form-text text-muted">Current file: {{ completed_tax_return.tax_return_pdf.name }}</small>
+                    {% endif %}
+                </div>
+                <button type="submit" class="btn btn-primary">Update Tax Year Info</button>
+                <a href="{% url 'association' %}?association_id={{ association.id }}&tax_year={{ tax_year }}" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

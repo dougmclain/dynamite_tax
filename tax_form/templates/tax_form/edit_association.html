@@ -11,8 +11,9 @@
             <form method="post" class="mb-4">
                 {% csrf_token %}
                 {{ form|crispy }}
+                <input type="hidden" name="tax_year" value="{{ tax_year }}">
                 <button type="submit" class="btn btn-primary">Update Association</button>
-                <a href="{% url 'association' %}?association_id={{ association.id }}" class="btn btn-secondary">Cancel</a>
+                <a href="{% url 'association' %}?association_id={{ association.id }}&tax_year={{ tax_year }}" class="btn btn-secondary">Cancel</a>
             </form>
         </div>
     </div>

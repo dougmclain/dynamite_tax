@@ -1,5 +1,5 @@
 from django import forms
-from .models import Association, Financial, Preparer
+from .models import Association, Financial, Preparer, Extension, CompletedTaxReturn
 from django.forms.widgets import NumberInput, TextInput
 import logging
 
@@ -100,3 +100,33 @@ class FinancialForm(forms.ModelForm):
                     field.widget.attrs['data-original-value'] = getattr(self.instance, field_name) or ''
                     
 
+class ExtensionForm(forms.ModelForm):
+    class Meta:
+        model = Extension
+        fields = ['filed', 'filed_date', 'tentative_tax', 'total_payments']
+        widgets = {
+            'filed_date': forms.DateInput(attrs={
+                'type': 'date',
+                'class': 'form-control'
+            }),
+            'tentative_tax': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'min': '0',
+                'placeholder': '0.00'
+            }),
+            'total_payments': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'min': '0',
+                'placeholder': '0.00'
+            }),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['filed'].widget.attrs['class'] = 'form-check-input'
+        self.fields['filed'].required = False
+        self.fields['filed_date'].required = False
+        self.fields['tentative_tax'].required = False
+        self.fields['total_payments'].required = False

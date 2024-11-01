@@ -149,6 +149,11 @@ class Extension(models.Model):
     filed = models.BooleanField(default=False, help_text="Indicates whether the extension has been filed")
     filed_date = models.DateField(null=True, blank=True, help_text="The date the extension was filed")
     form_7004 = models.FileField(upload_to='extensions/', null=True, blank=True)
+    
+    # New fields for Form 7004
+    tentative_tax = models.PositiveIntegerField(default=0, help_text="Form 7004 Line 6 - Tentative total tax")
+    total_payments = models.PositiveIntegerField(default=0, help_text="Form 7004 Line 7 - Total payments and credits")
+    balance_due = models.PositiveIntegerField(default=0, help_text="Form 7004 Line 8 - Balance due")
 
     def __str__(self):
         status = "Filed" if self.filed else "Not Filed"
@@ -162,6 +167,14 @@ class Extension(models.Model):
     @property
     def association(self):
         return self.financial.association
+
+    def calculate_balance_due(self):
+        """Calculate balance due as max(0, tentative_tax - total_payments)"""
+        return max(0, self.tentative_tax - self.total_payments)
+
+    def save(self, *args, **kwargs):
+        self.balance_due = self.calculate_balance_due()
+        super().save(*args, **kwargs)
     
 class CompletedTaxReturn(models.Model):
     financial = models.OneToOneField('Financial', on_delete=models.CASCADE, related_name='completed_tax_return')

@@ -1,0 +1,94 @@
+{% extends "tax_form/base.html" %}
+{% load crispy_forms_tags %}
+{% load static %}
+
+{% block title %}File Extension - Form 7004{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <h1 class="mb-4">File Extension - Form 7004</h1>
+
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <label for="association_select" class="form-label">Association</label>
+                    <select id="association_select" class="form-select">
+                        <option value="">Select an Association</option>
+                        {% for assoc in associations %}
+                            <option value="{{ assoc.id }}" {% if association.id == assoc.id %}selected{% endif %}>
+                                {{ assoc.association_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="tax_year_select" class="form-label">Tax Year</label>
+                    <select id="tax_year_select" class="form-select" {% if not association %}disabled{% endif %}>
+                        <option value="">Select Tax Year</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">&nbsp;</label>
+                    <button id="calculate_btn" class="btn btn-primary w-100">Start Extension</button>
+                </div>
+            </div>
+
+            {% if association and tax_year and form %}
+                <form method="post" enctype="multipart/form-data" id="extension_form">
+                    {% csrf_token %}
+                    <input type="hidden" name="association_id" value="{{ association.id }}">
+                    <input type="hidden" name="tax_year" value="{{ tax_year }}">
+
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h3 class="card-title mb-0">Association Information</h3>
+                        </div>
+                        <div class="card-body">
+                            <p><strong>Name:</strong> {{ association.association_name }}</p>
+                            <p><strong>EIN:</strong> {{ association.ein }}</p>
+                            <p><strong>Address:</strong><br>
+                                {{ association.mailing_address }}<br>
+                                {{ association.city }}, {{ association.state }} {{ association.zipcode }}</p>
+                            <p><strong>Tax Year:</strong> {{ tax_year }}</p>
+                            <p><strong>Form Code:</strong> 17 (Form 1120-H)</p>
+                        </div>
+                    </div>
+
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h3 class="card-title mb-0">Extension Information</h3>
+                        </div>
+                        <div class="card-body">
+                            {{ form|crispy }}
+                        </div>
+                    </div>
+
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h3 class="card-title mb-0">Balance Due Calculation</h3>
+                        </div>
+                        <div class="card-body">
+                            <div id="balanceDue" class="h4 text-end">
+                                Balance Due: $<span>0.00</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'dashboard' %}" class="btn btn-secondary">Cancel</a>
+                        <div>
+                            <button type="submit" name="save_only" value="1" class="btn btn-success me-2">Save</button>
+                            <button type="submit" name="generate_pdf" value="1" class="btn btn-primary">Generate Extension</button>
+                        </div>
+                    </div>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/extension_form.js' %}"></script>
+{% endblock %}

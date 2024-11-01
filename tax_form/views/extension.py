@@ -102,29 +102,16 @@ class ExtensionFormView(View):
                         'tentative_tax': form.cleaned_data['tentative_tax'],
                         'total_payments': form.cleaned_data['total_payments'],
                     }
-                    logger.debug(f"PDF data prepared: {pdf_data}")
 
                     # Generate and return PDF response
                     response = generate_extension_response(pdf_data, template_path)
                     if response:
-                        logger.debug("PDF generated successfully")
                         return response
                     else:
-                        logger.error("Failed to generate PDF")
                         messages.error(request, "Error generating PDF. Please try again.")
-                        return redirect('extension_form')
                 
-                # Handle save without PDF generation
-                if 'save_only' in request.POST:
-                    messages.success(request, "Extension information saved successfully.")
-                    return redirect('dashboard')
-                
-                # Default success message if neither save_only nor generate_pdf
-                messages.success(request, "Extension information processed successfully.")
-                return redirect('dashboard')
-            else:
-                logger.error(f"Form validation errors: {form.errors}")
-                messages.error(request, "Please correct the errors in the form.")
+                messages.success(request, "Extension information saved successfully.")
+                return redirect(f'/extension-form/?association_id={association_id}&tax_year={tax_year}')
             
             context = {
                 'form': form,

@@ -22,28 +22,30 @@ __all__ = ['generate_pdf']
 
 def generate_pdf(financial_info, association, preparer, tax_year):
     """Generate PDF and return HTTP response."""
-    template_path = os.path.join(settings.PDF_TEMPLATE_DIR, settings.PDF_TEMPLATE_NAME)
-    temp_dir = settings.PDF_TEMP_DIR
-    output_path = os.path.join(temp_dir, f'form_1120h_{association.id}_{tax_year}.pdf')
-
-    logger.info(f"Attempting to access PDF template at: {template_path}")
+    # Use tax year specific template
+    template_name = f'template_1120h_{tax_year}.pdf'
+    template_path = settings.PDF_TEMPLATE_DIR / template_name
     
-    if not os.path.exists(template_path):
+    # Generate output path
+    output_path = settings.PDF_TEMP_DIR / f'form_1120h_{association.id}_{tax_year}.pdf'
+
+    logger.info(f"Using template: {template_path}")
+    
+    if not template_path.exists():
         logger.error(f"PDF template not found at {template_path}")
-        logger.info(f"Current working directory: {os.getcwd()}")
-        logger.info(f"PDF_TEMPLATE_DIR contents: {os.listdir(settings.PDF_TEMPLATE_DIR)}")
+        logger.info(f"PDF_TEMPLATE_DIR contents: {list(settings.PDF_TEMPLATE_DIR.glob('*.pdf'))}")
         raise FileNotFoundError(f"PDF template not found at {template_path}")
 
     # Ensure the temporary directory exists
     try:
-        os.makedirs(temp_dir, exist_ok=True)
-        logger.info(f"Temporary directory ensured at: {temp_dir}")
+        os.makedirs(settings.PDF_TEMP_DIR, exist_ok=True)
+        logger.info(f"Temporary directory ensured at: {settings.PDF_TEMP_DIR}")
     except Exception as e:
         logger.error(f"Failed to create temporary directory: {str(e)}")
         raise
 
     try:
-        generate_1120h_pdf(financial_info, association, preparer, template_path, output_path)
+        generate_1120h_pdf(financial_info, association, preparer, str(template_path), str(output_path))
         
         with open(output_path, 'rb') as pdf:
             response = HttpResponse(pdf.read(), content_type='application/pdf')
@@ -59,6 +61,7 @@ def generate_pdf(financial_info, association, preparer, tax_year):
     except Exception as e:
         logger.error(f"Error in PDF generation: {str(e)}")
         raise
+
 
 logger = logging.getLogger(__name__)
 

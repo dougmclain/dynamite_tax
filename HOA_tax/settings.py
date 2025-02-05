@@ -160,15 +160,15 @@ LOGGING = {
     },
 }
 
-PDF_TEMPLATE_DIR = BASE_DIR / 'tax_form' / 'pdf_templates'
-PDF_TEMP_DIR = BASE_DIR / 'temp_pdfs'
-PDF_TEMPLATE_NAME = 'template_1120h.pdf'
+# PDF Settings
+PDF_BASE = Path('/Users/Doug/Library/Mobile Documents/com~apple~CloudDocs/Dynamite Software Development/Dynamite Tax ')
+PDF_TEMPLATE_DIR = PDF_BASE / 'tax_form' / 'pdf_templates'
+PDF_TEMP_DIR = PDF_BASE / 'temp_pdfs'
 
-# Ensure the directories exist
+# Ensure directories exist
 os.makedirs(PDF_TEMPLATE_DIR, exist_ok=True)
 os.makedirs(PDF_TEMP_DIR, exist_ok=True)
 
-print(f"PDF_TEMPLATE_DIR: {PDF_TEMPLATE_DIR}")
-print(f"PDF_TEMP_DIR: {PDF_TEMP_DIR}")
-print(f"PDF_TEMPLATE_NAME: {PDF_TEMPLATE_NAME}")
-print(f"Full template path: {os.path.join(PDF_TEMPLATE_DIR, PDF_TEMPLATE_NAME)}")
+if DEBUG:
+    print(f"PDF_TEMPLATE_DIR: {PDF_TEMPLATE_DIR}")
+    print(f"PDF_TEMP_DIR: {PDF_TEMP_DIR}")

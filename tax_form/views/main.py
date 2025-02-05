@@ -2,6 +2,8 @@ import logging
 from django.shortcuts import render, get_object_or_404
 from django.contrib import messages
 from django.http import JsonResponse
+from django.conf import settings
+from pathlib import Path
 from ..models import Financial, Association, Preparer
 from ..forms import TaxFormSelectionForm
 from .helpers import calculate_financial_info
@@ -14,6 +16,7 @@ def index(request):
     return render(request, 'tax_form/index.html')
 
 def form_1120h(request):
+    """Handle Form 1120-H generation and display."""
     logger.debug("form_1120h view called")
 
     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
@@ -22,7 +25,9 @@ def form_1120h(request):
         logger.debug(f"Association ID: {association_id}")
 
         if association_id:
-            tax_years = Financial.objects.filter(association_id=association_id).values_list('tax_year', flat=True).distinct().order_by('-tax_year')
+            tax_years = Financial.objects.filter(
+                association_id=association_id
+            ).values_list('tax_year', flat=True).distinct().order_by('-tax_year')
             logger.debug(f"Tax years for association {association_id}: {list(tax_years)}")
             return JsonResponse(list(tax_years), safe=False)
         else:
@@ -51,6 +56,8 @@ def form_1120h(request):
                 financial = get_object_or_404(Financial, association=association, tax_year=tax_year)
                 logger.debug(f"Financial record found: {financial}")
                 financial_info = calculate_financial_info(financial, association)
+                financial_info['tax_year'] = tax_year
+
                 context.update({
                     'form': form,
                     'financial_info': financial_info,
@@ -58,17 +65,17 @@ def form_1120h(request):
                     'preparer': preparer,
                     'financial': financial,
                 })
+
+                if 'download_pdf' in request.POST:
+                    try:
+                        pdf_response = generate_pdf(financial_info, association, preparer, tax_year)
+                        return pdf_response
+                    except Exception as e:
+                        logger.exception("Error generating PDF")
+                        messages.error(request, f"Error generating PDF: {str(e)}")
             except Financial.DoesNotExist:
                 logger.error(f"No financial record found for association {association} and year {tax_year}")
                 messages.error(request, "No financial record found for the selected association and year.")
-            
-            if 'download_pdf' in request.POST:
-                try:
-                    pdf_response = generate_pdf(financial_info, association, preparer, tax_year)
-                    return pdf_response
-                except Exception as e:
-                    logger.exception("Error generating PDF")
-                    messages.error(request, f"Error generating PDF: {str(e)}")
         else:
             logger.warning("Invalid form submission")
             messages.error(request, "Invalid form submission. Please check your inputs.")

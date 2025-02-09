@@ -15,6 +15,7 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from ..models import Financial, Association, Preparer
 from .helpers import format_number, get_statement_details, prepare_pdf_data
+from .instructions_generationg import InstructionsGenerator
 
 logger = logging.getLogger(__name__)
 
@@ -112,8 +113,8 @@ FIELD_POSITIONS = {
     'f1_27': (495, 290),  # 19 Taxable income
     'f1_28': (495, 278),   # 20 Tax (30% of line 19)
     'f1_30': (495, 254), # 22 Total tax
-    'f1_31': (395, 242), # 23b Current year's estimated tax payments
-    'f1_32': (395, 230), # 23c Tax deposited with Form 7004
+    'f1_31': (395, 230), # 23b Current year's estimated tax payments
+    'f1_32': (395, 218), # 23c Tax deposited with Form 7004
     'f1_35': (495, 170), # 23g Total payments and credits
     'f1_36': (495, 158), # 24 Amount owed
     'f1_37': (495, 146), # 25 Overpayment
@@ -145,16 +146,27 @@ def right_justify_text(can, text, x, y, width):
 
 
 def generate_1120h_pdf(financial_info, association, preparer, template_path, output_path):
-    data = prepare_pdf_data(financial_info, association, preparer)
-
+    """Generate PDF and return HTTP response."""
     try:
         reader = PdfReader(template_path)
         writer = PdfWriter()
+        
+        # Generate and add instructions page
+        instructions_generator = InstructionsGenerator()
+        instructions_page = instructions_generator.generate_page(
+            financial_info,
+            association,
+            amount_owed=financial_info.get('amount_owed', 0),
+            refund_amount=financial_info.get('refunded', 0)
+        )
+        writer.add_page(instructions_page)
+        
+        # Add the form page
         page = reader.pages[0]
-
         packet = BytesIO()
         can = canvas.Canvas(packet, pagesize=letter)
 
+        data = prepare_pdf_data(financial_info, association, preparer)
         for key, value in data.items():
             if key in FIELD_POSITIONS:
                 x, y = FIELD_POSITIONS[key]
@@ -177,11 +189,9 @@ def generate_1120h_pdf(financial_info, association, preparer, template_path, out
                 logger.debug(f"Drew field {key} with value {value} at position ({x}, {y})")
 
         can.save()
-
         packet.seek(0)
         new_pdf = PdfReader(packet)
         page.merge_page(new_pdf.pages[0])
-
         writer.add_page(page)
 
         # Add statement page if needed
@@ -204,6 +214,7 @@ def generate_1120h_pdf(financial_info, association, preparer, template_path, out
             writer.write(output_file)
 
         logger.info(f"PDF generated successfully at {output_path}")
+        
     except Exception as e:
         logger.error(f"Error generating PDF: {str(e)}", exc_info=True)
         raise

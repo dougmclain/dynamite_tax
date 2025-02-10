@@ -75,6 +75,7 @@ WSGI_APPLICATION = 'HOA_tax.wsgi.application'
 
 # Database configuration
 # Local SQLite database - commented out for later use
+
 """
 DATABASES = {
     'default': {
@@ -85,6 +86,7 @@ DATABASES = {
 """
 
 # Render PostgreSQL database
+
 import dj_database_url
 DATABASES = {
     'default': dj_database_url.parse(env('DATABASE_URL'))

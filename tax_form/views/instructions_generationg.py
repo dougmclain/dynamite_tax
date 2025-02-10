@@ -203,6 +203,8 @@ class InstructionsGenerator:
             can.drawString(50, y, "Date Due:")
             can.setFont("Helvetica", 10)
             y -= 15
+            
+            due_year = str(int(financial_info['tax_year']) + 1)
 
             if financial_info.get('extension_info'):
                 due_date = "October 15, " + str(financial_info['tax_year'])

@@ -19,7 +19,7 @@ SECRET_KEY = env('SECRET_KEY', default='django-insecure-9cu%k8-q=ej+lfa-hf_)saqe
 DEBUG = env('DEBUG', default=False)
 IS_PRODUCTION = not DEBUG
 
-ALLOWED_HOSTS = ['hoa-tax-help.onrender.com', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['hoa-tax-help.onrender.com', 'localhost', '127.0.0.1,' '*']
 if IS_PRODUCTION and 'RENDER_EXTERNAL_HOSTNAME' in os.environ:
     ALLOWED_HOSTS.append(os.environ['RENDER_EXTERNAL_HOSTNAME'])
 

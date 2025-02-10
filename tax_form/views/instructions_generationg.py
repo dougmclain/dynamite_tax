@@ -207,10 +207,10 @@ class InstructionsGenerator:
             due_year = str(int(financial_info['tax_year']) + 1)
 
             if financial_info.get('extension_info'):
-                due_date = "October 15, " + str(financial_info['tax_year'])
+                due_date = f"October 15, {due_year}"
             else:
-                due_date = "April 15, " + str(financial_info['tax_year'])
-            
+                due_date = f"April 15, {due_year}"   
+                      
             can.drawString(70, y, f"File your return on or before {due_date}.")
             y -= 25
 

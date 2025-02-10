@@ -126,15 +126,16 @@ else:
     MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # PDF Settings
-if IS_PRODUCTION:
-    PDF_TEMPLATE_DIR = Path('/opt/render/project/src/tax_form/pdf_templates')
-    PDF_TEMP_DIR = Path('/tmp/temp_pdfs')
-else:
+if DEBUG:
     PDF_BASE = Path('/Users/Doug/Library/Mobile Documents/com~apple~CloudDocs/Dynamite Software Development/Dynamite Tax ')
     PDF_TEMPLATE_DIR = PDF_BASE / 'tax_form' / 'pdf_templates'
     PDF_TEMP_DIR = PDF_BASE / 'temp_pdfs'
+else:
+    # For production, use the templates directly from the source
+    PDF_TEMPLATE_DIR = BASE_DIR / 'tax_form' / 'pdf_templates'
+    PDF_TEMP_DIR = Path('/tmp/temp_pdfs')
 
-# Create temp directory only (template directory will be handled in build script)
+# Only create temp directory - templates should already exist in source
 os.makedirs(PDF_TEMP_DIR, exist_ok=True)
 
 # Copy templates in production during startup

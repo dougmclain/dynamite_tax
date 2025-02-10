@@ -1,10 +1,14 @@
 """Module for generating instruction pages for tax returns."""
 
 import logging
+import os
+import traceback
 from datetime import date
 from io import BytesIO
+from django.conf import settings
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
+from reportlab.lib.utils import ImageReader
 from PyPDF2 import PdfReader
 from .helpers import format_number
 
@@ -25,6 +29,16 @@ class InstructionsGenerator:
         'SD', 'TX', 'UT', 'WA', 'WY'
     }
 
+    def __init__(self):
+        """Initialize with logo paths."""
+        # Define logo paths using full path
+        static_dir = os.path.join(settings.BASE_DIR, 'static')
+        self.logo_paths = {
+            'dynamite': os.path.join(static_dir, 'images', 'dynamite_logo.png'),
+            'hoatax': os.path.join(static_dir, 'images', 'hoatax_logo.png')
+        }
+        logger.info(f"Logo paths initialized: {self.logo_paths}")
+
     @classmethod
     def get_filing_address(cls, state):
         """Determine the filing address based on state."""
@@ -40,6 +54,78 @@ class InstructionsGenerator:
             return ("Internal Revenue Service Center\n"
                    "P.O. Box 409101\n"
                    "Ogden, UT 84409")
+
+    def draw_logos(self, canvas_obj):
+        """Draw logos on the canvas if they exist."""
+        try:
+            # Logo dimensions and positioning
+            dynamite_logo_height = 40
+            hoatax_logo_height = 60  # Slightly larger
+            margin_top = 730
+
+            logger.info("Starting logo drawing process...")
+            
+            # Try to draw Dynamite logo on the left
+            if os.path.exists(self.logo_paths['dynamite']):
+                logger.info(f"Found Dynamite logo at: {self.logo_paths['dynamite']}")
+                try:
+                    img = ImageReader(self.logo_paths['dynamite'])
+                    # Get image dimensions
+                    img_width, img_height = img.getSize()
+                    logger.info(f"Dynamite logo dimensions: {img_width}x{img_height}")
+                    
+                    # Calculate width while maintaining aspect ratio
+                    aspect_ratio = img_width / img_height
+                    new_width = dynamite_logo_height* aspect_ratio
+                    
+                    # Draw with explicit width and height
+                    canvas_obj.drawImage(
+                        img, 
+                        168 - new_width,  # x position (page width - logo width - right margin)
+                        margin_top,  # y
+                        width=new_width,
+                        height=dynamite_logo_height,
+                        mask='auto'  # Handle transparency
+                    )
+                    logger.info(f"Drew Dynamite logo at position (50, {margin_top}) with size {new_width}x{dynamite_logo_height}")
+                except Exception as e:
+                    logger.error(f"Error drawing Dynamite logo: {str(e)}")
+            else:
+                logger.warning(f"Dynamite logo not found at {self.logo_paths['dynamite']}")
+
+            # Try to draw HOA Tax logo on the right
+            if os.path.exists(self.logo_paths['hoatax']):
+                logger.info(f"Found HOA Tax logo at: {self.logo_paths['hoatax']}")
+                try:
+                    img = ImageReader(self.logo_paths['hoatax'])
+                    # Get image dimensions
+                    img_width, img_height = img.getSize()
+                    logger.info(f"HOA Tax logo dimensions: {img_width}x{img_height}")
+                    
+                    # Calculate width while maintaining aspect ratio
+                    aspect_ratio = img_width / img_height
+                    new_width = hoatax_logo_height * aspect_ratio
+                    
+                    # Draw with explicit width and height
+                    canvas_obj.drawImage(
+                        img, 
+                        510,  # x
+                        margin_top,  # y
+                        width=new_width,
+                        height=hoatax_logo_height,
+                        mask='auto'  # Handle transparency
+                    )
+                    logger.info(f"Drew HOA Tax logo at position (400, {margin_top}) with size {new_width}x{hoatax_logo_height}")
+                except Exception as e:
+                    logger.error(f"Error drawing HOA Tax logo: {str(e)}")
+            else:
+                logger.warning(f"HOA Tax logo not found at {self.logo_paths['hoatax']}")
+
+
+
+        except Exception as e:
+            logger.error(f"Error in draw_logos: {str(e)}\n{traceback.format_exc()}")
+            # Continue without logos if there's an error
 
     @staticmethod
     def draw_wrapped_text(canvas_obj, text, x, y, width):
@@ -64,7 +150,12 @@ class InstructionsGenerator:
         try:
             packet = BytesIO()
             can = canvas.Canvas(packet, pagesize=letter)
-            y = 750  # Starting y position
+            
+            # Draw logos at the top
+            self.draw_logos(can)
+            
+            # Start content below logos
+            y = 690  # Adjusted starting position to account for logos
             
             # Current date
             current_date = date.today().strftime("%B %d, %Y")
@@ -80,13 +171,14 @@ class InstructionsGenerator:
             
             # Review instructions with added text about keeping a copy
             review_text = ("Please review the form carefully to make sure there are no errors or "
-                          "missing information. Make a complete copy of the signed return for your "
-                          "records before mailing. We recommend that you mail the return to the Internal "
-                          "Revenue Service certified, return receipt. Keep all records you used to "
-                          "prepare the return for at least seven years.")
+                         "missing information. Make a complete copy of the signed return for your "
+                         "records before mailing. We recommend that you mail the return to the Internal "
+                         "Revenue Service certified, return receipt. Keep all records you used to "
+                         "prepare the return for at least seven years.")
             y = self.draw_wrapped_text(can, review_text, 50, y, 500)
             y -= 15
 
+            # [Rest of your generate_page method implementation...]
             # Signature requirement
             can.setFont("Helvetica-Bold", 10)
             can.drawString(50, y, "Signature Required:")
@@ -166,5 +258,5 @@ class InstructionsGenerator:
             return PdfReader(packet).pages[0]
 
         except Exception as e:
-            logger.error(f"Error generating instructions page: {str(e)}")
+            logger.error(f"Error generating page: {str(e)}\n{traceback.format_exc()}")
             raise

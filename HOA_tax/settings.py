@@ -6,6 +6,7 @@ from pathlib import Path
 import os
 import environ
 
+# Initialize environment variables
 env = environ.Env()
 environ.Env.read_env()
 
@@ -13,13 +14,13 @@ environ.Env.read_env()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = env('SECRET_KEY', default='django-insecure-9cu%k8-q=ej+lfa-hf_)saqez!-l$8@sx#pjsw@c!nu8yesf0q')
+SECRET_KEY = env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = env('DEBUG', default=False)
+DEBUG = env.bool('DJANGO_DEBUG', False)
 IS_PRODUCTION = not DEBUG
 
-ALLOWED_HOSTS = ['hoa-tax-help.onrender.com', 'localhost', '127.0.0.1,' '*']
+ALLOWED_HOSTS = ['dynamite-tax.onrender.com', 'localhost', '127.0.0.1']
 if IS_PRODUCTION and 'RENDER_EXTERNAL_HOSTNAME' in os.environ:
     ALLOWED_HOSTS.append(os.environ['RENDER_EXTERNAL_HOSTNAME'])
 
@@ -40,7 +41,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',  # Add whitenoise for static files
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -50,7 +51,6 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'HOA_tax.urls'
-WSGI_APPLICATION = 'HOA_tax.wsgi.application'
 
 TEMPLATES = [
     {
@@ -71,8 +71,10 @@ TEMPLATES = [
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
 
+WSGI_APPLICATION = 'HOA_tax.wsgi.application'
+
 # Database configuration
-# Local SQLite database - commented out for now but keep for later data transfer
+# Local SQLite database - commented out for later use
 """
 DATABASES = {
     'default': {
@@ -82,9 +84,7 @@ DATABASES = {
 }
 """
 
-
-
-
+# Render PostgreSQL database
 import dj_database_url
 DATABASES = {
     'default': dj_database_url.parse(env('DATABASE_URL'))
@@ -135,17 +135,8 @@ else:
     PDF_TEMPLATE_DIR = BASE_DIR / 'tax_form' / 'pdf_templates'
     PDF_TEMP_DIR = Path('/tmp/temp_pdfs')
 
-# Only create temp directory - templates should already exist in source
+# Only create temp directory - templates should already exist in their location
 os.makedirs(PDF_TEMP_DIR, exist_ok=True)
-
-# Copy templates in production during startup
-if IS_PRODUCTION:
-    import shutil
-    source_templates = Path(BASE_DIR) / 'tax_form' / 'pdf_templates'
-    if source_templates.exists():
-        os.makedirs(PDF_TEMPLATE_DIR, exist_ok=True)
-        for template_file in source_templates.glob('*.pdf'):
-            shutil.copy2(template_file, PDF_TEMPLATE_DIR / template_file.name)
 
 # Security settings for production
 if IS_PRODUCTION:
@@ -159,10 +150,7 @@ if IS_PRODUCTION:
     SECURE_REFERRER_POLICY = 'same-origin'
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
-    CSRF_TRUSTED_ORIGINS = ['https://hoa-tax-help.onrender.com']
-
-# Default primary key field type
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+    CSRF_TRUSTED_ORIGINS = ['https://dynamite-tax.onrender.com']
 
 # Logging configuration
 LOGGING = {

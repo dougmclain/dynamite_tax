@@ -1,6 +1,7 @@
 from django.views import View
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import JsonResponse
 from django.conf import settings
 from ..models import Association, Financial, Extension
@@ -12,7 +13,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-class ExtensionFormView(View):
+class ExtensionFormView(LoginRequiredMixin, View):
     template_name = 'tax_form/extension_form.html'
 
     def get(self, request):

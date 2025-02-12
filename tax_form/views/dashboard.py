@@ -1,10 +1,11 @@
 from django.views import View
 from django.shortcuts import render
+from django.contrib.auth.mixins import LoginRequiredMixin   
 from ..models import Association, Financial, Extension, CompletedTaxReturn
 from django.utils import timezone
 from django.db.models import Min, Max, Count, Q
 
-class DashboardView(View):
+class DashboardView(LoginRequiredMixin, View):
     template_name = 'tax_form/dashboard.html'
 
     def get(self, request):

@@ -1,6 +1,7 @@
 import logging
 from django.shortcuts import render, get_object_or_404
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.conf import settings
 from pathlib import Path
@@ -15,6 +16,7 @@ def index(request):
     """View for the home page."""
     return render(request, 'tax_form/index.html')
 
+@login_required
 def form_1120h(request):
     """Handle Form 1120-H generation and display."""
     logger.debug("form_1120h view called")

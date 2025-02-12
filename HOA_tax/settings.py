@@ -152,7 +152,7 @@ if IS_PRODUCTION:
     SECURE_REFERRER_POLICY = 'same-origin'
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
-    CSRF_TRUSTED_ORIGINS = ['https://dynamite-tax.onrender.com']
+    CSRF_TRUSTED_ORIGINS = ['https://dynamite-tax.onrender.com',]
 
 # Logging configuration
 LOGGING = {

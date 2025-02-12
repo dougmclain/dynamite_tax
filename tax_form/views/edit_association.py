@@ -1,11 +1,12 @@
 from django.views import View
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse
 from ..forms import AssociationForm
 from ..models import Association
 
-class EditAssociationView(View):
+class EditAssociationView(LoginRequiredMixin, View):
     template_name = 'tax_form/edit_association.html'
 
     def get(self, request, association_id):

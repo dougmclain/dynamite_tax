@@ -1,10 +1,11 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views import View
 from ..models import Association
 from ..forms import AssociationForm
 
-class CreateAssociationView(View):
+class CreateAssociationView(LoginRequiredMixin, View):
     template_name = 'tax_form/create_association.html'
 
     def get(self, request):

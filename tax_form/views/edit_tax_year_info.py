@@ -2,11 +2,12 @@ from django.views import View
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import Http404
 from ..models import Association, Financial, Extension, CompletedTaxReturn
 from django.core.files.storage import default_storage
 
-class EditTaxYearInfoView(View):
+class EditTaxYearInfoView(LoginRequiredMixin, View):
     template_name = 'tax_form/edit_tax_year_info.html'
 
     def get(self, request, association_id, tax_year):

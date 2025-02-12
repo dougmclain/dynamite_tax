@@ -1,5 +1,6 @@
 from django.views import View
 from django.shortcuts import render, get_object_or_404
+from django.contrib.auth.mixins import LoginRequiredMixin
 from ..models import Association, Financial, Extension, CompletedTaxReturn
 from ..tax_calculations import (
     calculate_total_exempt_income, calculate_total_other_income, calculate_gross_income,
@@ -8,7 +9,7 @@ from ..tax_calculations import (
 )
 from datetime import datetime
 
-class AssociationView(View):
+class AssociationView(LoginRequiredMixin, View):
     template_name = 'tax_form/association.html'
 
     def get(self, request):

@@ -3,6 +3,7 @@ import logging
 from datetime import date
 from io import BytesIO
 from django.http import HttpResponse
+
 from django.conf import settings
 from PyPDF2 import PdfReader, PdfWriter
 from reportlab.pdfgen import canvas

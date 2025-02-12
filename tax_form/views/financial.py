@@ -1,8 +1,10 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from ..models import Financial, Association
 from ..forms import FinancialForm
 
+@login_required
 def create_financial(request):
     """View for creating or updating financial information."""
     association_id = request.GET.get('association')

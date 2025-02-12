@@ -12,6 +12,6 @@ urlpatterns = [
     path('edit-association/<int:association_id>/', edit_association.EditAssociationView.as_view(), name='edit_association'),
     path('edit-tax-year-info/<int:association_id>/<int:tax_year>/', edit_tax_year_info.EditTaxYearInfoView.as_view(), name='edit_tax_year_info'),
     path('extension-form/', extension.ExtensionFormView.as_view(), name='extension_form'),
-    path('login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
-    path('logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
+    path('admin/login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
+    path('admin/logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
 ]

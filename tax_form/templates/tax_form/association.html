@@ -39,7 +39,6 @@
                     <div class="card h-100">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h2 class="h4 mb-0">{{ selected_association.association_name }}</h2>
-
                         </div>
                         <div class="card-body">
                             <h3 class="h5">Association Information</h3>
@@ -55,8 +54,8 @@
                             <h3 class="h5 mt-4">Contact Information</h3>
                             <p><strong>Name:</strong> {{ association_info.contact_name }}</p>
                             <p><strong>Email:</strong> {{ association_info.contact_email }}</p>
-                            <div class=" container mt-4 d-flex justify-content-md-end">
-                            <a href="{% url 'edit_association' association_id=selected_association.id %}" class="btn btn-primary btn-sm">Edit</a>
+                            <div class="container mt-4 d-flex justify-content-md-end">
+                                <a href="{% url 'edit_association' association_id=selected_association.id %}" class="btn btn-primary btn-sm">Edit</a>
                             </div>
                         </div>
                     </div>
@@ -101,15 +100,14 @@
                                 {% endif %}
                             </p>
                             <p><strong>Tax Return PDF:</strong>
-                                {% if completed_tax_return_data and completed_tax_return_data.tax_return_pdf and completed_tax_return_data.tax_return_pdf.name %}
-                                    {% if completed_tax_return_data.tax_return_pdf.storage.exists(completed_tax_return_data.tax_return_pdf.name) %}
-                                        <a href="{{ completed_tax_return_data.tax_return_pdf.url }}" class="btn btn-sm btn-secondary" target="_blank">View Tax Return</a>
-                                    {% else %}
-                                        File not found
-                                    {% endif %}
+                                {% if completed_tax_return_data and completed_tax_return_data.tax_return_pdf %}
+                                    <a href="{{ completed_tax_return_data.tax_return_pdf.url }}" class="btn btn-sm btn-secondary" target="_blank">View Tax Return</a>
                                 {% else %}
                                     Not available
                                 {% endif %}
+                                <div class="container mt-4 d-flex justify-content-md-end">
+                                    <a href="{% url 'edit_tax_year_info' association_id=selected_association.id tax_year=selected_tax_year %}" class="btn btn-primary btn-sm">Edit</a>
+                                </div>
                             </p>
                         </div>
                     </div>
@@ -174,7 +172,6 @@
                             {% if overpayment > 0 %}
                                 <p><strong>Overpayment (Refund):</strong> ${{ overpayment|intcomma }}</p>
                             {% endif %}
-
                         </div>
                     </div>
                 </div>

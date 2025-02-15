@@ -8,6 +8,9 @@ from ..tax_calculations import (
     calculate_total_payments, calculate_amount_owed, calculate_overpayment
 )
 from datetime import datetime
+import logging
+
+logger = logging.getLogger(__name__)
 
 class AssociationView(LoginRequiredMixin, View):
     template_name = 'tax_form/association.html'
@@ -59,8 +62,42 @@ class AssociationView(LoginRequiredMixin, View):
 
             if financial_data:
                 context['financial_data'] = financial_data
-                context['extension_data'] = Extension.objects.filter(financial=financial_data).first()
-                context['completed_tax_return_data'] = CompletedTaxReturn.objects.filter(financial=financial_data).first()
+                extension = Extension.objects.filter(financial=financial_data).first()
+                completed_tax_return = CompletedTaxReturn.objects.filter(financial=financial_data).first()
+
+                # Process extension data
+                if extension:
+                    if extension.form_7004:
+                        try:
+                            if extension.form_7004.storage.exists(extension.form_7004.name):
+                                context['extension_data'] = extension
+                            else:
+                                logger.warning(f"Extension file does not exist: {extension.form_7004.name}")
+                                extension.form_7004 = None
+                                extension.save()
+                                context['extension_data'] = extension
+                        except Exception as e:
+                            logger.error(f"Error checking extension file: {e}")
+                            context['extension_data'] = extension
+                    else:
+                        context['extension_data'] = extension
+
+                # Process completed tax return data
+                if completed_tax_return:
+                    if completed_tax_return.tax_return_pdf:
+                        try:
+                            if completed_tax_return.tax_return_pdf.storage.exists(completed_tax_return.tax_return_pdf.name):
+                                context['completed_tax_return_data'] = completed_tax_return
+                            else:
+                                logger.warning(f"Tax return file does not exist: {completed_tax_return.tax_return_pdf.name}")
+                                completed_tax_return.tax_return_pdf = None
+                                completed_tax_return.save()
+                                context['completed_tax_return_data'] = completed_tax_return
+                        except Exception as e:
+                            logger.error(f"Error checking tax return file: {e}")
+                            context['completed_tax_return_data'] = completed_tax_return
+                    else:
+                        context['completed_tax_return_data'] = completed_tax_return
 
                 # Calculate financial information
                 context['total_exempt_income'] = calculate_total_exempt_income(financial_data)

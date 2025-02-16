@@ -40,6 +40,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -174,3 +175,7 @@ LOGGING = {
         'level': 'INFO' if IS_PRODUCTION else 'DEBUG',
     },
 }
+
+# In settings.py
+SESSION_COOKIE_AGE = 86400  # Session lasts for 24 hours (in seconds)
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # Session survives browser close

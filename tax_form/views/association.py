@@ -18,13 +18,16 @@ class AssociationView(LoginRequiredMixin, View):
     def get(self, request):
         associations = Association.objects.all().order_by('association_name')
         selected_association_id = request.GET.get('association_id')
+    
         
         # Handle the case where tax_year might be empty or not present
         tax_year_param = request.GET.get('tax_year')
         if tax_year_param and tax_year_param.strip():
             selected_tax_year = int(tax_year_param)
+           #Save to session
+            request.session['tax_year'] = selected_tax_year
         else:
-            selected_tax_year = datetime.now().year
+            selected_tax_year = request.session.get('selected_tax_year', datetime.now().year)
 
         context = {
             'associations': associations,

@@ -9,9 +9,11 @@ from ..models import Financial, Association, Preparer
 from ..forms import TaxFormSelectionForm
 from .helpers import calculate_financial_info
 from .pdf_generation import generate_pdf
+from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 
+@login_required
 def index(request):
     """View for the home page."""
     return render(request, 'tax_form/index.html')
@@ -36,8 +38,12 @@ def form_1120h(request):
             logger.warning("AJAX request received without association_id")
             return JsonResponse([], safe=False)
 
+    # Get initial tax year from session or default to current year
+    initial_tax_year = request.session.get('selected_tax_year', timezone.now().year)
+    form = TaxFormSelectionForm(initial={'tax_year': initial_tax_year})
+    
     context = {
-        'form': TaxFormSelectionForm(),
+        'form': form,
         'financial_info': {},
         'association': None,
         'preparer': None,
@@ -52,6 +58,11 @@ def form_1120h(request):
             association = form.cleaned_data['association']
             tax_year = form.cleaned_data['tax_year']
             preparer = form.cleaned_data['preparer']
+            
+            # Save selected tax year to session
+            request.session['selected_tax_year'] = tax_year
+            logger.debug(f"Saved tax year {tax_year} to session")
+            
             logger.debug(f"Association: {association}, Tax Year: {tax_year}, Preparer: {preparer}")
 
             try:
@@ -80,7 +91,8 @@ def form_1120h(request):
                 messages.error(request, "No financial record found for the selected association and year.")
         else:
             logger.warning("Invalid form submission")
+            logger.debug(f"Form errors: {form.errors}")
             messages.error(request, "Invalid form submission. Please check your inputs.")
 
-    logger.debug("Rendering form_1120h.html template")
+    logger.debug(f"Rendering form_1120h.html template with selected year: {initial_tax_year}")
     return render(request, 'tax_form/form_1120h.html', context)

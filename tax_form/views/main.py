@@ -1,89 +1,94 @@
-from django.views import View
-from django.shortcuts import render
-from django.contrib.auth.mixins import LoginRequiredMixin   
-from ..models import Association, Financial, Extension, CompletedTaxReturn
-from django.utils import timezone
-from django.db.models import Min, Max, Count, Q
 import logging
+from django.shortcuts import render, get_object_or_404
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
+from django.conf import settings
+from pathlib import Path
+from ..models import Financial, Association, Preparer
+from ..forms import TaxFormSelectionForm
+from .helpers import calculate_financial_info
+from .pdf_generation import generate_pdf
 
 logger = logging.getLogger(__name__)
 
-class DashboardView(LoginRequiredMixin, View):
-    template_name = 'tax_form/dashboard.html'
+@login_required
+def index(request):
+    """View for the home page."""
+    return render(request, 'tax_form/index.html')
 
-    def get(self, request):
-        year_range = Financial.objects.aggregate(Min('tax_year'), Max('tax_year'))
-        min_year = year_range['tax_year__min'] or timezone.now().year
-        max_year = max(year_range['tax_year__max'] or timezone.now().year, timezone.now().year)
-        available_years = range(max_year, min_year - 2, -1)
+@login_required
+def form_1120h(request):
+    """Handle Form 1120-H generation and display."""
+    logger.debug("form_1120h view called")
 
-        # Get tax year from URL, session, or default to current year
-        tax_year_param = request.GET.get('tax_year')
-        if tax_year_param and tax_year_param.strip():
-            selected_year = int(tax_year_param)
-            # Save to session
-            request.session['selected_tax_year'] = selected_year
-            logger.debug(f"Setting selected_tax_year in session to: {selected_year}")
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        logger.debug("AJAX request received")
+        association_id = request.GET.get('association_id')
+        logger.debug(f"Association ID: {association_id}")
+
+        if association_id:
+            tax_years = Financial.objects.filter(
+                association_id=association_id
+            ).values_list('tax_year', flat=True).distinct().order_by('-tax_year')
+            logger.debug(f"Tax years for association {association_id}: {list(tax_years)}")
+            return JsonResponse(list(tax_years), safe=False)
         else:
-            # Try to get from session, otherwise use current year
-            selected_year = request.session.get('selected_tax_year')
-            if not selected_year:
-                selected_year = timezone.now().year
-            selected_year = int(selected_year)  # Ensure it's an integer
-            request.session['selected_tax_year'] = selected_year
-            logger.debug(f"Using selected_tax_year from session: {selected_year}")
+            logger.warning("AJAX request received without association_id")
+            return JsonResponse([], safe=False)
 
-        associations = Association.objects.all().order_by('association_name')
-        total_associations = associations.count()
+    # Get initial tax year from session or default to current year
+    initial_tax_year = request.session.get('selected_tax_year', None)
+    form = TaxFormSelectionForm(initial={'tax_year': initial_tax_year} if initial_tax_year else None)
+    
+    context = {
+        'form': form,
+        'financial_info': {},
+        'association': None,
+        'preparer': None,
+        'financial': None,
+    }
 
-        financials = Financial.objects.filter(tax_year=selected_year)
-        filed_returns = CompletedTaxReturn.objects.filter(
-            financial__tax_year=selected_year, 
-            return_filed=True
-        ).count()
-        unfiled_returns = total_associations - filed_returns
+    if request.method == 'POST':
+        logger.debug("POST request received")
+        form = TaxFormSelectionForm(request.POST)
+        if form.is_valid():
+            logger.debug("Form is valid")
+            association = form.cleaned_data['association']
+            tax_year = form.cleaned_data['tax_year']
+            preparer = form.cleaned_data['preparer']
 
-        dashboard_data = []
+            # Save selected tax year to session
+            request.session['selected_tax_year'] = tax_year            
+            logger.debug(f"Association: {association}, Tax Year: {tax_year}, Preparer: {preparer}")
 
-        for association in associations:
-            financial = financials.filter(association=association).first()
-            extension = Extension.objects.filter(financial=financial).first() if financial else None
-            completed_tax_return = CompletedTaxReturn.objects.filter(financial=financial).first() if financial else None
+            try:
+                financial = get_object_or_404(Financial, association=association, tax_year=tax_year)
+                logger.debug(f"Financial record found: {financial}")
+                financial_info = calculate_financial_info(financial, association)
+                financial_info['tax_year'] = tax_year
 
-            # Check if files exist before including URLs
-            extension_file_url = None
-            if extension and extension.form_7004:
-                try:
-                    if extension.form_7004.storage.exists(extension.form_7004.name):
-                        extension_file_url = extension.form_7004.url
-                except Exception as e:
-                    logger.error(f"Error checking extension file: {e}")
+                context.update({
+                    'form': form,
+                    'financial_info': financial_info,
+                    'association': association,
+                    'preparer': preparer,
+                    'financial': financial,
+                })
 
-            tax_return_file_url = None
-            if completed_tax_return and completed_tax_return.tax_return_pdf:
-                try:
-                    if completed_tax_return.tax_return_pdf.storage.exists(completed_tax_return.tax_return_pdf.name):
-                        tax_return_file_url = completed_tax_return.tax_return_pdf.url
-                except Exception as e:
-                    logger.error(f"Error checking tax return file: {e}")
+                if 'download_pdf' in request.POST:
+                    try:
+                        pdf_response = generate_pdf(financial_info, association, preparer, tax_year)
+                        return pdf_response
+                    except Exception as e:
+                        logger.exception("Error generating PDF")
+                        messages.error(request, f"Error generating PDF: {str(e)}")
+            except Financial.DoesNotExist:
+                logger.error(f"No financial record found for association {association} and year {tax_year}")
+                messages.error(request, "No financial record found for the selected association and year.")
+        else:
+            logger.warning("Invalid form submission")
+            messages.error(request, "Invalid form submission. Please check your inputs.")
 
-            dashboard_data.append({
-                'association': association,
-                'fiscal_year_end': association.get_fiscal_year_end(int(selected_year)),  # Ensure year is int
-                'extension_filed': extension.filed if extension else False,
-                'extension_filed_date': extension.filed_date if extension and extension.filed else None,
-                'extension_file_url': extension_file_url,
-                'tax_return_filed': completed_tax_return.return_filed if completed_tax_return else False,
-                'tax_return_prepared_date': completed_tax_return.date_prepared if completed_tax_return and completed_tax_return.return_filed else None,
-                'tax_return_file_url': tax_return_file_url,
-            })
-
-        context = {
-            'dashboard_data': dashboard_data,
-            'selected_year': selected_year,
-            'available_years': available_years,
-            'total_associations': total_associations,
-            'filed_returns': filed_returns,
-            'unfiled_returns': unfiled_returns,
-        }
-        return render(request, self.template_name, context)
+    logger.debug("Rendering form_1120h.html template")
+    return render(request, 'tax_form/form_1120h.html', context)

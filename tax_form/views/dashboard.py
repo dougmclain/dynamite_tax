@@ -17,21 +17,18 @@ class DashboardView(LoginRequiredMixin, View):
         max_year = max(year_range['tax_year__max'] or timezone.now().year, timezone.now().year)
         available_years = range(max_year, min_year - 2, -1)
 
-        # Get tax year from URL, session, or default to current year
-        tax_year_param = request.GET.get('tax_year')
-        if tax_year_param and tax_year_param.strip():
-            selected_year = int(tax_year_param)
-            # Save to session
+        # Get tax year from URL parameter
+        selected_year = request.GET.get('tax_year', timezone.now().year)
+        
+        # If we have a year in the URL, save it to session
+        if 'tax_year' in request.GET:
             request.session['selected_tax_year'] = selected_year
-            logger.debug(f"Setting selected_tax_year in session to: {selected_year}")
-        else:
-            # Try to get from session, otherwise use current year
-            selected_year = request.session.get('selected_tax_year')
-            if not selected_year:
-                # If no year in session, use current year
-                selected_year = timezone.now().year
-                request.session['selected_tax_year'] = selected_year
-            logger.debug(f"Using selected_tax_year from session: {selected_year}")
+        # If no year in URL but we have one in session, use that
+        elif 'selected_tax_year' in request.session:
+            selected_year = request.session['selected_tax_year']
+            
+        # Ensure we're working with an integer
+        selected_year = int(selected_year)
 
         associations = Association.objects.all().order_by('association_name')
         total_associations = associations.count()
@@ -67,9 +64,15 @@ class DashboardView(LoginRequiredMixin, View):
                 except Exception as e:
                     logger.error(f"Error checking tax return file: {e}")
 
+            try:
+                fiscal_year_end = association.get_fiscal_year_end(selected_year)
+            except Exception as e:
+                logger.error(f"Error getting fiscal year end: {e}")
+                fiscal_year_end = None
+
             dashboard_data.append({
                 'association': association,
-                'fiscal_year_end': association.get_fiscal_year_end(selected_year),
+                'fiscal_year_end': fiscal_year_end,
                 'extension_filed': extension.filed if extension else False,
                 'extension_filed_date': extension.filed_date if extension and extension.filed else None,
                 'extension_file_url': extension_file_url,

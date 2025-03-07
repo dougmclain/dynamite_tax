@@ -1,5 +1,6 @@
-*.pyc
+echo "*.pyc
 __pycache__/
 venv/
 .env
 db.sqlite3
+temp_pdfs/" > .gitignore

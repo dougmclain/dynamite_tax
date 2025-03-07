@@ -8,16 +8,29 @@ import environ
 
 # Initialize environment variables
 env = environ.Env()
-environ.Env.read_env()
+try:
+    environ.Env.read_env(os.path.join(Path(__file__).resolve().parent.parent, '.env'))
+except:
+    # Continue if .env file doesn't exist or can't be read
+    pass
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = env('SECRET_KEY')
+try:
+    SECRET_KEY = env('SECRET_KEY')
+except:
+    # Fallback for local development
+    SECRET_KEY = 'django-insecure-testing-key-123456789'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = env.bool('DJANGO_DEBUG', False)
+try:
+    DEBUG = env.bool('DJANGO_DEBUG', False)
+except:
+    # Default to True for local development
+    DEBUG = True
+
 IS_PRODUCTION = not DEBUG
 
 ALLOWED_HOSTS = ['dynamite-tax.onrender.com', 'localhost', '127.0.0.1']
@@ -75,23 +88,19 @@ CRISPY_TEMPLATE_PACK = "bootstrap5"
 WSGI_APPLICATION = 'HOA_tax.wsgi.application'
 
 # Database configuration
-# Local SQLite database - commented out for later use
-
-"""
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+try:
+    import dj_database_url
+    DATABASES = {
+        'default': dj_database_url.parse(env('DATABASE_URL', default='sqlite:///db.sqlite3'))
     }
-}
-"""
-
-# Render PostgreSQL database
-
-import dj_database_url
-DATABASES = {
-    'default': dj_database_url.parse(env('DATABASE_URL'))
-}
+except:
+    # Fallback for local development
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
@@ -136,7 +145,8 @@ os.makedirs(os.path.join(MEDIA_ROOT, 'extensions'), exist_ok=True)
 
 # Update PDF settings for production
 if DEBUG:
-    PDF_BASE = Path('/Users/Doug/Library/Mobile Documents/com~apple~CloudDocs/Dynamite Software Development/Dynamite Tax ')
+    # For local development, use project directories
+    PDF_BASE = BASE_DIR
     PDF_TEMPLATE_DIR = PDF_BASE / 'tax_form' / 'pdf_templates'
     PDF_TEMP_DIR = PDF_BASE / 'temp_pdfs'
 else:
@@ -179,3 +189,7 @@ LOGGING = {
 # In settings.py
 SESSION_COOKIE_AGE = 86400  # Session lasts for 24 hours (in seconds)
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # Session survives browser close
+
+# Authentication settings
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'

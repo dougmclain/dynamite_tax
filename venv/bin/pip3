@@ -1,6 +1,4 @@
-#!/bin/sh
-'''exec' "/Users/Doug/Library/Mobile Documents/com~apple~CloudDocs/Dynamite Software Development/Dynamite Tax /venv/bin/python3.12" "$0" "$@"
-' '''
+#!/Users/Doug/dynamite_tax/venv/bin/python3.12
 # -*- coding: utf-8 -*-
 import re
 import sys

@@ -16,10 +16,17 @@ class AssociationView(LoginRequiredMixin, View):
     template_name = 'tax_form/association.html'
 
     def get(self, request):
-        associations = Association.objects.all().order_by('association_name')
+        # Get search term from URL parameter
+        search_term = request.GET.get('search', '')
+        
+        # Filter associations by search term if provided
+        associations = Association.objects.all()
+        if search_term:
+            associations = associations.filter(association_name__icontains=search_term)
+        associations = associations.order_by('association_name')
+        
         selected_association_id = request.GET.get('association_id')
     
-        
         # Handle the case where tax_year might be empty or not present
         tax_year_param = request.GET.get('tax_year')
         if tax_year_param and tax_year_param.strip():
@@ -38,6 +45,7 @@ class AssociationView(LoginRequiredMixin, View):
             'extended_due_date': None,
             'selected_tax_year': selected_tax_year,
             'available_tax_years': range(datetime.now().year - 5, datetime.now().year + 1),
+            'search_term': search_term,  # Add search_term to context
         }
 
         if selected_association_id:

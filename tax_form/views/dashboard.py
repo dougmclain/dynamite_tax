@@ -20,6 +20,9 @@ class DashboardView(LoginRequiredMixin, View):
         # Get tax year from URL parameter
         selected_year = request.GET.get('tax_year', timezone.now().year)
         
+        # Get search term from URL parameter
+        search_term = request.GET.get('search', '')
+        
         # If we have a year in the URL, save it to session
         if 'tax_year' in request.GET:
             request.session['selected_tax_year'] = selected_year
@@ -30,12 +33,18 @@ class DashboardView(LoginRequiredMixin, View):
         # Ensure we're working with an integer
         selected_year = int(selected_year)
 
-        associations = Association.objects.all().order_by('association_name')
+        # Filter associations by search term if provided
+        associations = Association.objects.all()
+        if search_term:
+            associations = associations.filter(association_name__icontains=search_term)
+        associations = associations.order_by('association_name')
+        
         total_associations = associations.count()
 
         financials = Financial.objects.filter(tax_year=selected_year)
         filed_returns = CompletedTaxReturn.objects.filter(
             financial__tax_year=selected_year, 
+            financial__association__in=associations,  # Filter by our filtered associations
             return_filed=True
         ).count()
         unfiled_returns = total_associations - filed_returns
@@ -88,5 +97,6 @@ class DashboardView(LoginRequiredMixin, View):
             'total_associations': total_associations,
             'filed_returns': filed_returns,
             'unfiled_returns': unfiled_returns,
+            'search_term': search_term,  # Add search_term to context
         }
         return render(request, self.template_name, context)

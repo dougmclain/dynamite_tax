@@ -1,3 +1,5 @@
+# Update tax_form/views/dashboard.py
+
 from django.views import View
 from django.shortcuts import render
 from django.contrib.auth.mixins import LoginRequiredMixin   
@@ -5,6 +7,7 @@ from ..models import Association, Financial, Extension, CompletedTaxReturn
 from django.utils import timezone
 from django.db.models import Min, Max, Count, Q
 import logging
+from ..utils.session_management import save_selection_to_session, get_selection_from_session
 
 logger = logging.getLogger(__name__)
 
@@ -17,34 +20,31 @@ class DashboardView(LoginRequiredMixin, View):
         max_year = max(year_range['tax_year__max'] or timezone.now().year, timezone.now().year)
         available_years = range(max_year, min_year - 2, -1)
 
-        # Get tax year from URL parameter
-        selected_year = request.GET.get('tax_year', timezone.now().year)
-        
-        # Get search term from URL parameter
-        search_term = request.GET.get('search', '')
+        # Get tax year from URL parameter or session
+        selected_year = request.GET.get('tax_year')
         
         # If we have a year in the URL, save it to session
-        if 'tax_year' in request.GET:
-            request.session['selected_tax_year'] = selected_year
-        # If no year in URL but we have one in session, use that
-        elif 'selected_tax_year' in request.session:
-            selected_year = request.session['selected_tax_year']
+        if selected_year:
+            save_selection_to_session(request, tax_year=selected_year)
+        # If no year in URL, try to get from session
+        else:
+            _, session_tax_year = get_selection_from_session(request)
+            if session_tax_year:
+                selected_year = session_tax_year
+            else:
+                selected_year = str(timezone.now().year)
             
         # Ensure we're working with an integer
         selected_year = int(selected_year)
 
-        # Filter associations by search term if provided
-        associations = Association.objects.all()
-        if search_term:
-            associations = associations.filter(association_name__icontains=search_term)
-        associations = associations.order_by('association_name')
-        
+        # Get all associations - no separate search functionality
+        associations = Association.objects.all().order_by('association_name')
         total_associations = associations.count()
 
         financials = Financial.objects.filter(tax_year=selected_year)
         filed_returns = CompletedTaxReturn.objects.filter(
             financial__tax_year=selected_year, 
-            financial__association__in=associations,  # Filter by our filtered associations
+            financial__association__in=associations,
             return_filed=True
         ).count()
         unfiled_returns = total_associations - filed_returns
@@ -97,6 +97,5 @@ class DashboardView(LoginRequiredMixin, View):
             'total_associations': total_associations,
             'filed_returns': filed_returns,
             'unfiled_returns': unfiled_returns,
-            'search_term': search_term,  # Add search_term to context
         }
         return render(request, self.template_name, context)

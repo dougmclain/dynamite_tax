@@ -1,9 +1,12 @@
+from datetime import datetime
 from django import forms
 from .models import Association, Financial, Preparer, Extension, CompletedTaxReturn
 from django.forms.widgets import NumberInput, TextInput
 import logging
 
 logger = logging.getLogger(__name__)
+
+# Update in tax_form/forms.py
 
 class TaxFormSelectionForm(forms.Form):
     association = forms.ModelChoiceField(queryset=Association.objects.all(), empty_label=None)
@@ -17,15 +20,34 @@ class TaxFormSelectionForm(forms.Form):
         self.fields['preparer'].widget.attrs['class'] = 'form-select'
 
         logger.debug(f"Form initialized with data: {self.data}")
-
-        association_id = self.data.get('association')
-        if not association_id and Association.objects.exists():
+        
+        # First, get the association ID for filtering years
+        association_id = None
+        
+        # Try to get it from form data first
+        if self.data.get('association'):
+            association_id = self.data.get('association')
+        # Then from initial data
+        elif self.initial.get('association'):
+            association_id = self.initial.get('association')
+        # Default to first association if none selected
+        elif Association.objects.exists():
             association_id = Association.objects.first().id
 
+        # Get tax years for the selected association
         if association_id:
-            financial_years = Financial.objects.filter(association_id=association_id).values_list('tax_year', flat=True).distinct()
-            self.fields['tax_year'].choices = [(str(year), str(year)) for year in financial_years]
-            logger.debug(f"Tax years for association {association_id}: {self.fields['tax_year'].choices}")
+            try:
+                financial_years = Financial.objects.filter(association_id=association_id).values_list('tax_year', flat=True).distinct().order_by('-tax_year')
+                self.fields['tax_year'].choices = [(str(year), str(year)) for year in financial_years]
+                logger.debug(f"Tax years for association {association_id}: {self.fields['tax_year'].choices}")
+                
+                # If we don't have any years, add the current year
+                if not self.fields['tax_year'].choices:
+                    current_year = datetime.now().year
+                    self.fields['tax_year'].choices = [(str(current_year), str(current_year))]
+            except Exception as e:
+                logger.error(f"Error getting tax years: {e}")
+                self.fields['tax_year'].choices = []
         else:
             self.fields['tax_year'].choices = []
             logger.debug("No association selected, tax year choices empty")

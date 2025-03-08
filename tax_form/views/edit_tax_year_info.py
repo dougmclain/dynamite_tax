@@ -6,11 +6,15 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import Http404
 from ..models import Association, Financial, Extension, CompletedTaxReturn
 from django.core.files.storage import default_storage
+from ..utils.session_management import save_selection_to_session
 
 class EditTaxYearInfoView(LoginRequiredMixin, View):
     template_name = 'tax_form/edit_tax_year_info.html'
 
     def get(self, request, association_id, tax_year):
+        # Save to session
+        save_selection_to_session(request, association_id=association_id, tax_year=tax_year)
+        
         association = get_object_or_404(Association, id=association_id)
         financial, created = Financial.objects.get_or_create(
             association=association,
@@ -29,6 +33,9 @@ class EditTaxYearInfoView(LoginRequiredMixin, View):
         return render(request, self.template_name, context)
 
     def post(self, request, association_id, tax_year):
+        # Save to session
+        save_selection_to_session(request, association_id=association_id, tax_year=tax_year)
+        
         try:
             association = get_object_or_404(Association, id=association_id)
             financial, created = Financial.objects.get_or_create(

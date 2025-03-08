@@ -1,0 +1,58 @@
+/* static/css/enhanced_dropdown.css */
+
+.custom-select-container {
+    position: relative;
+    width: 100%;
+    margin-bottom: 1rem;
+}
+
+.custom-select-dropdown {
+    position: absolute;
+    width: 100%;
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+    background-color: white;
+    z-index: 2000; /* Higher than Bootstrap's default modals (1050) */
+    margin-top: 2px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.custom-select-item {
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.custom-select-item:hover, 
+.custom-select-item.selected {
+    background-color: #f8f9fa;
+}
+
+.custom-select-no-results {
+    padding: 0.5rem 1rem;
+    color: #6c757d;
+    font-style: italic;
+}
+
+.custom-select-search {
+    display: block;
+    width: 100%;
+    padding: 0.375rem 0.75rem;
+    font-size: 1rem;
+    font-weight: 400;
+    line-height: 1.5;
+    color: #212529;
+    background-color: #fff;
+    background-clip: padding-box;
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.custom-select-search:focus {
+    border-color: var(--tax-purple, #8C35B4);
+    outline: 0;
+    box-shadow: 0 0 0 0.25rem rgba(140, 53, 180, 0.25);
+}

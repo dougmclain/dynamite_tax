@@ -5,6 +5,12 @@ document.addEventListener('DOMContentLoaded', function() {
     associationSelects.forEach(function(associationSelect) {
         if (!associationSelect) return;
         
+        // Check if this select already has a search input above it
+        const parentElement = associationSelect.parentNode;
+        if (parentElement.querySelector('input[type="text"]')) {
+            return; // Skip if there's already a search input
+        }
+        
         // Create wrapper and search input
         const wrapper = document.createElement('div');
         wrapper.className = 'select-search-wrapper position-relative';

@@ -1,3 +1,4 @@
+# Update tax_form/views/main.py
 import logging
 from django.shortcuts import render, get_object_or_404
 from django.contrib import messages
@@ -5,10 +6,12 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.conf import settings
 from pathlib import Path
+from datetime import datetime
 from ..models import Financial, Association, Preparer
 from ..forms import TaxFormSelectionForm
 from .helpers import calculate_financial_info
 from .pdf_generation import generate_pdf
+from ..utils.session_management import save_selection_to_session, get_selection_from_session
 
 logger = logging.getLogger(__name__)
 
@@ -37,9 +40,36 @@ def form_1120h(request):
             logger.warning("AJAX request received without association_id")
             return JsonResponse([], safe=False)
 
-    # Get initial tax year from session or default to current year
-    initial_tax_year = request.session.get('selected_tax_year', None)
-    form = TaxFormSelectionForm(initial={'tax_year': initial_tax_year} if initial_tax_year else None)
+    # Get association and tax year from params or session
+    initial_association_id = request.GET.get('association_id')
+    initial_tax_year = request.GET.get('tax_year')
+    
+    # If provided in request, save to session
+    if initial_association_id or initial_tax_year:
+        save_selection_to_session(
+            request,
+            association_id=initial_association_id,
+            tax_year=initial_tax_year
+        )
+    
+    # If not in request, try to get from session
+    if not initial_association_id or not initial_tax_year:
+        session_association_id, session_tax_year = get_selection_from_session(request)
+        
+        if not initial_association_id and session_association_id:
+            initial_association_id = session_association_id
+            
+        if not initial_tax_year and session_tax_year:
+            initial_tax_year = session_tax_year
+    
+    # Initialize form with values from session or request
+    initial_data = {}
+    if initial_association_id:
+        initial_data['association'] = initial_association_id
+    if initial_tax_year:
+        initial_data['tax_year'] = initial_tax_year
+    
+    form = TaxFormSelectionForm(initial=initial_data if initial_data else None)
     
     context = {
         'form': form,
@@ -58,8 +88,13 @@ def form_1120h(request):
             tax_year = form.cleaned_data['tax_year']
             preparer = form.cleaned_data['preparer']
 
-            # Save selected tax year to session
-            request.session['selected_tax_year'] = tax_year            
+            # Save selection to session
+            save_selection_to_session(
+                request,
+                association_id=association.id,
+                tax_year=tax_year
+            )
+            
             logger.debug(f"Association: {association}, Tax Year: {tax_year}, Preparer: {preparer}")
 
             try:

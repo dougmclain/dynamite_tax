@@ -11,8 +11,12 @@
     {% csrf_token %}
     <div class="row g-3">
         <div class="col-md-4">
-            {{ form.association.label_tag }}
-            {{ form.association }}
+            <label for="{{ form.association.id_for_label }}" class="form-label">{{ form.association.label }}</label>
+            {{ form.association.as_widget }}
+            <script>
+                // Add the searchable class for our enhanced dropdown
+                document.getElementById('{{ form.association.id_for_label }}').classList.add('searchable');
+            </script>
         </div>
         <div class="col-md-4">
             {{ form.tax_year.label_tag }}
@@ -99,5 +103,6 @@
 {% endblock %}
 
 {% block extra_js %}
-    <script src="{% static 'js/form_1120h.js' %}"></script>
+<script src="{% static 'js/form_1120h.js' %}"></script>
+<script src="{% static 'js/enhanced_dropdown_search.js' %}"></script>
 {% endblock %}

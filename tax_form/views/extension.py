@@ -10,6 +10,7 @@ from datetime import datetime
 import os
 from .pdf_extension_generation import generate_extension_response
 import logging
+from ..utils.session_management import save_selection_to_session, get_selection_from_session
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +36,23 @@ class ExtensionFormView(LoginRequiredMixin, View):
         # Handle regular GET with association_id and tax_year
         association_id = request.GET.get('association_id')
         tax_year = request.GET.get('tax_year')
+        
+        # If we have parameters, save to session
+        if association_id or tax_year:
+            save_selection_to_session(
+                request,
+                association_id=association_id,
+                tax_year=tax_year
+            )
+        # If not, try to get from session
+        elif not association_id or not tax_year:
+            session_association_id, session_tax_year = get_selection_from_session(request)
+            
+            if not association_id and session_association_id:
+                association_id = session_association_id
+                
+            if not tax_year and session_tax_year:
+                tax_year = session_tax_year
 
         if association_id and tax_year:
             try:
@@ -72,6 +90,13 @@ class ExtensionFormView(LoginRequiredMixin, View):
         if not association_id or not tax_year:
             messages.error(request, "Please select an association and tax year.")
             return redirect('extension_form')
+            
+        # Save to session
+        save_selection_to_session(
+            request, 
+            association_id=association_id,
+            tax_year=tax_year
+        )
 
         try:
             association = get_object_or_404(Association, id=association_id)
@@ -123,7 +148,7 @@ class ExtensionFormView(LoginRequiredMixin, View):
                 'extension': extension,
             }
             return render(request, self.template_name, context)
-
+        
         except Exception as e:
             logger.error(f"Error processing form: {str(e)}", exc_info=True)
             messages.error(request, f"Error processing form: {str(e)}")

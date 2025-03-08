@@ -13,7 +13,7 @@
             <div class="row g-3 mb-4">
                 <div class="col-md-6">
                     <label for="association_select" class="form-label">Association</label>
-                    <select id="association_select" class="form-select">
+                    <select id="association_select" class="form-select searchable">
                         <option value="">Select an Association</option>
                         {% for assoc in associations %}
                             <option value="{{ assoc.id }}" {% if association.id == assoc.id %}selected{% endif %}>
@@ -91,4 +91,5 @@
 
 {% block extra_js %}
 <script src="{% static 'js/extension_form.js' %}"></script>
+<script src="{% static 'js/enhanced_dropdown_search.js' %}"></script>
 {% endblock %}

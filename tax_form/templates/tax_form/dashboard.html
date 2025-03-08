@@ -4,7 +4,6 @@
 
 {% block title %}Association Dashboard{% endblock %}
 
-
 {% block content %}
 <div class="container-fluid mt-5">
     <h1 class="mb-4">Association Dashboard</h1>
@@ -25,16 +24,7 @@
             </form>
 
             <h2 class="h4 mb-3">Tax Year {{ selected_year }}</h2>
-            <!-- Add this right after the tax year selection form -->
-            <div class="row justify-content-center mb-4">
-                <div class="col-md-6">
-                    <form method="get" class="d-flex">
-                        <input type="hidden" name="tax_year" value="{{ selected_year }}">
-                        <input type="text" name="search" class="form-control me-2" placeholder="Search associations..." value="{{ search_term }}">
-                        <button type="submit" class="btn btn-primary">Search</button>
-                    </form>
-                </div>
-            </div>
+            
             <div class="card mb-4">
                 <div class="card-body">
                     <h3 class="card-title h5">Summary</h3>
@@ -109,5 +99,5 @@
 
 {% block extra_js %}
 <script src="{% static 'js/dashboard.js' %}"></script>
-<script src="{% static 'js/association_search' %}"></script>
+<script src="{% static 'js/enhanced_dropdown_search.js' %}"></script>
 {% endblock %}

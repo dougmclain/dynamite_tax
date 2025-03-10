@@ -1,0 +1,8 @@
+/* Custom styles for searchable dropdowns */
+.select-search-wrapper {
+    margin-bottom: 0.5rem;
+}
+
+.select-search-wrapper input {
+    margin-bottom: 0.25rem;
+}

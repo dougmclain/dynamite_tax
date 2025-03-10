@@ -18,6 +18,9 @@ class AssociationView(LoginRequiredMixin, View):
     template_name = 'tax_form/association.html'
 
     def get(self, request):
+        # Get search term from URL parameter
+        search_term = request.GET.get('search', '')
+        
         # Get selected association and tax year from parameters or session
         selected_association_id = request.GET.get('association_id')
         tax_year_param = request.GET.get('tax_year')
@@ -45,9 +48,12 @@ class AssociationView(LoginRequiredMixin, View):
         else:
             selected_tax_year = datetime.now().year
         
-        # Get all associations for dropdown
-        associations = Association.objects.all().order_by('association_name')
-        
+        # Filter associations by search term if provided
+        associations = Association.objects.all()
+        if search_term:
+            associations = associations.filter(association_name__icontains=search_term)
+        associations = associations.order_by('association_name')
+
         context = {
             'associations': associations,
             'selected_association': None,
@@ -57,6 +63,7 @@ class AssociationView(LoginRequiredMixin, View):
             'extended_due_date': None,
             'selected_tax_year': selected_tax_year,
             'available_tax_years': range(datetime.now().year - 5, datetime.now().year + 1),
+            'search_term': search_term,  # Add search_term to context
         }
 
         if selected_association_id:
@@ -137,7 +144,7 @@ class AssociationView(LoginRequiredMixin, View):
                 context['amount_owed'] = calculate_amount_owed(context['total_tax'], context['total_payments'])
                 context['overpayment'] = calculate_overpayment(context['total_tax'], context['total_payments'])
 
-                # Income breakdown dictionary - use a different name to avoid conflict
+                # Income breakdown dictionary
                 context['income_breakdown'] = {
                     'interest': financial_data.interest,
                     'dividends': financial_data.dividends,

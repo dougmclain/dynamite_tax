@@ -37,9 +37,18 @@ def form_1120h(request):
             logger.warning("AJAX request received without association_id")
             return JsonResponse([], safe=False)
 
-    # Get initial tax year from session or default to current year
-    initial_tax_year = request.session.get('selected_tax_year', None)
-    form = TaxFormSelectionForm(initial={'tax_year': initial_tax_year} if initial_tax_year else None)
+    # Get parameters from either request or session
+    initial_association_id = request.GET.get('association_id') or request.session.get('selected_association_id')
+    initial_tax_year = request.GET.get('tax_year') or request.session.get('selected_tax_year')
+    
+    # Initialize form with values if available
+    initial_data = {}
+    if initial_association_id:
+        initial_data['association'] = initial_association_id
+    if initial_tax_year:
+        initial_data['tax_year'] = initial_tax_year
+    
+    form = TaxFormSelectionForm(initial=initial_data if initial_data else None)
     
     context = {
         'form': form,
@@ -58,8 +67,9 @@ def form_1120h(request):
             tax_year = form.cleaned_data['tax_year']
             preparer = form.cleaned_data['preparer']
 
-            # Save selected tax year to session
-            request.session['selected_tax_year'] = tax_year            
+            # Save selected values to session
+            request.session['selected_association_id'] = str(association.id)
+            request.session['selected_tax_year'] = int(tax_year)           
             logger.debug(f"Association: {association}, Tax Year: {tax_year}, Preparer: {preparer}")
 
             try:

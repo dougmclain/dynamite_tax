@@ -17,18 +17,34 @@ class TaxFormSelectionForm(forms.Form):
         self.fields['preparer'].widget.attrs['class'] = 'form-select'
 
         logger.debug(f"Form initialized with data: {self.data}")
+        logger.debug(f"Form initialized with initial: {self.initial}")
 
-        association_id = self.data.get('association')
-        if not association_id and Association.objects.exists():
-            association_id = Association.objects.first().id
+        # Check for initial data for association, which can come from session
+        association_id = None
+        if self.initial and 'association' in self.initial:
+            association_id = self.initial['association']
+        elif self.data and 'association' in self.data:
+            association_id = self.data.get('association')
 
         if association_id:
-            financial_years = Financial.objects.filter(association_id=association_id).values_list('tax_year', flat=True).distinct()
+            # Load tax years for this association
+            financial_years = Financial.objects.filter(
+                association_id=association_id
+            ).values_list('tax_year', flat=True).distinct().order_by('-tax_year')
             self.fields['tax_year'].choices = [(str(year), str(year)) for year in financial_years]
             logger.debug(f"Tax years for association {association_id}: {self.fields['tax_year'].choices}")
         else:
-            self.fields['tax_year'].choices = []
-            logger.debug("No association selected, tax year choices empty")
+            # If no association found, get any available tax year
+            if Association.objects.exists():
+                # Get the first association's tax years
+                default_association = Association.objects.first()
+                financial_years = Financial.objects.filter(
+                    association_id=default_association.id
+                ).values_list('tax_year', flat=True).distinct().order_by('-tax_year')
+                self.fields['tax_year'].choices = [(str(year), str(year)) for year in financial_years]
+            else:
+                self.fields['tax_year'].choices = []
+            logger.debug("Using default tax year choices or empty list")
 
 class AssociationForm(forms.ModelForm):
     class Meta:

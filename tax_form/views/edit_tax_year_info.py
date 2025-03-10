@@ -6,6 +6,9 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import Http404
 from ..models import Association, Financial, Extension, CompletedTaxReturn
 from django.core.files.storage import default_storage
+import logging
+
+logger = logging.getLogger(__name__)
 
 class EditTaxYearInfoView(LoginRequiredMixin, View):
     template_name = 'tax_form/edit_tax_year_info.html'
@@ -19,6 +22,10 @@ class EditTaxYearInfoView(LoginRequiredMixin, View):
         )
         extension, _ = Extension.objects.get_or_create(financial=financial)
         completed_tax_return, _ = CompletedTaxReturn.objects.get_or_create(financial=financial)
+
+        # Store in session
+        request.session['selected_association_id'] = str(association_id)
+        request.session['selected_tax_year'] = int(tax_year)
 
         context = {
             'association': association,
@@ -38,6 +45,10 @@ class EditTaxYearInfoView(LoginRequiredMixin, View):
             )
             extension, _ = Extension.objects.get_or_create(financial=financial)
             completed_tax_return, _ = CompletedTaxReturn.objects.get_or_create(financial=financial)
+
+            # Store in session
+            request.session['selected_association_id'] = str(association_id)
+            request.session['selected_tax_year'] = int(tax_year)
 
             extension.filed = 'extension_filed' in request.POST
             extension.filed_date = request.POST.get('extension_filed_date') or None
@@ -60,5 +71,6 @@ class EditTaxYearInfoView(LoginRequiredMixin, View):
             messages.success(request, f'Tax year {tax_year} information updated successfully.')
             return redirect(f"{reverse('association')}?association_id={association_id}&tax_year={tax_year}")
         except Exception as e:
+            logger.error(f"Error updating tax year info: {str(e)}", exc_info=True)
             messages.error(request, f'An error occurred: {str(e)}')
             return redirect(f"{reverse('association')}?association_id={association_id}&tax_year={tax_year}")

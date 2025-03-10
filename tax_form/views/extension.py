@@ -32,9 +32,16 @@ class ExtensionFormView(LoginRequiredMixin, View):
             'associations': Association.objects.all().order_by('association_name')
         }
 
-        # Handle regular GET with association_id and tax_year
+        # Try to get values from GET parameters first, then from session
         association_id = request.GET.get('association_id')
+        if not association_id:
+            association_id = request.session.get('selected_association_id')
+            logger.debug(f"Using association_id {association_id} from session")
+            
         tax_year = request.GET.get('tax_year')
+        if not tax_year:
+            tax_year = request.session.get('selected_tax_year')
+            logger.debug(f"Using tax_year {tax_year} from session")
 
         if association_id and tax_year:
             try:
@@ -48,6 +55,10 @@ class ExtensionFormView(LoginRequiredMixin, View):
                     defaults={'filed': False}
                 )
                 form = ExtensionForm(instance=extension)
+                
+                # Store in session
+                request.session['selected_association_id'] = association_id
+                request.session['selected_tax_year'] = int(tax_year)
                 
                 context.update({
                     'form': form,
@@ -80,6 +91,10 @@ class ExtensionFormView(LoginRequiredMixin, View):
                 financial=financial,
                 defaults={'filed': False}
             )
+            
+            # Store in session
+            request.session['selected_association_id'] = association_id
+            request.session['selected_tax_year'] = int(tax_year)
             
             form = ExtensionForm(request.POST, request.FILES, instance=extension)
             if form.is_valid():

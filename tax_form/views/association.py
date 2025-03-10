@@ -17,17 +17,25 @@ class AssociationView(LoginRequiredMixin, View):
 
     def get(self, request):
         associations = Association.objects.all().order_by('association_name')
-        selected_association_id = request.GET.get('association_id')
-    
         
-        # Handle the case where tax_year might be empty or not present
+        # Get association ID from URL parameters or session
+        selected_association_id = request.GET.get('association_id')
+        if not selected_association_id:
+            # Try to get from session if not in URL
+            selected_association_id = request.session.get('selected_association_id')
+            logger.debug(f"Retrieved association_id {selected_association_id} from session")
+        
+        # Get tax year from URL parameters or session
         tax_year_param = request.GET.get('tax_year')
+        
         if tax_year_param and tax_year_param.strip():
             selected_tax_year = int(tax_year_param)
-           #Save to session
-            request.session['tax_year'] = selected_tax_year
+            # Save to session
+            request.session['selected_tax_year'] = selected_tax_year
         else:
+            # Try to get from session, or use current year as default
             selected_tax_year = request.session.get('selected_tax_year', datetime.now().year)
+            logger.debug(f"Retrieved tax_year {selected_tax_year} from session")
 
         context = {
             'associations': associations,
@@ -43,6 +51,9 @@ class AssociationView(LoginRequiredMixin, View):
         if selected_association_id:
             selected_association = get_object_or_404(Association, id=selected_association_id)
             context['selected_association'] = selected_association
+
+            # Store in session if not already there
+            request.session['selected_association_id'] = selected_association_id
 
             # Add new association information
             context['association_info'] = {

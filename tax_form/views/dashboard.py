@@ -17,15 +17,20 @@ class DashboardView(LoginRequiredMixin, View):
         max_year = max(year_range['tax_year__max'] or timezone.now().year, timezone.now().year)
         available_years = range(max_year, min_year - 2, -1)
 
-        # Get tax year from URL parameter
-        selected_year = request.GET.get('tax_year', timezone.now().year)
+        # Get tax year from URL parameter or session
+        selected_year = request.GET.get('tax_year')
         
-        # If we have a year in the URL, save it to session
-        if 'tax_year' in request.GET:
+        if selected_year:
+            # If we have a year in the URL, save it to session
+            selected_year = int(selected_year)
             request.session['selected_tax_year'] = selected_year
-        # If no year in URL but we have one in session, use that
-        elif 'selected_tax_year' in request.session:
-            selected_year = request.session['selected_tax_year']
+        else:
+            # If no year in URL but we have one in session, use that
+            selected_year = request.session.get('selected_tax_year')
+            if not selected_year:
+                # Default to current year if no session data
+                selected_year = timezone.now().year
+                request.session['selected_tax_year'] = selected_year
             
         # Ensure we're working with an integer
         selected_year = int(selected_year)

@@ -135,14 +135,13 @@ os.makedirs(MEDIA_ROOT, exist_ok=True)
 os.makedirs(os.path.join(MEDIA_ROOT, 'completed_tax_returns'), exist_ok=True)
 os.makedirs(os.path.join(MEDIA_ROOT, 'extensions'), exist_ok=True)
 
-# Update PDF settings for production
 if DEBUG:
     PDF_BASE = Path('/Users/Doug/Library/Mobile Documents/com~apple~CloudDocs/Dynamite Software Development/Dynamite Tax ')
     PDF_TEMPLATE_DIR = PDF_BASE / 'tax_form' / 'pdf_templates'
     PDF_TEMP_DIR = PDF_BASE / 'temp_pdfs'
 else:
-    # For production, use the persistent disk for temporary files
-    PDF_TEMPLATE_DIR = BASE_DIR / 'tax_form' / 'pdf_templates'
+    # For production, use the persistent disk for all files
+    PDF_TEMPLATE_DIR = Path('/opt/render/project/media/pdf_templates')
     PDF_TEMP_DIR = Path('/opt/render/project/media/temp_pdfs')
 
 # Only create temp directory - templates should already exist in their location

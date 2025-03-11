@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# exit on error
+# Exit on error
 set -o errexit
 
 # Install dependencies
@@ -12,13 +12,14 @@ python manage.py collectstatic --no-input --clear
 python manage.py migrate
 
 # Create necessary directories on the persistent disk
-mkdir -p /opt/render/project/media/pdf_templates
-mkdir -p /opt/render/project/media/temp_pdfs
-mkdir -p /opt/render/project/media/extensions
-mkdir -p /opt/render/project/media/completed_tax_returns
+mkdir -p /media/pdf_templates
+mkdir -p /media/temp_pdfs
+mkdir -p /media/extensions
+mkdir -p /media/completed_tax_returns
+mkdir -p /media/signed_engagement_letters
 
 # Copy PDF templates to persistent disk
-cp -r tax_form/pdf_templates/* /opt/render/project/media/pdf_templates/ || echo "No PDF templates to copy or directory doesn't exist"
+cp -r tax_form/pdf_templates/* /media/pdf_templates/ || echo "No PDF templates to copy or directory doesn't exist"
 
 # Ensure proper permissions
-chmod -R 777 /opt/render/project/media
+chmod -R 777 /media

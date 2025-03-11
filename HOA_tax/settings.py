@@ -141,18 +141,11 @@ if DEBUG:
     PDF_TEMPLATE_DIR = PDF_BASE / 'tax_form' / 'pdf_templates'
     PDF_TEMP_DIR = PDF_BASE / 'temp_pdfs'
 else:
-    # For production, use the persistent disk for all files
-    PDF_TEMPLATE_DIR = Path('/opt/render/project/media/pdf_templates')
-    PDF_TEMP_DIR = Path('/opt/render/project/media/temp_pdfs')
+    # For production, use the persistent disk mount which is /media
+    MEDIA_ROOT = '/media'
+    PDF_TEMPLATE_DIR = Path(MEDIA_ROOT) / 'pdf_templates'
+    PDF_TEMP_DIR = Path(MEDIA_ROOT) / 'temp_pdfs'
 
-if DEBUG:
-    PDF_BASE = Path('/Users/Doug/Library/Mobile Documents/com~apple~CloudDocs/Dynamite Software Development/Dynamite Tax ')
-    PDF_TEMPLATE_DIR = PDF_BASE / 'tax_form' / 'pdf_templates'
-    PDF_TEMP_DIR = PDF_BASE / 'temp_pdfs'
-else:
-    # For production, use the persistent disk for all files
-    PDF_TEMPLATE_DIR = Path('/opt/render/project/media/pdf_templates')
-    PDF_TEMP_DIR = Path('/opt/render/project/media/temp_pdfs')
 
 # Only create temp directory - templates should already exist in their location
 os.makedirs(PDF_TEMP_DIR, exist_ok=True)

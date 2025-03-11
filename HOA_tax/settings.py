@@ -124,10 +124,11 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 # Media files
 MEDIA_URL = '/media/'
 if IS_PRODUCTION:
-    # Use Render's persistent disk mount path
-    MEDIA_ROOT = '/media'
+    # Use Render's persistent disk mount path (e.g. /data) for media files
+    MEDIA_ROOT = os.path.join('/data', 'media')
 else:
     MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
 
 # Ensure media directories exist and are writable
 os.makedirs(MEDIA_ROOT, exist_ok=True)
@@ -136,18 +137,17 @@ os.makedirs(os.path.join(MEDIA_ROOT, 'extensions'), exist_ok=True)
 # Below the other os.makedirs calls in settings.py
 os.makedirs(os.path.join(MEDIA_ROOT, 'signed_engagement_letters'), exist_ok=True)
 
+# Replace your existing PDF path settings with this:
 if DEBUG:
     PDF_BASE = Path('/Users/Doug/Library/Mobile Documents/com~apple~CloudDocs/Dynamite Software Development/Dynamite Tax ')
     PDF_TEMPLATE_DIR = PDF_BASE / 'tax_form' / 'pdf_templates'
     PDF_TEMP_DIR = PDF_BASE / 'temp_pdfs'
 else:
     # For production, use the persistent disk mount which is /media
-    MEDIA_ROOT = '/media'
-    PDF_TEMPLATE_DIR = Path(MEDIA_ROOT) / 'pdf_templates'
-    PDF_TEMP_DIR = Path(MEDIA_ROOT) / 'temp_pdfs'
+    PDF_TEMPLATE_DIR = Path('/media/pdf_templates')
+    PDF_TEMP_DIR = Path('/media/temp_pdfs')
 
-
-# Only create temp directory - templates should already exist in their location
+# Make sure these directories exist
 os.makedirs(PDF_TEMP_DIR, exist_ok=True)
 if not DEBUG:
     os.makedirs(PDF_TEMPLATE_DIR, exist_ok=True)

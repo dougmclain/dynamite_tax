@@ -126,7 +126,7 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 MEDIA_URL = '/media/'
 if IS_PRODUCTION:
     # Use Render's persistent disk mount path
-    MEDIA_ROOT = '/opt/render/project/media'
+    MEDIA_ROOT = '/media'
 else:
     MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 

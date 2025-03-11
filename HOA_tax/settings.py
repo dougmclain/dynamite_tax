@@ -6,12 +6,13 @@ from pathlib import Path
 import os
 import environ
 
-# Initialize environment variables
-env = environ.Env()
-environ.Env.read_env()
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Initialize environment variables
+env = environ.Env()
+# Explicitly load the .env file from the project root (i.e., the directory containing manage.py)
+env.read_env(os.path.join(BASE_DIR, '.env'))
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = env('SECRET_KEY')
@@ -88,7 +89,6 @@ DATABASES = {
 """
 
 # Render PostgreSQL database
-
 import dj_database_url
 DATABASES = {
     'default': dj_database_url.parse(env('DATABASE_URL'))
@@ -176,6 +176,6 @@ LOGGING = {
     },
 }
 
-# In settings.py
+# Session settings
 SESSION_COOKIE_AGE = 86400  # Session lasts for 24 hours (in seconds)
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # Session survives browser close

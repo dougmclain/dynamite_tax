@@ -78,15 +78,14 @@ WSGI_APPLICATION = 'HOA_tax.wsgi.application'
 
 # Database configuration
 # Local SQLite database - commented out for later use
-
-
+"""
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
-
+"""
 
 # Render PostgreSQL database
 import dj_database_url
@@ -146,8 +145,19 @@ else:
     PDF_TEMPLATE_DIR = Path('/opt/render/project/media/pdf_templates')
     PDF_TEMP_DIR = Path('/opt/render/project/media/temp_pdfs')
 
+if DEBUG:
+    PDF_BASE = Path('/Users/Doug/Library/Mobile Documents/com~apple~CloudDocs/Dynamite Software Development/Dynamite Tax ')
+    PDF_TEMPLATE_DIR = PDF_BASE / 'tax_form' / 'pdf_templates'
+    PDF_TEMP_DIR = PDF_BASE / 'temp_pdfs'
+else:
+    # For production, use the persistent disk for all files
+    PDF_TEMPLATE_DIR = Path('/opt/render/project/media/pdf_templates')
+    PDF_TEMP_DIR = Path('/opt/render/project/media/temp_pdfs')
+
 # Only create temp directory - templates should already exist in their location
 os.makedirs(PDF_TEMP_DIR, exist_ok=True)
+if not DEBUG:
+    os.makedirs(PDF_TEMPLATE_DIR, exist_ok=True)
 
 # Security settings for production
 if IS_PRODUCTION:

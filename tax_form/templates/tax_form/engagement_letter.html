@@ -1,0 +1,142 @@
+{% extends "tax_form/base.html" %}
+{% load crispy_forms_tags %}
+{% load static %}
+
+{% block title %}Engagement Letters{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <h2 class="mb-4">Engagement Letters</h2>
+            
+            <!-- Create New Engagement Letter -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3 class="card-title h5 mb-0">Create New Engagement Letter</h3>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-4">
+                                {{ form.association|as_crispy_field }}
+                            </div>
+                            <div class="col-md-4">
+                                {# If a selected tax year exists, bind it to the field's value #}
+                                {% if selected_tax_year %}
+                                    {{ form.tax_year|as_crispy_field }}
+                                {% else %}
+                                    {{ form.tax_year|as_crispy_field }}
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                {{ form.price|as_crispy_field }}
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <button type="submit" class="btn btn-primary">Generate Engagement Letter</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Existing Engagement Letters -->
+            {% if engagement_letters %}
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title h5 mb-0">Existing Engagement Letters</h3>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Association</th>
+                                    <th>Tax Year</th>
+                                    <th>Price</th>
+                                    <th>Created</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for letter in engagement_letters %}
+                                <tr data-tax-year="{{ letter.tax_year }}">
+                                    <td>{{ letter.association.association_name }}</td>
+                                    <td>{{ letter.tax_year }}</td>
+                                    <td>${{ letter.price }}</td>
+                                    <td>{{ letter.date_created|date:"F d, Y" }}</td>
+                                    <td>
+                                        {% if letter.status == 'signed' %}
+                                            <span class="badge bg-success">Signed on {{ letter.date_signed|date:"F d, Y" }}</span>
+                                            {% if letter.signed_pdf %}
+                                                <a href="{{ letter.signed_pdf.url }}" target="_blank" class="ms-2">View</a>
+                                            {% endif %}
+                                        {% elif letter.status == 'sent' %}
+                                            <span class="badge bg-info">Sent</span>
+                                        {% else %}
+                                            <span class="badge bg-warning">Pending</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="d-flex">
+                                            <a href="{% url 'download_engagement_letter' letter.id %}" class="btn btn-sm btn-primary me-1" title="Download the original engagement letter">Download</a>
+                                            
+                                            <a href="{% url 'mark_sent_engagement_letter' letter.id %}" class="btn btn-sm btn-info me-1" title="Mark this engagement letter as sent to the client">Mark Sent</a>
+                                            
+                                            <a href="{% url 'upload_signed_engagement_letter_form' letter.id %}" class="btn btn-sm btn-success me-1" title="Upload a signed copy of this engagement letter">Upload Signed</a>
+                                            
+                                            <!-- Delete button with confirmation -->
+                                            <form method="post" action="{% url 'delete_engagement_letter' letter.id %}" onsubmit="return confirm('Are you sure you want to delete this engagement letter?');">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-sm btn-danger" title="Delete this engagement letter">Delete</button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                No engagement letters have been created yet.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<!-- Set a global variable for the selected tax year -->
+<script>
+    // Use the context variable or default to "2024"
+    window.selectedTaxYear = "{{ selected_tax_year|default:'2024' }}";
+    if (!window.selectedTaxYear) {
+        const params = new URLSearchParams(window.location.search);
+        window.selectedTaxYear = params.get('tax_year') || "2024";
+    }
+</script>
+<script src="{% static 'js/engagement_letter.js' %}"></script>
+{% endblock %}
+
+
+{% block extra_css %}
+<style>
+    .card {
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border: none;
+    }
+    .card-header {
+        background-color: #f7f7f7;
+    }
+    .btn {
+        margin-top: 10px;
+    }
+</style>
+{% endblock %}

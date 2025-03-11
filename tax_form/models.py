@@ -211,3 +211,27 @@ class Preparer(models.Model):
 
     def __str__(self):
         return self.name
+
+class EngagementLetter(models.Model):
+    STATUS_CHOICES = (
+        ('pending', 'Pending'),
+        ('sent', 'Sent'),
+        ('signed', 'Signed'),
+    )
+    
+    association = models.ForeignKey('Association', on_delete=models.CASCADE, related_name='engagement_letters')
+    tax_year = models.IntegerField(default=datetime.now().year, help_text="Tax year this engagement is for")
+    price = models.PositiveIntegerField(default=150, help_text="Price for tax preparation services")
+    date_created = models.DateField(auto_now_add=True)
+    date_signed = models.DateField(null=True, blank=True)
+    signed_by = models.CharField(max_length=100, blank=True, null=True)
+    signer_title = models.CharField(max_length=100, blank=True, null=True)
+    pdf_file = models.FileField(upload_to='engagement_letters/', null=True, blank=True)
+    signed_pdf = models.FileField(upload_to='signed_engagement_letters/', null=True, blank=True)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    
+    def __str__(self):
+        return f"{self.association.association_name} - {self.tax_year} Engagement Letter"
+    
+    class Meta:
+        unique_together = ('association', 'tax_year')

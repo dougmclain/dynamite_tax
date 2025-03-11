@@ -1,5 +1,5 @@
 from django import forms
-from .models import Association, Financial, Preparer, Extension, CompletedTaxReturn
+from .models import Association, Financial, Preparer, Extension, CompletedTaxReturn, EngagementLetter
 from django.forms.widgets import NumberInput, TextInput
 import logging
 
@@ -146,3 +146,14 @@ class ExtensionForm(forms.ModelForm):
         self.fields['filed_date'].required = False
         self.fields['tentative_tax'].required = False
         self.fields['total_payments'].required = False
+        
+# Fix the indentation of EngagementLetterForm - it should not be nested inside ExtensionForm
+class EngagementLetterForm(forms.ModelForm):
+    class Meta:
+        model = EngagementLetter
+        fields = ['association', 'tax_year', 'price']
+        widgets = {
+            'association': forms.Select(attrs={'class': 'form-select'}),
+            'tax_year': forms.NumberInput(attrs={'class': 'form-control'}),
+            'price': forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'step': '50'}),
+        }

@@ -79,14 +79,14 @@ WSGI_APPLICATION = 'HOA_tax.wsgi.application'
 # Database configuration
 # Local SQLite database - commented out for later use
 
-"""
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
-"""
+
 
 # Render PostgreSQL database
 import dj_database_url
@@ -134,6 +134,8 @@ else:
 os.makedirs(MEDIA_ROOT, exist_ok=True)
 os.makedirs(os.path.join(MEDIA_ROOT, 'completed_tax_returns'), exist_ok=True)
 os.makedirs(os.path.join(MEDIA_ROOT, 'extensions'), exist_ok=True)
+# Below the other os.makedirs calls in settings.py
+os.makedirs(os.path.join(MEDIA_ROOT, 'signed_engagement_letters'), exist_ok=True)
 
 if DEBUG:
     PDF_BASE = Path('/Users/Doug/Library/Mobile Documents/com~apple~CloudDocs/Dynamite Software Development/Dynamite Tax ')
@@ -179,3 +181,5 @@ LOGGING = {
 # Session settings
 SESSION_COOKIE_AGE = 86400  # Session lasts for 24 hours (in seconds)
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # Session survives browser close
+
+LOGIN_URL = '/admin/login/'

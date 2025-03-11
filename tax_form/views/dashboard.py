@@ -1,7 +1,7 @@
 from django.views import View
 from django.shortcuts import render
 from django.contrib.auth.mixins import LoginRequiredMixin   
-from ..models import Association, Financial, Extension, CompletedTaxReturn
+from ..models import Association, Financial, Extension, CompletedTaxReturn, EngagementLetter
 from django.utils import timezone
 from django.db.models import Min, Max, Count, Q
 import logging
@@ -51,7 +51,7 @@ class DashboardView(LoginRequiredMixin, View):
             financial = financials.filter(association=association).first()
             extension = Extension.objects.filter(financial=financial).first() if financial else None
             completed_tax_return = CompletedTaxReturn.objects.filter(financial=financial).first() if financial else None
-
+            engagement_letter = EngagementLetter.objects.filter(association=association, tax_year=selected_year).first()
             # Check if files exist before including URLs
             extension_file_url = None
             if extension and extension.form_7004:

@@ -1,6 +1,6 @@
 from django.urls import path
 from django.contrib.auth import views as auth_views
-from .views import main, association, financial, create_association, dashboard, edit_association, edit_tax_year_info, extension
+from .views import main, association, financial, create_association, dashboard, edit_association, edit_tax_year_info, extension, engagement_letter
 
 urlpatterns = [
     path('', main.index, name='index'),
@@ -14,4 +14,10 @@ urlpatterns = [
     path('extension-form/', extension.ExtensionFormView.as_view(), name='extension_form'),
     path('admin/login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
     path('admin/logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
+    path('engagement-letter/', engagement_letter.EngagementLetterView.as_view(), name='engagement_letter'),
+    path('engagement-letter/download/<int:letter_id>/', engagement_letter.DownloadEngagementLetterView.as_view(), name='download_engagement_letter'),
+    path('engagement-letter/delete/<int:letter_id>/', engagement_letter.DeleteEngagementLetterView.as_view(), name='delete_engagement_letter'),
+    path('engagement-letter/upload-form/<int:letter_id>/', engagement_letter.UploadSignedEngagementLetterFormView.as_view(), name='upload_signed_engagement_letter_form'),
+    path('engagement-letter/upload-signed/<int:letter_id>/', engagement_letter.UploadSignedEngagementLetterView.as_view(), name='upload_signed_engagement_letter'),
+    path('engagement-letter/mark-sent/<int:letter_id>/', engagement_letter.MarkEngagementLetterSentView.as_view(), name='mark_sent_engagement_letter'),
 ]

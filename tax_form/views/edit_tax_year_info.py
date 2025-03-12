@@ -50,23 +50,24 @@ class EditTaxYearInfoView(LoginRequiredMixin, View):
             request.session['selected_association_id'] = str(association_id)
             request.session['selected_tax_year'] = int(tax_year)
 
+            # Update fields without handling files
             extension.filed = 'extension_filed' in request.POST
             extension.filed_date = request.POST.get('extension_filed_date') or None
             completed_tax_return.return_filed = 'tax_return_filed' in request.POST
             completed_tax_return.date_prepared = request.POST.get('tax_return_filed_date') or None
 
+            # Skip file handling for now
+            extension.save(update_fields=['filed', 'filed_date'])
+            completed_tax_return.save(update_fields=['return_filed', 'date_prepared'])
+
+            # Log information about the files that would have been processed
             if 'extension_file' in request.FILES:
-                if extension.form_7004:
-                    default_storage.delete(extension.form_7004.path)
-                extension.form_7004 = request.FILES['extension_file']
-
+                logger.info(f"Extension file uploaded: {request.FILES['extension_file'].name}")
+                messages.info(request, f"Extension file '{request.FILES['extension_file'].name}' received but not saved due to storage constraints.")
+            
             if 'tax_return_file' in request.FILES:
-                if completed_tax_return.tax_return_pdf:
-                    default_storage.delete(completed_tax_return.tax_return_pdf.path)
-                completed_tax_return.tax_return_pdf = request.FILES['tax_return_file']
-
-            extension.save()
-            completed_tax_return.save()
+                logger.info(f"Tax return file uploaded: {request.FILES['tax_return_file'].name}")
+                messages.info(request, f"Tax return file '{request.FILES['tax_return_file'].name}' received but not saved due to storage constraints.")
 
             messages.success(request, f'Tax year {tax_year} information updated successfully.')
             return redirect(f"{reverse('association')}?association_id={association_id}&tax_year={tax_year}")

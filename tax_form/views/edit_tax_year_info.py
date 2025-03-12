@@ -77,13 +77,13 @@ class EditTaxYearInfoView(LoginRequiredMixin, View):
                     except Exception as e:
                         logger.warning(f"Could not delete previous extension file: {e}")
                 
-                # Ensure directory exists
+                # Ensure directory exists - REMOVED DIRECTORY CREATION
                 extensions_dir = os.path.join(settings.MEDIA_ROOT, 'extensions')
-                os.makedirs(extensions_dir, exist_ok=True)
+                # Directory creation removed to avoid permission issues
                 
                 # Use the relative path (just the filename part)
                 extension.form_7004.save(f"extensions/{new_filename}", extension_file)
-                logger.info(f"Saved extension file to: {extension.form_7004.path}")
+                logger.info(f"Saved extension file to: {extension.form_7004.name}")
 
             if 'tax_return_file' in request.FILES:
                 # Create a safe filename
@@ -106,13 +106,13 @@ class EditTaxYearInfoView(LoginRequiredMixin, View):
                     except Exception as e:
                         logger.warning(f"Could not delete previous tax return file: {e}")
                 
-                # Ensure directory exists
+                # Ensure directory exists - REMOVED DIRECTORY CREATION
                 returns_dir = os.path.join(settings.MEDIA_ROOT, 'completed_tax_returns')
-                os.makedirs(returns_dir, exist_ok=True)
+                # Directory creation removed to avoid permission issues
                 
                 # Use the relative path (just the filename part)
                 completed_tax_return.tax_return_pdf.save(f"completed_tax_returns/{new_filename}", tax_return_file)
-                logger.info(f"Saved tax return file to: {completed_tax_return.tax_return_pdf.path}")
+                logger.info(f"Saved tax return file to: {completed_tax_return.tax_return_pdf.name}")
 
             extension.save()
             completed_tax_return.save()

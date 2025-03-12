@@ -3,7 +3,8 @@ services:
     name: hoatax
     env: python
     buildCommand: chmod +x build.sh && ./build.sh
-    startCommand: gunicorn HOA_tax.wsgi:application
+    startCommand: chmod +x start.sh && ./start.sh
+    # Other settings remain the same...
     envVars:
       - key: PYTHON_VERSION
         value: 3.9.0

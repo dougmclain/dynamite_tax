@@ -81,8 +81,9 @@ class EditTaxYearInfoView(LoginRequiredMixin, View):
                         logger.warning(f"Could not delete previous extension file: {e}")
                 
                 # Save using default_storage (which will be Azure in production)
-                file_path = f"extensions/{new_filename}"
+                file_path = new_filename  # Let the model's upload_to handle the folder structure
                 extension.form_7004.save(file_path, extension_file)
+
                 logger.info(f"Saved extension file to: {extension.form_7004.name}")
 
             if 'tax_return_file' in request.FILES:

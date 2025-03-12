@@ -124,33 +124,36 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 # Media files
 MEDIA_URL = '/media/'
 if IS_PRODUCTION:
-    # Use Render's persistent disk mount path (e.g. /data) for media files
+    # Use Render's persistent disk mount path for media files
     MEDIA_ROOT = os.path.join('/data', 'media')
 else:
     MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-
-# Ensure media directories exist and are writable
-os.makedirs(MEDIA_ROOT, exist_ok=True)
-os.makedirs(os.path.join(MEDIA_ROOT, 'completed_tax_returns'), exist_ok=True)
-os.makedirs(os.path.join(MEDIA_ROOT, 'extensions'), exist_ok=True)
-# Below the other os.makedirs calls in settings.py
-os.makedirs(os.path.join(MEDIA_ROOT, 'signed_engagement_letters'), exist_ok=True)
-
-# Replace your existing PDF path settings with this:
+# PDF paths - separate from media for better organization
 if DEBUG:
     PDF_BASE = Path('/Users/Doug/Library/Mobile Documents/com~apple~CloudDocs/Dynamite Software Development/Dynamite Tax ')
     PDF_TEMPLATE_DIR = PDF_BASE / 'tax_form' / 'pdf_templates'
     PDF_TEMP_DIR = PDF_BASE / 'temp_pdfs'
 else:
-    # For production, use the persistent disk mount which is /media
-    PDF_TEMPLATE_DIR = Path('/media/pdf_templates')
-    PDF_TEMP_DIR = Path('/media/temp_pdfs')
+    # For production on Render, use /data for writeable storage
+    PDF_TEMPLATE_DIR = Path('/data/pdf_templates')
+    PDF_TEMP_DIR = Path('/data/temp_pdfs')
 
-# Make sure these directories exist
-os.makedirs(PDF_TEMP_DIR, exist_ok=True)
-if not DEBUG:
+# Ensure media/storage directories exist and are writable
+try:
+    # Media directories for uploads
+    os.makedirs(MEDIA_ROOT, exist_ok=True)
+    os.makedirs(os.path.join(MEDIA_ROOT, 'completed_tax_returns'), exist_ok=True)
+    os.makedirs(os.path.join(MEDIA_ROOT, 'extensions'), exist_ok=True)
+    os.makedirs(os.path.join(MEDIA_ROOT, 'signed_engagement_letters'), exist_ok=True)
+    
+    # PDF directories
+    os.makedirs(PDF_TEMP_DIR, exist_ok=True)
     os.makedirs(PDF_TEMPLATE_DIR, exist_ok=True)
+except Exception as e:
+    # Log errors but don't break app startup
+    import logging
+    logging.error(f"Error creating directories: {str(e)}")
 
 # Security settings for production
 if IS_PRODUCTION:
@@ -170,9 +173,27 @@ if IS_PRODUCTION:
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+    },
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+        },
+        'tax_form': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': True,
         },
     },
     'root': {

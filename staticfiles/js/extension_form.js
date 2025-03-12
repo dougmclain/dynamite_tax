@@ -6,8 +6,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Handle association selection and tax year loading
     if (associationSelect && taxYearSelect) {
-        associationSelect.addEventListener('change', function() {
-            const associationId = this.value;
+        // Function to load tax years for a given association
+        const loadTaxYears = function(associationId, callback) {
             if (associationId) {
                 fetch(`/extension-form/?association_id=${associationId}`, {
                     headers: {
@@ -25,6 +25,11 @@ document.addEventListener('DOMContentLoaded', function() {
                             taxYearSelect.appendChild(option);
                         });
                         taxYearSelect.disabled = false;
+                        
+                        // If a callback is provided, execute it after populating tax years
+                        if (typeof callback === 'function') {
+                            callback();
+                        }
                     } else {
                         taxYearSelect.innerHTML = '<option value="">No tax years available</option>';
                         taxYearSelect.disabled = true;
@@ -39,6 +44,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 taxYearSelect.innerHTML = '<option value="">Select an association first</option>';
                 taxYearSelect.disabled = true;
             }
+        };
+
+        // Add change event listener to association select
+        associationSelect.addEventListener('change', function() {
+            const associationId = this.value;
+            loadTaxYears(associationId);
         });
 
         // Handle Start Extension button
@@ -53,6 +64,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 alert('Please select both an association and a tax year.');
             }
         });
+        
+        // When page loads, if association is already selected, load its tax years
+        // and try to select the previously selected tax year if available
+        if (associationSelect.value) {
+            // Store the current tax year value if it exists
+            const currentTaxYear = taxYearSelect.dataset.selectedYear || '';
+            
+            loadTaxYears(associationSelect.value, function() {
+                if (currentTaxYear) {
+                    // Try to select the previously selected tax year
+                    for (let i = 0; i < taxYearSelect.options.length; i++) {
+                        if (taxYearSelect.options[i].value === currentTaxYear) {
+                            taxYearSelect.selectedIndex = i;
+                            break;
+                        }
+                    }
+                }
+            });
+        }
     }
 
     // Handle Balance Due Calculation

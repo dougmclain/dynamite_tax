@@ -126,12 +126,15 @@ if DEBUG:
     PDF_BASE = Path('/Users/Doug/Library/Mobile Documents/com~apple~CloudDocs/Dynamite Software Development/Dynamite Tax ')
     PDF_TEMPLATE_DIR = PDF_BASE / 'tax_form' / 'pdf_templates'
     PDF_TEMP_DIR = PDF_BASE / 'temp_pdfs'
+    # Create temp directory locally
+    os.makedirs(PDF_TEMP_DIR, exist_ok=True)
 else:
     # For production on Render
     PDF_TEMPLATE_DIR = Path('/opt/render/project/src/tax_form/pdf_templates')
     PDF_TEMP_DIR = Path('/opt/render/project/src/tax_form/temp_pdfs')
-    # Create the temp directory if it doesn't exist
-    os.makedirs(PDF_TEMP_DIR, exist_ok=True)
+    # Only try to create this directory when running on Render
+    if os.path.exists('/opt/render/project/src'):
+        os.makedirs(PDF_TEMP_DIR, exist_ok=True)
 
 # Security settings for production
 if IS_PRODUCTION:

@@ -80,35 +80,90 @@ class AssociationView(LoginRequiredMixin, View):
                 completed_tax_return = CompletedTaxReturn.objects.filter(financial=financial_data).first()
 
                 # Process extension data
+                # Process extension data
                 if extension:
                     if extension.form_7004:
+                        file_path = extension.form_7004.name
+                        logger.debug(f"Checking for extension file at path: {file_path}")
+                        
                         try:
-                            if extension.form_7004.storage.exists(extension.form_7004.name):
-                                context['extension_data'] = extension
+                            # Try to get the URL first to see if it's generated correctly
+                            file_url = extension.form_7004.url
+                            logger.debug(f"Generated URL for extension file: {file_url}")
+                            
+                            # Check if file exists in storage
+                            file_exists = extension.form_7004.storage.exists(file_path)
+                            logger.debug(f"Extension file exists check result: {file_exists}")
+                            
+                            if not file_exists:
+                                logger.warning(f"Extension file does not exist: {file_path}")
+                                
+                                # Try an alternative path (with or without media prefix)
+                                alt_path = file_path if file_path.startswith('media/') else f"media/{file_path}"
+                                logger.debug(f"Trying alternative path: {alt_path}")
+                                alt_exists = extension.form_7004.storage.exists(alt_path)
+                                logger.debug(f"Alternative path exists: {alt_exists}")
+                                
+                                if alt_exists:
+                                    # If the alternative path works, update the model
+                                    logger.info(f"Found extension file at alternative path: {alt_path}")
+                                    extension.form_7004.name = alt_path
+                                    extension.save()
+                                    context['extension_data'] = extension
+                                else:
+                                    # If file still can't be found, clear the field
+                                    logger.warning(f"Could not find extension file at any path, clearing field")
+                                    extension.form_7004 = None
+                                    extension.save()
+                                    context['extension_data'] = extension
                             else:
-                                logger.warning(f"Extension file does not exist: {extension.form_7004.name}")
-                                extension.form_7004 = None
-                                extension.save()
                                 context['extension_data'] = extension
                         except Exception as e:
-                            logger.error(f"Error checking extension file: {e}")
+                            logger.error(f"Error checking extension file: {e}", exc_info=True)
                             context['extension_data'] = extension
                     else:
                         context['extension_data'] = extension
-
                 # Process completed tax return data
+# Process completed tax return data
                 if completed_tax_return:
                     if completed_tax_return.tax_return_pdf:
+                        file_path = completed_tax_return.tax_return_pdf.name
+                        logger.debug(f"Checking for tax return file at path: {file_path}")
+                        
                         try:
-                            if completed_tax_return.tax_return_pdf.storage.exists(completed_tax_return.tax_return_pdf.name):
-                                context['completed_tax_return_data'] = completed_tax_return
+                            # Try to get the URL first to see if it's generated correctly
+                            file_url = completed_tax_return.tax_return_pdf.url
+                            logger.debug(f"Generated URL for tax return file: {file_url}")
+                            
+                            # Check if file exists in storage
+                            file_exists = completed_tax_return.tax_return_pdf.storage.exists(file_path)
+                            logger.debug(f"File exists check result: {file_exists}")
+                            
+                            if not file_exists:
+                                logger.warning(f"Tax return file does not exist: {file_path}")
+                                
+                                # Try an alternative path (with or without media prefix)
+                                alt_path = file_path if file_path.startswith('media/') else f"media/{file_path}"
+                                logger.debug(f"Trying alternative path: {alt_path}")
+                                alt_exists = completed_tax_return.tax_return_pdf.storage.exists(alt_path)
+                                logger.debug(f"Alternative path exists: {alt_exists}")
+                                
+                                if alt_exists:
+                                    # If the alternative path works, update the model
+                                    logger.info(f"Found file at alternative path: {alt_path}")
+                                    completed_tax_return.tax_return_pdf.name = alt_path
+                                    completed_tax_return.save()
+                                    context['completed_tax_return_data'] = completed_tax_return
+                                else:
+                                    # If file still can't be found, clear the field
+                                    logger.warning(f"Could not find tax return file at any path, clearing field")
+                                    completed_tax_return.tax_return_pdf = None
+                                    completed_tax_return.save()
+                                    context['completed_tax_return_data'] = completed_tax_return
                             else:
-                                logger.warning(f"Tax return file does not exist: {completed_tax_return.tax_return_pdf.name}")
-                                completed_tax_return.tax_return_pdf = None
-                                completed_tax_return.save()
                                 context['completed_tax_return_data'] = completed_tax_return
                         except Exception as e:
-                            logger.error(f"Error checking tax return file: {e}")
+                            logger.error(f"Error checking tax return file: {e}", exc_info=True)
                             context['completed_tax_return_data'] = completed_tax_return
                     else:
                         context['completed_tax_return_data'] = completed_tax_return

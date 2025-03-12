@@ -300,7 +300,7 @@ class UploadSignedEngagementLetterView(LoginRequiredMixin, View):
         logger.debug(f"POST data keys: {list(request.POST.keys())}")
         
         if 'signed_pdf' in request.FILES:
-            # Get form data
+            # Get form data (all are now optional)
             signed_pdf = request.FILES['signed_pdf']
             signed_by = request.POST.get('signed_by', '')
             signer_title = request.POST.get('signer_title', '')
@@ -315,21 +315,35 @@ class UploadSignedEngagementLetterView(LoginRequiredMixin, View):
                 
                 if date_signed:
                     engagement_letter.date_signed = date_signed
+                else:
+                    engagement_letter.date_signed = timezone.now().date()
+                
+                # Store the file using consistent naming
+                pdf_filename = create_engagement_letter_filename(
+                    engagement_letter.association, 
+                    engagement_letter.tax_year, 
+                    signed=True
+                )
                 
                 # Get file data to memory
                 pdf_data = signed_pdf.read()
                 
-                # Update status
+                # Save the file to the model's FileField
+                engagement_letter.signed_pdf.save(
+                    pdf_filename,
+                    ContentFile(pdf_data),
+                    save=False
+                )
+                
+                # Update status and save
                 engagement_letter.status = 'signed'
                 engagement_letter.save()
                 
                 messages.success(request, f'Signed engagement letter for {engagement_letter.association.association_name} uploaded successfully.')
                 
-                # Return the uploaded PDF
-                pdf_filename = create_engagement_letter_filename(engagement_letter.association, engagement_letter.tax_year, signed=True)
-                response = HttpResponse(pdf_data, content_type='application/pdf')
-                response['Content-Disposition'] = f'attachment; filename="{pdf_filename}"'
-                return response
+                # Redirect back to the engagement letter list instead of returning the PDF
+                return redirect('engagement_letter')
+                
             except Exception as e:
                 logger.error(f"Error processing signed PDF: {str(e)}", exc_info=True)
                 messages.error(request, f'Error processing signed PDF: {str(e)}')

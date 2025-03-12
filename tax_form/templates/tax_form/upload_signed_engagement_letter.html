@@ -34,18 +34,18 @@
                         
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label for="signed_by" class="form-label">Signed By</label>
-                                <input type="text" class="form-control" id="signed_by" name="signed_by" required>
+                                <label for="signed_by" class="form-label">Signed By (Optional)</label>
+                                <input type="text" class="form-control" id="signed_by" name="signed_by">
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label for="signer_title" class="form-label">Signer Title</label>
-                                <input type="text" class="form-control" id="signer_title" name="signer_title" required>
+                                <label for="signer_title" class="form-label">Signer Title (Optional)</label>
+                                <input type="text" class="form-control" id="signer_title" name="signer_title">
                             </div>
                         </div>
                         
                         <div class="mb-3">
-                            <label for="date_signed" class="form-label">Date Signed</label>
-                            <input type="date" class="form-control" id="date_signed" name="date_signed" value="{{ today|date:'Y-m-d' }}" required>
+                            <label for="date_signed" class="form-label">Date Signed (Optional)</label>
+                            <input type="date" class="form-control" id="date_signed" name="date_signed" value="{{ today|date:'Y-m-d' }}">
                         </div>
                         
                         <div class="d-flex justify-content-between mt-4">

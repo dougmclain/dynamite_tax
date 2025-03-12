@@ -4,7 +4,9 @@ from django.urls import reverse
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.conf import settings
+from django.core.files.storage import default_storage
 from ..models import Association, Financial, Extension, CompletedTaxReturn
+from ..pdf_utils import check_file_exists, delete_file_from_azure
 import logging
 import os
 
@@ -55,7 +57,7 @@ class EditTaxYearInfoView(LoginRequiredMixin, View):
             completed_tax_return.return_filed = 'tax_return_filed' in request.POST
             completed_tax_return.date_prepared = request.POST.get('tax_return_filed_date') or None
 
-            # Handle file uploads
+            # Handle file uploads using default_storage (which is Azure in production)
             if 'extension_file' in request.FILES:
                 # Create a safe filename
                 extension_file = request.FILES['extension_file']
@@ -71,18 +73,16 @@ class EditTaxYearInfoView(LoginRequiredMixin, View):
                 # Delete previous file if it exists
                 if extension.form_7004:
                     try:
-                        # Check if file exists before trying to delete
-                        if extension.form_7004 and hasattr(extension.form_7004, 'path') and os.path.exists(extension.form_7004.path):
-                            extension.form_7004.delete(save=False)
+                        # Use default_storage to check and delete files
+                        if default_storage.exists(extension.form_7004.name):
+                            default_storage.delete(extension.form_7004.name)
+                            logger.info(f"Deleted previous extension file: {extension.form_7004.name}")
                     except Exception as e:
                         logger.warning(f"Could not delete previous extension file: {e}")
                 
-                # Ensure directory exists - REMOVED DIRECTORY CREATION
-                extensions_dir = os.path.join(settings.MEDIA_ROOT, 'extensions')
-                # Directory creation removed to avoid permission issues
-                
-                # Use the relative path (just the filename part)
-                extension.form_7004.save(f"extensions/{new_filename}", extension_file)
+                # Save using default_storage (which will be Azure in production)
+                file_path = f"extensions/{new_filename}"
+                extension.form_7004.save(file_path, extension_file)
                 logger.info(f"Saved extension file to: {extension.form_7004.name}")
 
             if 'tax_return_file' in request.FILES:
@@ -100,18 +100,16 @@ class EditTaxYearInfoView(LoginRequiredMixin, View):
                 # Delete previous file if it exists
                 if completed_tax_return.tax_return_pdf:
                     try:
-                        # Check if file exists before trying to delete
-                        if completed_tax_return.tax_return_pdf and hasattr(completed_tax_return.tax_return_pdf, 'path') and os.path.exists(completed_tax_return.tax_return_pdf.path):
-                            completed_tax_return.tax_return_pdf.delete(save=False)
+                        # Using default_storage which will be Azure in production
+                        if default_storage.exists(completed_tax_return.tax_return_pdf.name):
+                            default_storage.delete(completed_tax_return.tax_return_pdf.name)
+                            logger.info(f"Deleted previous tax return file: {completed_tax_return.tax_return_pdf.name}")
                     except Exception as e:
                         logger.warning(f"Could not delete previous tax return file: {e}")
                 
-                # Ensure directory exists - REMOVED DIRECTORY CREATION
-                returns_dir = os.path.join(settings.MEDIA_ROOT, 'completed_tax_returns')
-                # Directory creation removed to avoid permission issues
-                
-                # Use the relative path (just the filename part)
-                completed_tax_return.tax_return_pdf.save(f"completed_tax_returns/{new_filename}", tax_return_file)
+                # Save using default_storage (which will be Azure in production)
+                file_path = f"completed_tax_returns/{new_filename}"
+                completed_tax_return.tax_return_pdf.save(file_path, tax_return_file)
                 logger.info(f"Saved tax return file to: {completed_tax_return.tax_return_pdf.name}")
 
             extension.save()

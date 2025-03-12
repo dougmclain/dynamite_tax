@@ -5,6 +5,8 @@ from datetime import date
 from io import BytesIO
 from django.http import HttpResponse
 from django.conf import settings
+from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
 from PyPDF2 import PdfReader, PdfWriter
 from PyPDF2.generic import NameObject, TextStringObject, BooleanObject, NumberObject, ArrayObject
 from reportlab.lib import colors
@@ -52,59 +54,61 @@ def generate_pdf(financial_info, association, preparer, tax_year):
         raise FileNotFoundError(f"PDF template not found at {template_path} or any alternative locations")
     
     # Generate output path using the same directory as the template
-    output_dir = template_path.parent.parent / 'temp_pdfs'
-    output_path = output_dir / f'form_1120h_{association.id}_{tax_year}.pdf'
+    output_dir = settings.PDF_TEMP_DIR
+    output_filename = f'form_1120h_{association.id}_{tax_year}.pdf'
+    output_path = output_dir / output_filename
     
     # Ensure the output directory exists
     os.makedirs(output_dir, exist_ok=True)
     logger.info(f"Using output path: {output_path}")
 
     try:
+        # Generate the PDF locally first
         generate_1120h_pdf(financial_info, association, preparer, str(template_path), str(output_path))
         
-        with open(output_path, 'rb') as pdf:
-            response = HttpResponse(pdf.read(), content_type='application/pdf')
-            response['Content-Disposition'] = f'attachment; filename=form_1120h_{association.id}_{tax_year}.pdf'
-        
-        # Clean up the temporary file
-        try:
-            os.remove(output_path)
-            logger.info(f"Temporary PDF file removed: {output_path}")
-        except Exception as e:
-            logger.warning(f"Could not remove temporary file: {str(e)}")
+        if settings.USE_AZURE_STORAGE:
+            # Upload to Azure Storage
+            azure_path = f'tax_returns/{output_filename}'
+            
+            # Read the generated PDF
+            with open(output_path, 'rb') as f:
+                file_content = f.read()
+            
+            # Save to Azure Storage
+            azure_file_path = default_storage.save(azure_path, ContentFile(file_content))
+            logger.info(f"PDF saved to Azure Storage at: {azure_file_path}")
+            
+            # Return the PDF as a response (from the local file)
+            with open(output_path, 'rb') as pdf:
+                response = HttpResponse(pdf.read(), content_type='application/pdf')
+                response['Content-Disposition'] = f'attachment; filename={output_filename}'
+                
+            # Clean up local file
+            try:
+                os.remove(output_path)
+                logger.info(f"Temporary PDF file removed: {output_path}")
+            except Exception as e:
+                logger.warning(f"Could not remove temporary file: {str(e)}")
+        else:
+            # Local file handling (unchanged)
+            with open(output_path, 'rb') as pdf:
+                response = HttpResponse(pdf.read(), content_type='application/pdf')
+                response['Content-Disposition'] = f'attachment; filename={output_filename}'
+            
+            # Clean up the temporary file
+            try:
+                os.remove(output_path)
+                logger.info(f"Temporary PDF file removed: {output_path}")
+            except Exception as e:
+                logger.warning(f"Could not remove temporary file: {str(e)}")
         
         return response
     except PermissionError:
         logger.error(f"Permission denied when writing to {output_path}")
         raise PermissionError(f"Permission denied when writing to {output_path}. Please check directory permissions.")
     except Exception as e:
-        logger.error(f"Error in PDF generation: {str(e)}")
+        logger.error(f"Error in PDF generation: {str(e)}", exc_info=True)
         raise
-
-logger = logging.getLogger(__name__)
-
-def to_pdf_object(value):
-    if isinstance(value, bool):
-        return BooleanObject(value)
-    elif isinstance(value, int):
-        return NumberObject(value)
-    elif isinstance(value, float):
-        return NumberObject(value)
-    elif isinstance(value, str):
-        return TextStringObject(value)
-    else:
-        return TextStringObject(str(value))
-
-def inspect_pdf_template(template_path):
-    reader = PdfReader(template_path)
-    logger.info(f"Inspecting PDF template: {template_path}")
-    logger.info(f"Number of pages: {len(reader.pages)}")
-    
-    for field_name, field in reader.get_fields().items():
-        rect = field.get('/Rect')
-        field_type = field.get('/FT')
-        logger.info(f"Field: {field_name}, Type: {field_type}, Rect: {rect}")
-
 
 FIELD_POSITIONS = {
     'f1_1': (75, 675),   # Name
@@ -146,21 +150,12 @@ FIELD_POSITIONS = {
     'f1_46': (270, 62), # Preparer's signature
 }
 
-
-
-
-
 NUMERIC_COLUMN_WIDTH = 80  # width in points
-
-def format_number(value):
-    """Format number without decimals and with commas for thousands."""
-    return f"{int(value):,}"
 
 def right_justify_text(can, text, x, y, width):
     text_width = pdfmetrics.stringWidth(text, 'Courier', 10)
     adjusted_x = x + width - text_width
     can.drawString(adjusted_x, y, text)
-
 
 def generate_1120h_pdf(financial_info, association, preparer, template_path, output_path):
     """Generate PDF and return HTTP response."""
@@ -224,6 +219,16 @@ def generate_1120h_pdf(financial_info, association, preparer, template_path, out
                 for page in extension_reader.pages:
                     writer.add_page(page)
                 logger.info(f"Extension PDF added from {extension_path}")
+            elif settings.USE_AZURE_STORAGE and default_storage.exists(financial_info['extension_info']['form_7004_url']):
+                # Try to get the extension from Azure Storage
+                try:
+                    azure_extension_content = default_storage.open(financial_info['extension_info']['form_7004_url']).read()
+                    extension_reader = PdfReader(BytesIO(azure_extension_content))
+                    for page in extension_reader.pages:
+                        writer.add_page(page)
+                    logger.info(f"Extension PDF added from Azure Storage")
+                except Exception as e:
+                    logger.warning(f"Could not add extension PDF from Azure Storage: {str(e)}")
             else:
                 logger.warning(f"Extension PDF file not found at {extension_path}")
 

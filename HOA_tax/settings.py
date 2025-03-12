@@ -38,18 +38,18 @@ INSTALLED_APPS = [
     'crispy_bootstrap5',
     'crispy_forms',
     'tax_form',
+    'storages',  # Add django-storages
 ]
 
 MIDDLEWARE = [
-    'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
-    'tax_form.middleware.AssociationSessionMiddleware',  # 
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    'tax_form.middleware.AssociationSessionMiddleware',  # <-- Moved after SessionMiddleware
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
@@ -78,9 +78,24 @@ WSGI_APPLICATION = 'HOA_tax.wsgi.application'
 
 # Database configuration
 import dj_database_url
-DATABASES = {
-    'default': dj_database_url.parse(env('DATABASE_URL'))
-}
+
+# Check if we're running in production or development
+if IS_PRODUCTION:
+    # Production database (from DATABASE_URL env var)
+    DATABASES = {
+        'default': dj_database_url.parse(env('DATABASE_URL'))
+    }
+else:
+    # Development database (SQLite)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+    # Optionally, you can override with DATABASE_URL if provided
+    if env('DATABASE_URL', default=None):
+        DATABASES['default'] = dj_database_url.parse(env('DATABASE_URL'))
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
@@ -110,30 +125,57 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-# Media files - Use local storage within the project directory
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media_files')
+# Azure Storage Configuration
+USE_AZURE_STORAGE = env.bool('USE_AZURE_STORAGE', IS_PRODUCTION)  # Default to using Azure in production
 
-# Create media directories if they don't exist
-os.makedirs(MEDIA_ROOT, exist_ok=True)
-os.makedirs(os.path.join(MEDIA_ROOT, 'completed_tax_returns'), exist_ok=True)
-os.makedirs(os.path.join(MEDIA_ROOT, 'extensions'), exist_ok=True)
-os.makedirs(os.path.join(MEDIA_ROOT, 'engagement_letters'), exist_ok=True)
-os.makedirs(os.path.join(MEDIA_ROOT, 'signed_engagement_letters'), exist_ok=True)
-
-# PDF paths - separate from media
-if DEBUG:
-    PDF_BASE = Path('/Users/Doug/Library/Mobile Documents/com~apple~CloudDocs/Dynamite Software Development/Dynamite Tax ')
-    PDF_TEMPLATE_DIR = PDF_BASE / 'tax_form' / 'pdf_templates'
-    PDF_TEMP_DIR = PDF_BASE / 'temp_pdfs'
-    # Create temp directory locally
+if USE_AZURE_STORAGE:
+    # Azure Storage Settings
+    AZURE_ACCOUNT_NAME = env('AZURE_ACCOUNT_NAME', default='dynamitetax')
+    AZURE_ACCOUNT_KEY = env('AZURE_ACCOUNT_KEY', default='')
+    AZURE_CONTAINER = env('AZURE_CONTAINER', default='media')
+    
+    # Configure the default storage
+    DEFAULT_FILE_STORAGE = 'storages.backends.azure_storage.AzureStorage'
+    
+    # Media files URL (this will be the base URL for accessing your files)
+    MEDIA_URL = f'https://{AZURE_ACCOUNT_NAME}.blob.core.windows.net/{AZURE_CONTAINER}/'
+    
+    # Optional: Set custom domain if you have one
+    # AZURE_CUSTOM_DOMAIN = 'cdn.yourdomain.com'
+    
+    # Optional: Set this to True if using CDN with HTTPS
+    AZURE_SSL = True
+    
+    # Optional: Set default ACL for new files
+    AZURE_DEFAULT_CONTENT_TYPE = 'application/octet-stream'
+    
+    # Create the temp_pdfs directory locally (still needed for temporary PDF generation)
+    PDF_TEMPLATE_DIR = Path('/opt/render/project/src/tax_form/pdf_templates') if IS_PRODUCTION else BASE_DIR / 'tax_form' / 'pdf_templates'
+    PDF_TEMP_DIR = Path('/opt/render/project/src/tax_form/temp_pdfs') if IS_PRODUCTION else BASE_DIR / 'tax_form' / 'temp_pdfs'
     os.makedirs(PDF_TEMP_DIR, exist_ok=True)
 else:
-    # For production on Render
-    PDF_TEMPLATE_DIR = Path('/opt/render/project/src/tax_form/pdf_templates')
-    PDF_TEMP_DIR = Path('/opt/render/project/src/tax_form/temp_pdfs')
-    # Only try to create this directory when running on Render
-    if os.path.exists('/opt/render/project/src'):
+    # Local media configuration
+    MEDIA_URL = '/media/'
+    MEDIA_ROOT = os.path.join(BASE_DIR, 'media_files')
+    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+    
+    # Create media directories if they don't exist
+    os.makedirs(MEDIA_ROOT, exist_ok=True)
+    os.makedirs(os.path.join(MEDIA_ROOT, 'completed_tax_returns'), exist_ok=True)
+    os.makedirs(os.path.join(MEDIA_ROOT, 'extensions'), exist_ok=True)
+    os.makedirs(os.path.join(MEDIA_ROOT, 'engagement_letters'), exist_ok=True)
+    os.makedirs(os.path.join(MEDIA_ROOT, 'signed_engagement_letters'), exist_ok=True)
+    
+    # PDF paths - separate from media
+    if DEBUG:
+        PDF_BASE = Path('/Users/Doug/Library/Mobile Documents/com~apple~CloudDocs/Dynamite Software Development/Dynamite Tax ')
+        PDF_TEMPLATE_DIR = PDF_BASE / 'tax_form' / 'pdf_templates'
+        PDF_TEMP_DIR = PDF_BASE / 'temp_pdfs'
+        # Create temp directory locally
+        os.makedirs(PDF_TEMP_DIR, exist_ok=True)
+    else:
+        PDF_TEMPLATE_DIR = BASE_DIR / 'tax_form' / 'pdf_templates'
+        PDF_TEMP_DIR = BASE_DIR / 'tax_form' / 'temp_pdfs'
         os.makedirs(PDF_TEMP_DIR, exist_ok=True)
 
 # Security settings for production
@@ -176,6 +218,10 @@ LOGGING = {
             'level': 'DEBUG',
             'propagate': True,
         },
+        'storages': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+        },
     },
     'root': {
         'handlers': ['console'],
@@ -188,5 +234,3 @@ SESSION_COOKIE_AGE = 86400  # Session lasts for 24 hours (in seconds)
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # Session survives browser close
 
 LOGIN_URL = '/admin/login/'
-
-DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'

@@ -77,17 +77,6 @@ CRISPY_TEMPLATE_PACK = "bootstrap5"
 WSGI_APPLICATION = 'HOA_tax.wsgi.application'
 
 # Database configuration
-# Local SQLite database - commented out for later use
-"""
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
-"""
-
-# Render PostgreSQL database
 import dj_database_url
 DATABASES = {
     'default': dj_database_url.parse(env('DATABASE_URL'))
@@ -121,39 +110,19 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-# Media files
-MEDIA_URL = '/media/'
-if IS_PRODUCTION:
-    # Use Render's persistent disk mount path for media files
-    MEDIA_ROOT = os.path.join('/data', 'media')
-else:
-    MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-
-# PDF paths - separate from media for better organization
+# Media and PDF paths - using the correct Render paths
 if DEBUG:
-    PDF_BASE = Path('/Users/Doug/Library/Mobile Documents/com~apple~CloudDocs/Dynamite Software Development/Dynamite Tax ')
-    PDF_TEMPLATE_DIR = PDF_BASE / 'tax_form' / 'pdf_templates'
-    PDF_TEMP_DIR = PDF_BASE / 'temp_pdfs'
+    # Local development settings
+    MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+    PDF_TEMPLATE_DIR = Path('/Users/Doug/Library/Mobile Documents/com~apple~CloudDocs/Dynamite Software Development/Dynamite Tax/tax_form/pdf_templates')
+    PDF_TEMP_DIR = Path('/Users/Doug/Library/Mobile Documents/com~apple~CloudDocs/Dynamite Software Development/Dynamite Tax/temp_pdfs')
 else:
-    # For production on Render, use /data for writeable storage
-    PDF_TEMPLATE_DIR = Path('/data/pdf_templates')
-    PDF_TEMP_DIR = Path('/data/temp_pdfs')
+    # Production settings - use Render's disk mounting system
+    MEDIA_ROOT = '/var/lib/render/disk'
+    PDF_TEMPLATE_DIR = Path('/var/lib/render/disk/pdf_templates')
+    PDF_TEMP_DIR = Path('/var/lib/render/disk/temp_pdfs')
 
-# Ensure media/storage directories exist and are writable
-try:
-    # Media directories for uploads
-    os.makedirs(MEDIA_ROOT, exist_ok=True)
-    os.makedirs(os.path.join(MEDIA_ROOT, 'completed_tax_returns'), exist_ok=True)
-    os.makedirs(os.path.join(MEDIA_ROOT, 'extensions'), exist_ok=True)
-    os.makedirs(os.path.join(MEDIA_ROOT, 'signed_engagement_letters'), exist_ok=True)
-    
-    # PDF directories
-    os.makedirs(PDF_TEMP_DIR, exist_ok=True)
-    os.makedirs(PDF_TEMPLATE_DIR, exist_ok=True)
-except Exception as e:
-    # Log errors but don't break app startup
-    import logging
-    logging.error(f"Error creating directories: {str(e)}")
+MEDIA_URL = '/media/'
 
 # Security settings for production
 if IS_PRODUCTION:
@@ -167,7 +136,7 @@ if IS_PRODUCTION:
     SECURE_REFERRER_POLICY = 'same-origin'
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
-    CSRF_TRUSTED_ORIGINS = ['https://dynamite-tax.onrender.com',]
+    CSRF_TRUSTED_ORIGINS = ['https://dynamite-tax.onrender.com']
 
 # Logging configuration
 LOGGING = {

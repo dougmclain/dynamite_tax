@@ -11,5 +11,5 @@ services:
         value: false
     disk:
       name: media
-      mountPath: /opt/render/project/media
+      mountPath: /var/lib/render/disk
       sizeGB: 10

@@ -110,13 +110,16 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-# Media files
+# Media files - Use local storage within the project directory
 MEDIA_URL = '/media/'
-if IS_PRODUCTION:
-    # Use Render's writable disk mount path with the nested media directory
-    MEDIA_ROOT = '/var/lib/render/disk/media'
-else:
-    MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media_files')
+
+# Create media directories if they don't exist
+os.makedirs(MEDIA_ROOT, exist_ok=True)
+os.makedirs(os.path.join(MEDIA_ROOT, 'completed_tax_returns'), exist_ok=True)
+os.makedirs(os.path.join(MEDIA_ROOT, 'extensions'), exist_ok=True)
+os.makedirs(os.path.join(MEDIA_ROOT, 'engagement_letters'), exist_ok=True)
+os.makedirs(os.path.join(MEDIA_ROOT, 'signed_engagement_letters'), exist_ok=True)
 
 # PDF paths - separate from media
 if DEBUG:
@@ -125,8 +128,11 @@ if DEBUG:
     PDF_TEMP_DIR = PDF_BASE / 'temp_pdfs'
 else:
     # For production on Render
-    PDF_TEMPLATE_DIR = Path('/var/lib/render/disk/pdf_templates')
-    PDF_TEMP_DIR = Path('/var/lib/render/disk/temp_pdfs')
+    PDF_TEMPLATE_DIR = Path('/opt/render/project/src/tax_form/pdf_templates')
+    PDF_TEMP_DIR = Path('/opt/render/project/src/tax_form/temp_pdfs')
+    # Create the temp directory if it doesn't exist
+    os.makedirs(PDF_TEMP_DIR, exist_ok=True)
+
 # Security settings for production
 if IS_PRODUCTION:
     CSRF_COOKIE_SECURE = True

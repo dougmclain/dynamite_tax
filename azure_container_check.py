@@ -1,9 +1,8 @@
-# azure_container_check.py
 import os
 import sys
 import django
 from django.conf import settings
-from azure.storage.blob import BlobServiceClient, BlobClient, PublicAccess
+from azure.storage.blob import BlobServiceClient, ContentSettings
 
 # Initialize Django
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -27,9 +26,10 @@ def check_and_fix_container():
         print(f"Public Access Type: {properties.public_access}")
         
         # If container doesn't have public access, set it
-        if properties.public_access != PublicAccess.Blob:
+        if properties.public_access != 'blob':  # PublicAccess.Blob
             print("Setting container public access to 'Blob'...")
-            container_client.set_container_access_policy(signed_identifiers={}, public_access=PublicAccess.Blob)
+            # For newer Azure SDK versions:
+            container_client.set_container_access_policy(public_access='blob')
             print("Container public access updated successfully")
         else:
             print("Container already has correct public access settings")
@@ -38,8 +38,15 @@ def check_and_fix_container():
         test_content = b"This is a test file with public access settings."
         blob_name = "public_access_test.txt"
         
+        # Create proper ContentSettings object
+        content_settings = ContentSettings(
+            content_type="text/plain",
+            cache_control="public, max-age=86400"
+        )
+        
+        # Upload the blob with content settings
         blob_client = container_client.get_blob_client(blob_name)
-        blob_client.upload_blob(test_content, overwrite=True, content_settings={"cache_control": "public, max-age=86400", "content_type": "text/plain"})
+        blob_client.upload_blob(test_content, overwrite=True, content_settings=content_settings)
         
         print(f"Test blob uploaded to: {blob_client.url}")
         print("Try accessing this URL in your browser to verify public access")

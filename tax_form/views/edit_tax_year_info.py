@@ -108,8 +108,9 @@ class EditTaxYearInfoView(LoginRequiredMixin, View):
                         logger.warning(f"Could not delete previous tax return file: {e}")
                 
                 # Save using default_storage (which will be Azure in production)
-                file_path = f"completed_tax_returns/{new_filename}"
+                file_path = new_filename  # Let Django's upload_to handle the folder prefix
                 completed_tax_return.tax_return_pdf.save(file_path, tax_return_file)
+
                 logger.info(f"Saved tax return file to: {completed_tax_return.tax_return_pdf.name}")
 
             extension.save()

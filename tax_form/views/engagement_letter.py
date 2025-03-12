@@ -21,6 +21,21 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+# Helper function for creating standardized filenames
+def create_engagement_letter_filename(association, tax_year, signed=False):
+    """Create a standardized filename for engagement letters."""
+    # Create a safe name from the association name
+    safe_name = ''.join(c for c in association.association_name if c.isalnum() or c.isspace())
+    safe_name = safe_name.replace(' ', '_')
+    if len(safe_name) > 30:
+        safe_name = safe_name[:30]
+    
+    # Add 'signed_' prefix if this is a signed version
+    prefix = 'signed_' if signed else ''
+    
+    # Return the formatted filename
+    return f"{safe_name}_{prefix}eng_letter_{tax_year}.pdf"
+
 class EngagementLetterView(LoginRequiredMixin, View):
     template_name = 'tax_form/engagement_letter.html'
     
@@ -58,8 +73,8 @@ class EngagementLetterView(LoginRequiredMixin, View):
             # Generate PDF
             pdf_response = self.generate_pdf(engagement_letter)
             
-            # Save PDF file
-            pdf_filename = f"engagement_letter_{association.id}_{tax_year}.pdf"
+            # Save PDF file with improved filename
+            pdf_filename = create_engagement_letter_filename(association, tax_year)
             engagement_letter.pdf_file.save(pdf_filename, ContentFile(pdf_response.content))
             
             messages.success(request, f'Engagement letter for {association.association_name} - {tax_year} created successfully.')
@@ -196,12 +211,15 @@ class EngagementLetterView(LoginRequiredMixin, View):
         # Build the PDF
         doc.build(elements)
         
-        # Create a response
+        # Create a response with the formatted filename
         pdf = buffer.getvalue()
         buffer.close()
         response = HttpResponse(content_type='application/pdf')
         response.write(pdf)
-        response['Content-Disposition'] = f'inline; filename=engagement_letter_{engagement_letter.association.id}_{engagement_letter.tax_year}.pdf'
+        
+        # Use consistent filename format
+        pdf_filename = create_engagement_letter_filename(engagement_letter.association, engagement_letter.tax_year)
+        response['Content-Disposition'] = f'inline; filename={pdf_filename}'
         
         return response
 
@@ -216,8 +234,8 @@ class DownloadEngagementLetterView(LoginRequiredMixin, View):
             # Generate PDF
             pdf_response = EngagementLetterView().generate_pdf(engagement_letter)
             
-            # Save PDF file
-            pdf_filename = f"engagement_letter_{engagement_letter.association.id}_{engagement_letter.tax_year}.pdf"
+            # Save PDF file with improved filename
+            pdf_filename = create_engagement_letter_filename(engagement_letter.association, engagement_letter.tax_year)
             engagement_letter.pdf_file.save(pdf_filename, ContentFile(pdf_response.content))
         
         # Return PDF file
@@ -289,8 +307,8 @@ class ProcessSignedEngagementLetterView(LoginRequiredMixin, View):
                 if date_signed:
                     engagement_letter.date_signed = date_signed
                 
-                # Save the signed PDF
-                pdf_filename = f"signed_engagement_letter_{engagement_letter.association.id}_{engagement_letter.tax_year}.pdf"
+                # Save the signed PDF with improved filename
+                pdf_filename = create_engagement_letter_filename(engagement_letter.association, engagement_letter.tax_year, signed=True)
                 engagement_letter.signed_pdf.save(pdf_filename, signed_pdf)
                 
                 # Update status
@@ -335,8 +353,8 @@ class UploadSignedEngagementLetterView(LoginRequiredMixin, View):
                 if date_signed:
                     engagement_letter.date_signed = date_signed
                 
-                # Save the signed PDF
-                pdf_filename = f"signed_engagement_letter_{engagement_letter.association.id}_{engagement_letter.tax_year}.pdf"
+                # Save the signed PDF with improved filename
+                pdf_filename = create_engagement_letter_filename(engagement_letter.association, engagement_letter.tax_year, signed=True)
                 engagement_letter.signed_pdf.save(pdf_filename, signed_pdf)
                 
                 # Update status

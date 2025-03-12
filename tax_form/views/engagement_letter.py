@@ -70,14 +70,22 @@ class EngagementLetterView(LoginRequiredMixin, View):
                 engagement_letter.price = form.cleaned_data['price']
                 engagement_letter.save()
             
-            # Generate PDF
-            pdf_response = self.generate_pdf(engagement_letter)
+            try:
+                # Generate PDF
+                pdf_response = self.generate_pdf(engagement_letter)
+                
+                # Display success message
+                messages.success(request, f'Engagement letter for {association.association_name} - {tax_year} created successfully.')
+                
+                # Return the PDF directly
+                pdf_filename = create_engagement_letter_filename(association, tax_year)
+                response = HttpResponse(pdf_response.content, content_type='application/pdf')
+                response['Content-Disposition'] = f'attachment; filename={pdf_filename}'
+                return response
+            except Exception as e:
+                logger.error(f"Error generating PDF: {str(e)}", exc_info=True)
+                messages.error(request, f"Error generating PDF: {str(e)}")
             
-            # Save PDF file with improved filename
-            pdf_filename = create_engagement_letter_filename(association, tax_year)
-            engagement_letter.pdf_file.save(pdf_filename, ContentFile(pdf_response.content))
-            
-            messages.success(request, f'Engagement letter for {association.association_name} - {tax_year} created successfully.')
             return redirect('engagement_letter')
         
         engagement_letters = EngagementLetter.objects.all().order_by('-tax_year', 'association__association_name')
@@ -229,18 +237,13 @@ class DownloadEngagementLetterView(LoginRequiredMixin, View):
     def get(self, request, letter_id):
         engagement_letter = get_object_or_404(EngagementLetter, id=letter_id)
         
-        # Check if PDF exists, if not, generate it
-        if not engagement_letter.pdf_file:
-            # Generate PDF
-            pdf_response = EngagementLetterView().generate_pdf(engagement_letter)
-            
-            # Save PDF file with improved filename
-            pdf_filename = create_engagement_letter_filename(engagement_letter.association, engagement_letter.tax_year)
-            engagement_letter.pdf_file.save(pdf_filename, ContentFile(pdf_response.content))
+        # Generate PDF
+        pdf_response = EngagementLetterView().generate_pdf(engagement_letter)
         
-        # Return PDF file
-        response = HttpResponse(engagement_letter.pdf_file, content_type='application/pdf')
-        response['Content-Disposition'] = f'attachment; filename="{os.path.basename(engagement_letter.pdf_file.name)}"'
+        # Return PDF directly as a response
+        pdf_filename = create_engagement_letter_filename(engagement_letter.association, engagement_letter.tax_year)
+        response = HttpResponse(pdf_response.content, content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="{pdf_filename}"'
         
         return response
 
@@ -254,12 +257,18 @@ class DeleteEngagementLetterView(LoginRequiredMixin, View):
         
         # Delete the PDF files if they exist
         if engagement_letter.pdf_file:
-            if os.path.exists(engagement_letter.pdf_file.path):
-                os.remove(engagement_letter.pdf_file.path)
+            try:
+                if os.path.exists(engagement_letter.pdf_file.path):
+                    os.remove(engagement_letter.pdf_file.path)
+            except:
+                logger.warning(f"Could not delete file: {engagement_letter.pdf_file.path}")
         
         if engagement_letter.signed_pdf:
-            if os.path.exists(engagement_letter.signed_pdf.path):
-                os.remove(engagement_letter.signed_pdf.path)
+            try:
+                if os.path.exists(engagement_letter.signed_pdf.path):
+                    os.remove(engagement_letter.signed_pdf.path)
+            except:
+                logger.warning(f"Could not delete file: {engagement_letter.signed_pdf.path}")
         
         # Delete the database record
         engagement_letter.delete()
@@ -278,52 +287,6 @@ class UploadSignedEngagementLetterFormView(LoginRequiredMixin, View):
             'today': timezone.now().date()
         }
         return render(request, self.template_name, context)
-
-class ProcessSignedEngagementLetterView(LoginRequiredMixin, View):
-    """View to handle the upload of a signed engagement letter"""
-    
-    def post(self, request, letter_id):
-        engagement_letter = get_object_or_404(EngagementLetter, id=letter_id)
-        
-        # Debug information
-        logger.debug(f"Received upload request for letter ID: {letter_id}")
-        logger.debug(f"Files in request: {list(request.FILES.keys())}")
-        logger.debug(f"POST data keys: {list(request.POST.keys())}")
-        
-        if 'signed_pdf' in request.FILES:
-            # Get form data
-            signed_pdf = request.FILES['signed_pdf']
-            signed_by = request.POST.get('signed_by', '')
-            signer_title = request.POST.get('signer_title', '')
-            date_signed = request.POST.get('date_signed')
-            
-            logger.debug(f"Uploaded file: {signed_pdf.name}, size: {signed_pdf.size}")
-            
-            try:
-                # Update the engagement letter
-                engagement_letter.signed_by = signed_by
-                engagement_letter.signer_title = signer_title
-                
-                if date_signed:
-                    engagement_letter.date_signed = date_signed
-                
-                # Save the signed PDF with improved filename
-                pdf_filename = create_engagement_letter_filename(engagement_letter.association, engagement_letter.tax_year, signed=True)
-                engagement_letter.signed_pdf.save(pdf_filename, signed_pdf)
-                
-                # Update status
-                engagement_letter.status = 'signed'
-                engagement_letter.save()
-                
-                messages.success(request, f'Signed engagement letter for {engagement_letter.association.association_name} uploaded successfully.')
-            except Exception as e:
-                logger.error(f"Error saving signed PDF: {str(e)}", exc_info=True)
-                messages.error(request, f'Error saving signed PDF: {str(e)}')
-        else:
-            logger.warning("No file found in request.FILES")
-            messages.error(request, 'No file was uploaded. Please select a PDF file.')
-            
-        return redirect('engagement_letter')
 
 class UploadSignedEngagementLetterView(LoginRequiredMixin, View):
     """View to handle the upload of a signed engagement letter"""
@@ -353,18 +316,23 @@ class UploadSignedEngagementLetterView(LoginRequiredMixin, View):
                 if date_signed:
                     engagement_letter.date_signed = date_signed
                 
-                # Save the signed PDF with improved filename
-                pdf_filename = create_engagement_letter_filename(engagement_letter.association, engagement_letter.tax_year, signed=True)
-                engagement_letter.signed_pdf.save(pdf_filename, signed_pdf)
+                # Get file data to memory
+                pdf_data = signed_pdf.read()
                 
                 # Update status
                 engagement_letter.status = 'signed'
                 engagement_letter.save()
                 
                 messages.success(request, f'Signed engagement letter for {engagement_letter.association.association_name} uploaded successfully.')
+                
+                # Return the uploaded PDF
+                pdf_filename = create_engagement_letter_filename(engagement_letter.association, engagement_letter.tax_year, signed=True)
+                response = HttpResponse(pdf_data, content_type='application/pdf')
+                response['Content-Disposition'] = f'attachment; filename="{pdf_filename}"'
+                return response
             except Exception as e:
-                logger.error(f"Error saving signed PDF: {str(e)}", exc_info=True)
-                messages.error(request, f'Error saving signed PDF: {str(e)}')
+                logger.error(f"Error processing signed PDF: {str(e)}", exc_info=True)
+                messages.error(request, f'Error processing signed PDF: {str(e)}')
         else:
             logger.warning("No file found in request.FILES")
             messages.error(request, 'No file was uploaded. Please select a PDF file.')

@@ -4,6 +4,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from ..models import Association, Financial, Extension, CompletedTaxReturn, EngagementLetter
 from django.utils import timezone
 from django.db.models import Min, Max, Count, Q
+from django.conf import settings
 import logging
 
 logger = logging.getLogger(__name__)
@@ -45,6 +46,12 @@ class DashboardView(LoginRequiredMixin, View):
         ).count()
         unfiled_returns = total_associations - filed_returns
 
+        # Get signed engagement letters
+        signed_engagement_letters = EngagementLetter.objects.filter(
+            tax_year=selected_year,
+            status='signed'
+        ).count()
+
         dashboard_data = []
 
         for association in associations:
@@ -52,22 +59,19 @@ class DashboardView(LoginRequiredMixin, View):
             extension = Extension.objects.filter(financial=financial).first() if financial else None
             completed_tax_return = CompletedTaxReturn.objects.filter(financial=financial).first() if financial else None
             engagement_letter = EngagementLetter.objects.filter(association=association, tax_year=selected_year).first()
-            # Check if files exist before including URLs
+            
+            # Check if files exist and generate direct Azure URLs
             extension_file_url = None
-            if extension and extension.form_7004:
-                try:
-                    if extension.form_7004.storage.exists(extension.form_7004.name):
-                        extension_file_url = extension.form_7004.url
-                except Exception as e:
-                    logger.error(f"Error checking extension file: {e}")
-
+            if extension and extension.form_7004 and extension.form_7004.name:
+                extension_file_url = f"https://{settings.AZURE_ACCOUNT_NAME}.blob.core.windows.net/{settings.AZURE_CONTAINER}/{extension.form_7004.name}"
+                
             tax_return_file_url = None
-            if completed_tax_return and completed_tax_return.tax_return_pdf:
-                try:
-                    if completed_tax_return.tax_return_pdf.storage.exists(completed_tax_return.tax_return_pdf.name):
-                        tax_return_file_url = completed_tax_return.tax_return_pdf.url
-                except Exception as e:
-                    logger.error(f"Error checking tax return file: {e}")
+            if completed_tax_return and completed_tax_return.tax_return_pdf and completed_tax_return.tax_return_pdf.name:
+                tax_return_file_url = f"https://{settings.AZURE_ACCOUNT_NAME}.blob.core.windows.net/{settings.AZURE_CONTAINER}/{completed_tax_return.tax_return_pdf.name}"
+            
+            engagement_letter_url = None
+            if engagement_letter and engagement_letter.signed_pdf and engagement_letter.signed_pdf.name:
+                engagement_letter_url = f"https://{settings.AZURE_ACCOUNT_NAME}.blob.core.windows.net/{settings.AZURE_CONTAINER}/{engagement_letter.signed_pdf.name}"
 
             try:
                 fiscal_year_end = association.get_fiscal_year_end(selected_year)
@@ -84,6 +88,8 @@ class DashboardView(LoginRequiredMixin, View):
                 'tax_return_filed': completed_tax_return.return_filed if completed_tax_return else False,
                 'tax_return_prepared_date': completed_tax_return.date_prepared if completed_tax_return and completed_tax_return.return_filed else None,
                 'tax_return_file_url': tax_return_file_url,
+                'engagement_letter': engagement_letter,
+                'engagement_letter_url': engagement_letter_url,
             })
 
         context = {
@@ -93,5 +99,6 @@ class DashboardView(LoginRequiredMixin, View):
             'total_associations': total_associations,
             'filed_returns': filed_returns,
             'unfiled_returns': unfiled_returns,
+            'signed_engagement_letters': signed_engagement_letters,
         }
         return render(request, self.template_name, context)

@@ -18,6 +18,7 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, Tabl
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import inch
 import logging
+from azure.storage.blob import BlobServiceClient
 
 logger = logging.getLogger(__name__)
 
@@ -276,22 +277,21 @@ class DeleteEngagementLetterView(LoginRequiredMixin, View):
         messages.success(request, f'Engagement letter for {association_name} - {tax_year} deleted successfully.')
         return redirect('engagement_letter')
 
-class UploadSignedEngagementLetterFormView(LoginRequiredMixin, View):
-    """View to show the form for uploading a signed engagement letter"""
+class UploadSignedEngagementLetterView(LoginRequiredMixin, View):
+    """View to handle both showing and processing the upload form"""
     template_name = 'tax_form/upload_signed_engagement_letter.html'
     
     def get(self, request, letter_id):
+        """Display the upload form"""
         engagement_letter = get_object_or_404(EngagementLetter, id=letter_id)
         context = {
             'letter': engagement_letter,
             'today': timezone.now().date()
         }
         return render(request, self.template_name, context)
-
-class UploadSignedEngagementLetterView(LoginRequiredMixin, View):
-    """View to handle the upload of a signed engagement letter"""
     
     def post(self, request, letter_id):
+        """Process the upload form"""
         engagement_letter = get_object_or_404(EngagementLetter, id=letter_id)
         
         # Debug information
@@ -318,40 +318,79 @@ class UploadSignedEngagementLetterView(LoginRequiredMixin, View):
                 else:
                     engagement_letter.date_signed = timezone.now().date()
                 
-                # Store the file using consistent naming
-                pdf_filename = create_engagement_letter_filename(
-                    engagement_letter.association, 
-                    engagement_letter.tax_year, 
-                    signed=True
-                )
+                # Create a custom filename for the PDF
+                safe_name = ''.join(c for c in engagement_letter.association.association_name if c.isalnum() or c.isspace())
+                safe_name = safe_name.replace(' ', '_')
+                if len(safe_name) > 30:
+                    safe_name = safe_name[:30]
                 
-                # Get file data to memory
-                pdf_data = signed_pdf.read()
+                # Full path for the blob
+                blob_path = f"signed_engagement_letters/{safe_name}_signed_eng_letter_{engagement_letter.tax_year}.pdf"
                 
-                # Save the file to the model's FileField
-                engagement_letter.signed_pdf.save(
-                    pdf_filename,
-                    ContentFile(pdf_data),
-                    save=False
-                )
+                # Read file content
+                file_content = signed_pdf.read()
                 
-                # Update status and save
+                # Connect to Azure directly
+                connection_string = f"DefaultEndpointsProtocol=https;AccountName={settings.AZURE_ACCOUNT_NAME};AccountKey={settings.AZURE_ACCOUNT_KEY};EndpointSuffix=core.windows.net"
+                blob_service_client = BlobServiceClient.from_connection_string(connection_string)
+                container_client = blob_service_client.get_container_client(settings.AZURE_CONTAINER)
+                
+                # Create content settings
+                content_settings = None
+                try:
+                    from azure.storage.blob import ContentSettings
+                    content_settings = ContentSettings(
+                        content_type="application/pdf",
+                        cache_control="public, max-age=86400"
+                    )
+                except ImportError:
+                    logger.warning("ContentSettings import failed, uploading without content settings")
+                
+                # Upload directly to Azure
+                blob_client = container_client.get_blob_client(blob_path)
+                if content_settings:
+                    blob_client.upload_blob(file_content, overwrite=True, content_settings=content_settings)
+                else:
+                    blob_client.upload_blob(file_content, overwrite=True)
+                
+                # Store the blob path in the model
+                engagement_letter.signed_pdf = blob_path
+                logger.info(f"Uploaded signed engagement letter to Azure: {blob_path}")
+                
+                # Get the direct URL
+                full_url = f"https://{settings.AZURE_ACCOUNT_NAME}.blob.core.windows.net/{settings.AZURE_CONTAINER}/{blob_path}"
+                logger.debug(f"Signed engagement letter URL: {full_url}")
+                
+                # Update status
                 engagement_letter.status = 'signed'
                 engagement_letter.save()
                 
                 messages.success(request, f'Signed engagement letter for {engagement_letter.association.association_name} uploaded successfully.')
                 
-                # Redirect back to the engagement letter list instead of returning the PDF
+                # Redirect back to engagement letters list
                 return redirect('engagement_letter')
-                
             except Exception as e:
                 logger.error(f"Error processing signed PDF: {str(e)}", exc_info=True)
                 messages.error(request, f'Error processing signed PDF: {str(e)}')
+                
+                # If there's an error, re-render the form
+                context = {
+                    'letter': engagement_letter,
+                    'today': timezone.now().date(),
+                    'error': str(e)
+                }
+                return render(request, self.template_name, context)
         else:
             logger.warning("No file found in request.FILES")
             messages.error(request, 'No file was uploaded. Please select a PDF file.')
             
-        return redirect('engagement_letter')
+            # Re-render the form with error
+            context = {
+                'letter': engagement_letter,
+                'today': timezone.now().date(),
+                'error': 'No file was uploaded. Please select a PDF file.'
+            }
+            return render(request, self.template_name, context)
 
 class MarkEngagementLetterSentView(LoginRequiredMixin, View):
     """View to mark an engagement letter as sent"""

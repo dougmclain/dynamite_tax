@@ -179,3 +179,5 @@ SESSION_COOKIE_AGE = 86400  # Session lasts for 24 hours (in seconds)
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # Session survives browser close
 
 LOGIN_URL = '/admin/login/'
+
+DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'

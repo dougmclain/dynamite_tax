@@ -3,9 +3,8 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import Http404
+from django.conf import settings
 from ..models import Association, Financial, Extension, CompletedTaxReturn
-from django.core.files.storage import default_storage
 import logging
 import os
 
@@ -69,14 +68,22 @@ class EditTaxYearInfoView(LoginRequiredMixin, View):
                 file_ext = os.path.splitext(extension_file.name)[1].lower()
                 new_filename = f"{safe_name}_extension_{tax_year}{file_ext}"
                 
-                # Save with the new filename
+                # Delete previous file if it exists
                 if extension.form_7004:
                     try:
-                        extension.form_7004.delete()
-                    except:
-                        logger.warning(f"Could not delete previous extension file")
-                        
-                extension.form_7004.save(new_filename, extension_file)
+                        # Check if file exists before trying to delete
+                        if extension.form_7004 and hasattr(extension.form_7004, 'path') and os.path.exists(extension.form_7004.path):
+                            extension.form_7004.delete(save=False)
+                    except Exception as e:
+                        logger.warning(f"Could not delete previous extension file: {e}")
+                
+                # Ensure directory exists
+                extensions_dir = os.path.join(settings.MEDIA_ROOT, 'extensions')
+                os.makedirs(extensions_dir, exist_ok=True)
+                
+                # Use the relative path (just the filename part)
+                extension.form_7004.save(f"extensions/{new_filename}", extension_file)
+                logger.info(f"Saved extension file to: {extension.form_7004.path}")
 
             if 'tax_return_file' in request.FILES:
                 # Create a safe filename
@@ -90,14 +97,22 @@ class EditTaxYearInfoView(LoginRequiredMixin, View):
                 file_ext = os.path.splitext(tax_return_file.name)[1].lower()
                 new_filename = f"{safe_name}_tax_return_{tax_year}{file_ext}"
                 
-                # Save with the new filename
+                # Delete previous file if it exists
                 if completed_tax_return.tax_return_pdf:
                     try:
-                        completed_tax_return.tax_return_pdf.delete()
-                    except:
-                        logger.warning(f"Could not delete previous tax return file")
-                        
-                completed_tax_return.tax_return_pdf.save(new_filename, tax_return_file)
+                        # Check if file exists before trying to delete
+                        if completed_tax_return.tax_return_pdf and hasattr(completed_tax_return.tax_return_pdf, 'path') and os.path.exists(completed_tax_return.tax_return_pdf.path):
+                            completed_tax_return.tax_return_pdf.delete(save=False)
+                    except Exception as e:
+                        logger.warning(f"Could not delete previous tax return file: {e}")
+                
+                # Ensure directory exists
+                returns_dir = os.path.join(settings.MEDIA_ROOT, 'completed_tax_returns')
+                os.makedirs(returns_dir, exist_ok=True)
+                
+                # Use the relative path (just the filename part)
+                completed_tax_return.tax_return_pdf.save(f"completed_tax_returns/{new_filename}", tax_return_file)
+                logger.info(f"Saved tax return file to: {completed_tax_return.tax_return_pdf.path}")
 
             extension.save()
             completed_tax_return.save()

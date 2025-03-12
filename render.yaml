@@ -2,7 +2,7 @@ services:
   - type: web
     name: hoatax
     env: python
-    buildCommand: pip install -r requirements.txt
+    buildCommand: chmod +x build.sh && ./build.sh
     startCommand: gunicorn HOA_tax.wsgi:application
     envVars:
       - key: PYTHON_VERSION

@@ -6,12 +6,14 @@ set -o errexit
 pip install -r requirements.txt
 
 # Create necessary directories on the persistent disk
-echo "Creating necessary directories..."
+# Create necessary directories on the persistent disk
+mkdir -p /var/lib/render/disk/media
+mkdir -p /var/lib/render/disk/media/engagement_letters
+mkdir -p /var/lib/render/disk/media/signed_engagement_letters
+mkdir -p /var/lib/render/disk/media/extensions
+mkdir -p /var/lib/render/disk/media/completed_tax_returns
 mkdir -p /var/lib/render/disk/pdf_templates
 mkdir -p /var/lib/render/disk/temp_pdfs
-mkdir -p /var/lib/render/disk/extensions
-mkdir -p /var/lib/render/disk/completed_tax_returns
-mkdir -p /var/lib/render/disk/signed_engagement_letters
 
 # Copy PDF templates from repository to persistent disk
 echo "Copying PDF templates from repository..."

@@ -122,8 +122,13 @@ else:
     PDF_TEMPLATE_DIR = Path('/var/lib/render/disk/pdf_templates')
     PDF_TEMP_DIR = Path('/var/lib/render/disk/temp_pdfs')
 
+# Media files
 MEDIA_URL = '/media/'
-
+if IS_PRODUCTION:
+    # Use Render's writable disk mounting path
+    MEDIA_ROOT = '/var/lib/render/disk/media'
+else:
+    MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # Security settings for production
 if IS_PRODUCTION:
     CSRF_COOKIE_SECURE = True

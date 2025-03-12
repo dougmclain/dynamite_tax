@@ -57,62 +57,68 @@ class EditTaxYearInfoView(LoginRequiredMixin, View):
             completed_tax_return.return_filed = 'tax_return_filed' in request.POST
             completed_tax_return.date_prepared = request.POST.get('tax_return_filed_date') or None
 
-            # Handle file uploads using default_storage (which is Azure in production)
+            # Handle file uploads using default_storage (Azure in production)
             if 'extension_file' in request.FILES:
-                # Create a safe filename
                 extension_file = request.FILES['extension_file']
+                logger.debug(f"Received extension file with size: {extension_file.size} bytes")
+
+                # Create a safe filename
                 safe_name = ''.join(c for c in association.association_name if c.isalnum() or c.isspace())
                 safe_name = safe_name.replace(' ', '_')
                 if len(safe_name) > 30:
                     safe_name = safe_name[:30]
-                    
-                # Format the filename
+                
                 file_ext = os.path.splitext(extension_file.name)[1].lower()
                 new_filename = f"{safe_name}_extension_{tax_year}{file_ext}"
+                logger.debug(f"Computed new filename for extension: {new_filename}")
                 
                 # Delete previous file if it exists
                 if extension.form_7004:
                     try:
-                        # Use default_storage to check and delete files
                         if default_storage.exists(extension.form_7004.name):
                             default_storage.delete(extension.form_7004.name)
                             logger.info(f"Deleted previous extension file: {extension.form_7004.name}")
                     except Exception as e:
                         logger.warning(f"Could not delete previous extension file: {e}")
                 
-                # Save using default_storage (which will be Azure in production)
+                # Save file without manually prepending folder (upload_to in model will handle it)
                 extension.form_7004.save(new_filename, extension_file)
-
-
                 logger.info(f"Saved extension file to: {extension.form_7004.name}")
+                
+                # Verify existence immediately
+                exists = default_storage.exists(extension.form_7004.name)
+                logger.debug(f"Extension file exists after saving? {exists}")
+                if not exists:
+                    logger.error("Extension file does not exist in storage after saving.")
 
             if 'tax_return_file' in request.FILES:
-                # Create a safe filename
                 tax_return_file = request.FILES['tax_return_file']
+                logger.debug(f"Received tax return file with size: {tax_return_file.size} bytes")
+
                 safe_name = ''.join(c for c in association.association_name if c.isalnum() or c.isspace())
                 safe_name = safe_name.replace(' ', '_')
                 if len(safe_name) > 30:
                     safe_name = safe_name[:30]
-                    
-                # Format the filename
+                
                 file_ext = os.path.splitext(tax_return_file.name)[1].lower()
                 new_filename = f"{safe_name}_tax_return_{tax_year}{file_ext}"
+                logger.debug(f"Computed new filename for tax return: {new_filename}")
                 
-                # Delete previous file if it exists
                 if completed_tax_return.tax_return_pdf:
                     try:
-                        # Using default_storage which will be Azure in production
                         if default_storage.exists(completed_tax_return.tax_return_pdf.name):
                             default_storage.delete(completed_tax_return.tax_return_pdf.name)
                             logger.info(f"Deleted previous tax return file: {completed_tax_return.tax_return_pdf.name}")
                     except Exception as e:
                         logger.warning(f"Could not delete previous tax return file: {e}")
                 
-                # Save using default_storage (which will be Azure in production)
                 completed_tax_return.tax_return_pdf.save(new_filename, tax_return_file)
-
-
                 logger.info(f"Saved tax return file to: {completed_tax_return.tax_return_pdf.name}")
+
+                exists = default_storage.exists(completed_tax_return.tax_return_pdf.name)
+                logger.debug(f"Tax return file exists after saving? {exists}")
+                if not exists:
+                    logger.error("Tax return file does not exist in storage after saving.")
 
             extension.save()
             completed_tax_return.save()

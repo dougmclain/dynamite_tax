@@ -1,5 +1,6 @@
 import os
 import logging
+from pathlib import Path
 from datetime import date
 from io import BytesIO
 from django.http import HttpResponse
@@ -23,97 +24,62 @@ __all__ = ['generate_pdf']
 
 def generate_pdf(financial_info, association, preparer, tax_year):
     """Generate PDF and return HTTP response."""
-    # Use tax year specific template
+    # Create a list of possible template locations
     template_name = f'template_1120h_{tax_year}.pdf'
-    template_path = settings.PDF_TEMPLATE_DIR / template_name
+    possible_paths = [
+        settings.PDF_TEMPLATE_DIR / template_name,
+        Path('/var/lib/render/disk/pdf_templates') / template_name,
+        Path('/media/pdf_templates') / template_name,
+        Path('/data/pdf_templates') / template_name,
+        Path(settings.BASE_DIR) / 'pdf_templates' / template_name,
+        Path(settings.BASE_DIR) / 'tax_form' / 'pdf_templates' / template_name,
+    ]
     
-    # Generate output path
-    output_path = settings.PDF_TEMP_DIR / f'form_1120h_{association.id}_{tax_year}.pdf'
-
-    # Enhanced debugging information
-    logger.info(f"PDF Generation - Debug Information:")
-    logger.info(f"  PDF_TEMPLATE_DIR: {settings.PDF_TEMPLATE_DIR}")
-    logger.info(f"  PDF_TEMP_DIR: {settings.PDF_TEMP_DIR}")
-    logger.info(f"  Template name: {template_name}")
-    logger.info(f"  Full template path: {template_path}")
-    logger.info(f"  Output path: {output_path}")
+    # Try each path until we find one that exists
+    template_path = None
+    for path in possible_paths:
+        logger.info(f"Checking for template at: {path}")
+        if path.exists():
+            template_path = path
+            logger.info(f"Found template at: {path}")
+            break
     
-    # Check if template exists and log detailed information
-    if not template_path.exists():
-        logger.error(f"PDF template not found at {template_path}")
-        
-        # Try to list contents of the directory
-        try:
-            template_dir_contents = list(settings.PDF_TEMPLATE_DIR.glob('*.pdf'))
-            logger.info(f"PDF_TEMPLATE_DIR contents: {template_dir_contents}")
-        except Exception as dir_error:
-            logger.error(f"Error listing template directory: {str(dir_error)}")
-            
-        # Check if the directory itself exists
-        logger.info(f"Template directory exists: {os.path.exists(str(settings.PDF_TEMPLATE_DIR))}")
-        
-        # Check if parent directories exist
-        parent_dir = os.path.dirname(str(settings.PDF_TEMPLATE_DIR))
-        logger.info(f"Parent directory '{parent_dir}' exists: {os.path.exists(parent_dir)}")
-        
-        raise FileNotFoundError(f"PDF template not found at {template_path}")
-
-    # If template exists, log additional information about it
-    try:
-        template_size = os.path.getsize(str(template_path))
-        template_mode = oct(os.stat(str(template_path)).st_mode)[-3:]
-        logger.info(f"Template file exists - Size: {template_size} bytes, Permissions: {template_mode}")
-    except Exception as stat_error:
-        logger.error(f"Error getting template file stats: {str(stat_error)}")
-
-    # Ensure the temporary directory exists
-    try:
-        os.makedirs(settings.PDF_TEMP_DIR, exist_ok=True)
-        temp_dir_mode = oct(os.stat(str(settings.PDF_TEMP_DIR)).st_mode)[-3:]
-        logger.info(f"Temporary directory ensured at: {settings.PDF_TEMP_DIR} with permissions: {temp_dir_mode}")
-    except Exception as dir_error:
-        logger.error(f"Failed to create temporary directory: {str(dir_error)}")
-        raise
+    # If no template is found, use the first path for error reporting
+    if template_path is None:
+        template_path = possible_paths[0]
+        logger.error(f"PDF template not found at any of the searched locations")
+        logger.error(f"Searched paths: {possible_paths}")
+        raise FileNotFoundError(f"PDF template not found at {template_path} or any alternative locations")
+    
+    # Generate output path using the same directory as the template
+    output_dir = template_path.parent.parent / 'temp_pdfs'
+    output_path = output_dir / f'form_1120h_{association.id}_{tax_year}.pdf'
+    
+    # Ensure the output directory exists
+    os.makedirs(output_dir, exist_ok=True)
+    logger.info(f"Using output path: {output_path}")
 
     try:
-        # Log before generating PDF
-        logger.info(f"Starting PDF generation with template: {template_path}")
-        
         generate_1120h_pdf(financial_info, association, preparer, str(template_path), str(output_path))
         
-        # Log after successful PDF generation
-        if os.path.exists(str(output_path)):
-            output_size = os.path.getsize(str(output_path))
-            logger.info(f"Generated PDF file - Size: {output_size} bytes")
-        else:
-            logger.warning(f"Expected output file not found at: {output_path}")
-        
         with open(output_path, 'rb') as pdf:
-            pdf_content = pdf.read()
-            logger.info(f"Successfully read {len(pdf_content)} bytes from generated PDF")
-            
-            response = HttpResponse(pdf_content, content_type='application/pdf')
+            response = HttpResponse(pdf.read(), content_type='application/pdf')
             response['Content-Disposition'] = f'attachment; filename=form_1120h_{association.id}_{tax_year}.pdf'
         
         # Clean up the temporary file
-        os.remove(output_path)
-        logger.info(f"Temporary PDF file removed: {output_path}")
+        try:
+            os.remove(output_path)
+            logger.info(f"Temporary PDF file removed: {output_path}")
+        except Exception as e:
+            logger.warning(f"Could not remove temporary file: {str(e)}")
         
         return response
-    except PermissionError as perm_error:
+    except PermissionError:
         logger.error(f"Permission denied when writing to {output_path}")
-        # Try to log parent directory permissions
-        try:
-            output_parent = os.path.dirname(str(output_path))
-            parent_mode = oct(os.stat(output_parent).st_mode)[-3:]
-            logger.error(f"Output parent directory permissions: {parent_mode}")
-        except Exception:
-            pass
         raise PermissionError(f"Permission denied when writing to {output_path}. Please check directory permissions.")
     except Exception as e:
-        logger.error(f"Error in PDF generation: {str(e)}", exc_info=True)
+        logger.error(f"Error in PDF generation: {str(e)}")
         raise
-
 
 logger = logging.getLogger(__name__)
 

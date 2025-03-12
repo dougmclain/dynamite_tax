@@ -7,6 +7,7 @@ from django.http import Http404
 from ..models import Association, Financial, Extension, CompletedTaxReturn
 from django.core.files.storage import default_storage
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -50,24 +51,56 @@ class EditTaxYearInfoView(LoginRequiredMixin, View):
             request.session['selected_association_id'] = str(association_id)
             request.session['selected_tax_year'] = int(tax_year)
 
-            # Update fields without handling files
             extension.filed = 'extension_filed' in request.POST
             extension.filed_date = request.POST.get('extension_filed_date') or None
             completed_tax_return.return_filed = 'tax_return_filed' in request.POST
             completed_tax_return.date_prepared = request.POST.get('tax_return_filed_date') or None
 
-            # Skip file handling for now
-            extension.save(update_fields=['filed', 'filed_date'])
-            completed_tax_return.save(update_fields=['return_filed', 'date_prepared'])
-
-            # Log information about the files that would have been processed
+            # Handle file uploads
             if 'extension_file' in request.FILES:
-                logger.info(f"Extension file uploaded: {request.FILES['extension_file'].name}")
-                messages.info(request, f"Extension file '{request.FILES['extension_file'].name}' received but not saved due to storage constraints.")
-            
+                # Create a safe filename
+                extension_file = request.FILES['extension_file']
+                safe_name = ''.join(c for c in association.association_name if c.isalnum() or c.isspace())
+                safe_name = safe_name.replace(' ', '_')
+                if len(safe_name) > 30:
+                    safe_name = safe_name[:30]
+                    
+                # Format the filename
+                file_ext = os.path.splitext(extension_file.name)[1].lower()
+                new_filename = f"{safe_name}_extension_{tax_year}{file_ext}"
+                
+                # Save with the new filename
+                if extension.form_7004:
+                    try:
+                        extension.form_7004.delete()
+                    except:
+                        logger.warning(f"Could not delete previous extension file")
+                        
+                extension.form_7004.save(new_filename, extension_file)
+
             if 'tax_return_file' in request.FILES:
-                logger.info(f"Tax return file uploaded: {request.FILES['tax_return_file'].name}")
-                messages.info(request, f"Tax return file '{request.FILES['tax_return_file'].name}' received but not saved due to storage constraints.")
+                # Create a safe filename
+                tax_return_file = request.FILES['tax_return_file']
+                safe_name = ''.join(c for c in association.association_name if c.isalnum() or c.isspace())
+                safe_name = safe_name.replace(' ', '_')
+                if len(safe_name) > 30:
+                    safe_name = safe_name[:30]
+                    
+                # Format the filename
+                file_ext = os.path.splitext(tax_return_file.name)[1].lower()
+                new_filename = f"{safe_name}_tax_return_{tax_year}{file_ext}"
+                
+                # Save with the new filename
+                if completed_tax_return.tax_return_pdf:
+                    try:
+                        completed_tax_return.tax_return_pdf.delete()
+                    except:
+                        logger.warning(f"Could not delete previous tax return file")
+                        
+                completed_tax_return.tax_return_pdf.save(new_filename, tax_return_file)
+
+            extension.save()
+            completed_tax_return.save()
 
             messages.success(request, f'Tax year {tax_year} information updated successfully.')
             return redirect(f"{reverse('association')}?association_id={association_id}&tax_year={tax_year}")

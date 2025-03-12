@@ -110,25 +110,23 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-# Media and PDF paths - using the correct Render paths
-if DEBUG:
-    # Local development settings
-    MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-    PDF_TEMPLATE_DIR = Path('/Users/Doug/Library/Mobile Documents/com~apple~CloudDocs/Dynamite Software Development/Dynamite Tax/tax_form/pdf_templates')
-    PDF_TEMP_DIR = Path('/Users/Doug/Library/Mobile Documents/com~apple~CloudDocs/Dynamite Software Development/Dynamite Tax/temp_pdfs')
-else:
-    # Production settings - use Render's disk mounting system
-    MEDIA_ROOT = '/var/lib/render/disk'
-    PDF_TEMPLATE_DIR = Path('/var/lib/render/disk/pdf_templates')
-    PDF_TEMP_DIR = Path('/var/lib/render/disk/temp_pdfs')
-
 # Media files
 MEDIA_URL = '/media/'
 if IS_PRODUCTION:
-    # Use Render's writable disk mounting path
+    # Use Render's writable disk mount path with the nested media directory
     MEDIA_ROOT = '/var/lib/render/disk/media'
 else:
     MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# PDF paths - separate from media
+if DEBUG:
+    PDF_BASE = Path('/Users/Doug/Library/Mobile Documents/com~apple~CloudDocs/Dynamite Software Development/Dynamite Tax ')
+    PDF_TEMPLATE_DIR = PDF_BASE / 'tax_form' / 'pdf_templates'
+    PDF_TEMP_DIR = PDF_BASE / 'temp_pdfs'
+else:
+    # For production on Render
+    PDF_TEMPLATE_DIR = Path('/var/lib/render/disk/pdf_templates')
+    PDF_TEMP_DIR = Path('/var/lib/render/disk/temp_pdfs')
 # Security settings for production
 if IS_PRODUCTION:
     CSRF_COOKIE_SECURE = True

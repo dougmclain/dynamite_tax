@@ -88,10 +88,16 @@
                                     Not available
                                 {% endif %}
                             </p>
-                            <p><strong>Tax Return Filed:</strong>
+                        <!-- In tax_form/templates/tax_form/association.html -->
+<!-- Update the part that shows tax return information -->
+
+                            <p><strong>Tax Return Sent:</strong>
                                 {% if completed_tax_return_data %}
-                                    {% if completed_tax_return_data.return_filed %}
-                                        Yes{% if completed_tax_return_data.date_prepared %} (Prepared on {{ completed_tax_return_data.date_prepared|date:"F d, Y" }}){% endif %}
+                                    {% if completed_tax_return_data.sent_for_signature %}
+                                        Yes{% if completed_tax_return_data.sent_date %} (Sent on {{ completed_tax_return_data.sent_date|date:"F d, Y" }}){% endif %}
+                                        {% if completed_tax_return_data.sent_tax_return_pdf %}
+                                            <a href="{{ completed_tax_return_data.sent_tax_return_pdf.url }}" class="btn btn-sm btn-secondary" target="_blank">View Sent Return</a>
+                                        {% endif %}
                                     {% else %}
                                         No
                                     {% endif %}
@@ -99,9 +105,21 @@
                                     No information available
                                 {% endif %}
                             </p>
-                            <p><strong>Tax Return PDF:</strong>
+                            <p><strong>Tax Return Filed:</strong>
+                                {% if completed_tax_return_data %}
+                                    {% if completed_tax_return_data.return_filed %}
+                                        Yes{% if completed_tax_return_data.date_prepared %} (Prepared on {{ completed_tax_return_data.date_prepared|date:"F d, Y" }}){% endif %}
+                                        <span class="badge bg-info">{{ completed_tax_return_data.get_filing_status_display }}</span>
+                                    {% else %}
+                                        No
+                                    {% endif %}
+                                {% else %}
+                                    No information available
+                                {% endif %}
+                            </p>
+                            <p><strong>Signed Tax Return:</strong>
                                 {% if completed_tax_return_data and completed_tax_return_data.tax_return_pdf %}
-                                    <a href="{{ completed_tax_return_data.tax_return_pdf.url }}" class="btn btn-sm btn-secondary" target="_blank">View Tax Return</a>
+                                    <a href="{{ completed_tax_return_data.tax_return_pdf.url }}" class="btn btn-sm btn-secondary" target="_blank">View Signed Return</a>
                                 {% else %}
                                     Not available
                                 {% endif %}

@@ -72,46 +72,29 @@ class DashboardView(LoginRequiredMixin, View):
             completed_tax_return = CompletedTaxReturn.objects.filter(financial=financial).first() if financial else None
             engagement_letter = EngagementLetter.objects.filter(association=association, tax_year=selected_year).first()
             
-            # Check if files exist and generate appropriate URLs
-            extension_file_url = None
-            if extension and extension.form_7004 and extension.form_7004.name:
-                if use_azure and azure_account and azure_container:
-                    extension_file_url = f"https://{azure_account}.blob.core.windows.net/{azure_container}/{extension.form_7004.name}"
-                else:
-                    # Use Django's standard URL resolution
-                    extension_file_url = extension.form_7004.url if hasattr(extension.form_7004, 'url') else None
-                
-            tax_return_file_url = None
-            if completed_tax_return and completed_tax_return.tax_return_pdf and completed_tax_return.tax_return_pdf.name:
-                if use_azure and azure_account and azure_container:
-                    tax_return_file_url = f"https://{azure_account}.blob.core.windows.net/{azure_container}/{completed_tax_return.tax_return_pdf.name}"
-                else:
-                    tax_return_file_url = completed_tax_return.tax_return_pdf.url if hasattr(completed_tax_return.tax_return_pdf, 'url') else None
-            
-            engagement_letter_url = None
-            if engagement_letter and engagement_letter.signed_pdf and engagement_letter.signed_pdf.name:
-                if use_azure and azure_account and azure_container:
-                    engagement_letter_url = f"https://{azure_account}.blob.core.windows.net/{azure_container}/{engagement_letter.signed_pdf.name}"
-                else:
-                    engagement_letter_url = engagement_letter.signed_pdf.url if hasattr(engagement_letter.signed_pdf, 'url') else None
-
             try:
                 fiscal_year_end = association.get_fiscal_year_end(selected_year)
             except Exception as e:
                 logger.error(f"Error getting fiscal year end: {e}")
                 fiscal_year_end = None
 
+            filing_status_display = "Not Filed"
+            if completed_tax_return and completed_tax_return.return_filed:
+                filing_status_map = {
+                    'not_filed': 'Not Filed',
+                    'filed_by_dynamite': 'Filed by Dynamite',
+                    'filed_by_association': 'Filed by Association'
+                }
+                filing_status_display = filing_status_map.get(completed_tax_return.filing_status, "Filed")
+
             dashboard_data.append({
                 'association': association,
                 'fiscal_year_end': fiscal_year_end,
-                'extension_filed': extension.filed if extension else False,
-                'extension_filed_date': extension.filed_date if extension and extension.filed else None,
-                'extension_file_url': extension_file_url,
-                'tax_return_filed': completed_tax_return.return_filed if completed_tax_return else False,
+                'tax_return_sent_date': completed_tax_return.sent_date if completed_tax_return and completed_tax_return.sent_for_signature else None,
                 'tax_return_prepared_date': completed_tax_return.date_prepared if completed_tax_return and completed_tax_return.return_filed else None,
-                'tax_return_file_url': tax_return_file_url,
+                'tax_return_filed': completed_tax_return.return_filed if completed_tax_return else False,
+                'filing_status_display': filing_status_display,
                 'engagement_letter': engagement_letter,
-                'engagement_letter_url': engagement_letter_url,
             })
 
         context = {

@@ -41,6 +41,9 @@ class EditTaxYearInfoView(LoginRequiredMixin, View):
         }
         return render(request, self.template_name, context)
 
+# In tax_form/views/edit_tax_year_info.py
+# Update the post method to handle the new fields:
+
     def post(self, request, association_id, tax_year):
         try:
             association = get_object_or_404(Association, id=association_id)
@@ -59,8 +62,15 @@ class EditTaxYearInfoView(LoginRequiredMixin, View):
             # Update model fields from form data
             extension.filed = 'extension_filed' in request.POST
             extension.filed_date = request.POST.get('extension_filed_date') or None
+            
+            # Update tax return sent fields
+            completed_tax_return.sent_for_signature = 'tax_return_sent' in request.POST
+            completed_tax_return.sent_date = request.POST.get('tax_return_sent_date') or None
+            
+            # Update filed tax return fields
             completed_tax_return.return_filed = 'tax_return_filed' in request.POST
             completed_tax_return.date_prepared = request.POST.get('tax_return_filed_date') or None
+            completed_tax_return.filing_status = request.POST.get('filing_status', 'not_filed')
 
             # Azure Storage connection
             connection_string = f"DefaultEndpointsProtocol=https;AccountName={settings.AZURE_ACCOUNT_NAME};AccountKey={settings.AZURE_ACCOUNT_KEY};EndpointSuffix=core.windows.net"
@@ -94,6 +104,34 @@ class EditTaxYearInfoView(LoginRequiredMixin, View):
                 # Store the blob path in the model
                 extension.form_7004 = blob_path
                 logger.info(f"Uploaded extension file to Azure: {blob_path}")
+
+            # Handle sent tax return file upload
+            if 'sent_tax_return_file' in request.FILES:
+                sent_tax_return_file = request.FILES['sent_tax_return_file']
+                logger.debug(f"Received sent tax return file with size: {sent_tax_return_file.size} bytes")
+
+                # Create a safe filename
+                safe_name = ''.join(c for c in association.association_name if c.isalnum() or c.isspace())
+                safe_name = safe_name.replace(' ', '_')
+                if len(safe_name) > 30:
+                    safe_name = safe_name[:30]
+                
+                file_ext = os.path.splitext(sent_tax_return_file.name)[1].lower()
+                filename = f"{safe_name}_sent_tax_return_{tax_year}{file_ext}"
+                
+                # Full path for the blob
+                blob_path = f"sent_tax_returns/{filename}"
+                
+                # Read file content
+                file_content = sent_tax_return_file.read()
+                
+                # Upload directly to Azure
+                blob_client = container_client.get_blob_client(blob_path)
+                blob_client.upload_blob(file_content, overwrite=True, content_type="application/pdf")
+                
+                # Store the blob path in the model
+                completed_tax_return.sent_tax_return_pdf = blob_path
+                logger.info(f"Uploaded sent tax return file to Azure: {blob_path}")
 
             # Handle tax return file upload
             if 'tax_return_file' in request.FILES:

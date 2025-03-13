@@ -42,24 +42,61 @@
                     </div>
                 </div>
                 
+<!-- In tax_form/templates/tax_form/edit_tax_year_info.html -->
+<!-- Update the Tax Return Information section: -->
+
                 <!-- Tax Return Information -->
                 <div class="card mb-4">
                     <div class="card-header">
                         <h3 class="h5 mb-0">Tax Return Information</h3>
                     </div>
                     <div class="card-body">
+                        <!-- Sent for Signature Section -->
+                        <h4 class="h6 mt-2 mb-3">Sent for Signature</h4>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="tax_return_sent" name="tax_return_sent" {% if completed_tax_return.sent_for_signature %}checked{% endif %}>
+                            <label class="form-check-label" for="tax_return_sent">Tax Return Sent for Signature</label>
+                        </div>
+                        <div class="mb-3">
+                            <label for="tax_return_sent_date" class="form-label">Tax Return Sent Date</label>
+                            <input type="date" class="form-control" id="tax_return_sent_date" name="tax_return_sent_date" value="{% if completed_tax_return.sent_date %}{{ completed_tax_return.sent_date|date:'Y-m-d' }}{% endif %}">
+                        </div>
+                        <div class="mb-3">
+                            <label for="sent_tax_return_file" class="form-label">Sent Tax Return File (PDF)</label>
+                            <div class="drop-zone mb-2" id="sentTaxReturnDropZone">
+                                <span class="drop-zone__prompt">Drop sent tax return file here or click to browse</span>
+                                <input type="file" class="drop-zone__input" id="sent_tax_return_file" name="sent_tax_return_file" accept=".pdf">
+                            </div>
+                            {% if completed_tax_return.sent_tax_return_pdf %}
+                                <div class="mt-2">
+                                    <span class="badge bg-success">Current file: {{ completed_tax_return.sent_tax_return_pdf.name|slice:"-30:" }}</span>
+                                    <a href="{{ completed_tax_return.sent_tax_return_pdf.url }}" class="btn btn-sm btn-secondary ms-2" target="_blank">View</a>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Filed Tax Return Section -->
+                        <h4 class="h6 mt-4 mb-3">Filed Tax Return</h4>
                         <div class="mb-3 form-check">
                             <input type="checkbox" class="form-check-input" id="tax_return_filed" name="tax_return_filed" {% if completed_tax_return.return_filed %}checked{% endif %}>
                             <label class="form-check-label" for="tax_return_filed">Tax Return Filed</label>
+                        </div>
+                        <div class="mb-3">
+                            <label for="filing_status" class="form-label">Filing Status</label>
+                            <select class="form-select" id="filing_status" name="filing_status">
+                                <option value="not_filed" {% if completed_tax_return.filing_status == 'not_filed' %}selected{% endif %}>Not Filed</option>
+                                <option value="filed_by_dynamite" {% if completed_tax_return.filing_status == 'filed_by_dynamite' %}selected{% endif %}>Filed by Dynamite</option>
+                                <option value="filed_by_association" {% if completed_tax_return.filing_status == 'filed_by_association' %}selected{% endif %}>Filed by Association</option>
+                            </select>
                         </div>
                         <div class="mb-3">
                             <label for="tax_return_filed_date" class="form-label">Tax Return Filed Date</label>
                             <input type="date" class="form-control" id="tax_return_filed_date" name="tax_return_filed_date" value="{% if completed_tax_return.date_prepared %}{{ completed_tax_return.date_prepared|date:'Y-m-d' }}{% endif %}">
                         </div>
                         <div class="mb-3">
-                            <label for="tax_return_file" class="form-label">Tax Return File (PDF)</label>
+                            <label for="tax_return_file" class="form-label">Signed Tax Return File (PDF)</label>
                             <div class="drop-zone mb-2" id="taxReturnDropZone">
-                                <span class="drop-zone__prompt">Drop tax return file here or click to browse</span>
+                                <span class="drop-zone__prompt">Drop signed tax return file here or click to browse</span>
                                 <input type="file" class="drop-zone__input" id="tax_return_file" name="tax_return_file" accept=".pdf">
                             </div>
                             {% if completed_tax_return.tax_return_pdf %}

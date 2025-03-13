@@ -46,15 +46,17 @@
             </div>
 
             <div class="table-responsive">
+               <!-- In tax_form/templates/tax_form/dashboard.html -->
+<!-- Replace the table header section with this: -->
+
                 <table class="table table-hover" id="associationTable">
                     <thead>
                         <tr>
                             <th class="sortable" data-sort="name">Association Name</th>
                             <th>Fiscal Year End</th>
-                            <th class="sortable" data-sort="extension">Extension Filed Date</th>
-                            <th>Extension Form</th>
+                            <th class="sortable" data-sort="sent">Tax Return Sent Date</th>
                             <th class="sortable" data-sort="return">Tax Return Filed Date</th>
-                            <th>Tax Return PDF</th>
+                            <th>Filing Status</th>
                             <th>Engagement Letter</th>
                         </tr>
                     </thead>
@@ -63,18 +65,11 @@
                         <tr class="clickable-row" data-href="{% url 'association' %}?association_id={{ data.association.id }}&tax_year={{ selected_year }}">
                             <td data-name="{{ data.association.association_name }}" title="{{ data.association.association_name }}">{{ data.association.association_name }}</td>
                             <td title="{{ data.fiscal_year_end|date:'F d, Y' }}">{{ data.fiscal_year_end|date:"F d, Y" }}</td>
-                            <td data-extension="{{ data.extension_filed_date|date:'Y-m-d'|default:'9999-12-31' }}" title="{{ data.extension_filed_date|date:'F d, Y'|default:'Not Filed' }}">
-                                {% if data.extension_filed_date %}
-                                    {{ data.extension_filed_date|date:"F d, Y" }}
+                            <td data-sent="{{ data.tax_return_sent_date|date:'Y-m-d'|default:'9999-12-31' }}" title="{{ data.tax_return_sent_date|date:'F d, Y'|default:'Not Sent' }}">
+                                {% if data.tax_return_sent_date %}
+                                    {{ data.tax_return_sent_date|date:"F d, Y" }}
                                 {% else %}
-                                    Not Filed
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if data.extension_file_url %}
-                                    <a href="{{ data.extension_file_url }}" class="file-link" target="_blank">View</a>
-                                {% else %}
-                                    N/A
+                                    Not Sent
                                 {% endif %}
                             </td>
                             <td data-return="{{ data.tax_return_prepared_date|date:'Y-m-d'|default:'9999-12-31' }}" title="{{ data.tax_return_prepared_date|date:'F d, Y'|default:'Not Filed' }}">
@@ -85,10 +80,10 @@
                                 {% endif %}
                             </td>
                             <td>
-                                {% if data.tax_return_file_url %}
-                                    <a href="{{ data.tax_return_file_url }}" class="file-link" target="_blank">View</a>
+                                {% if data.tax_return_filed %}
+                                    <span class="badge bg-success">{{ data.filing_status_display }}</span>
                                 {% else %}
-                                    N/A
+                                    <span class="badge bg-secondary">Not Filed</span>
                                 {% endif %}
                             </td>
                             <td>
@@ -96,9 +91,6 @@
                                     {% if letter %}
                                         {% if letter.status == 'signed' %}
                                             <span class="badge bg-success">Signed</span>
-                                            {% if letter.signed_pdf %}
-                                                <a href="{{ letter.signed_pdf.url }}" class="file-link" target="_blank">View</a>
-                                            {% endif %}
                                         {% elif letter.status == 'sent' %}
                                             <span class="badge bg-info">Sent</span>
                                         {% else %}

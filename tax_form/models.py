@@ -178,10 +178,26 @@ class Extension(models.Model):
         super().save(*args, **kwargs)
     
 class CompletedTaxReturn(models.Model):
+    FILING_STATUS_CHOICES = (
+        ('not_filed', 'Not Filed'),
+        ('filed_by_dynamite', 'Filed by Dynamite'),
+        ('filed_by_association', 'Filed by Association'),
+    )
+    
     financial = models.OneToOneField('Financial', on_delete=models.CASCADE, related_name='completed_tax_return')
+    
+    # Return filing status
     return_filed = models.BooleanField(default=False, help_text="Indicates whether the tax return has been filed")
+    filing_status = models.CharField(max_length=20, choices=FILING_STATUS_CHOICES, default='not_filed', help_text="Who filed the tax return")
     date_prepared = models.DateField(null=True, blank=True, help_text="The date the tax return was prepared")
-    tax_return_pdf = models.FileField(upload_to='completed_tax_returns/', null=True, blank=True)
+    
+    # Return sent for signature
+    sent_for_signature = models.BooleanField(default=False, help_text="Indicates whether the tax return was sent for signature")
+    sent_date = models.DateField(null=True, blank=True, help_text="The date the tax return was sent for signature")
+    sent_tax_return_pdf = models.FileField(upload_to='sent_tax_returns/', null=True, blank=True, help_text="PDF of the tax return sent for signature")
+    
+    # Signed return
+    tax_return_pdf = models.FileField(upload_to='completed_tax_returns/', null=True, blank=True, help_text="PDF of the signed tax return")
 
     def __str__(self):
         status = "Filed" if self.return_filed else "Not Filed"

@@ -24,6 +24,8 @@ logger = logging.getLogger(__name__)
 
 __all__ = ['generate_pdf']
 
+# Update the pdf_generation.py file to standardize tax return filenames
+
 def generate_pdf(financial_info, association, preparer, tax_year):
     """Generate PDF and return HTTP response."""
     # Create a list of possible template locations
@@ -53,9 +55,12 @@ def generate_pdf(financial_info, association, preparer, tax_year):
         logger.error(f"Searched paths: {possible_paths}")
         raise FileNotFoundError(f"PDF template not found at {template_path} or any alternative locations")
     
-    # Generate output path using the same directory as the template
+    # Create a standardized filename with first 10 letters of association name, 1120H, and tax year
+    assoc_name_safe = ''.join(c for c in association.association_name[:10] if c.isalnum())
+    output_filename = f'{assoc_name_safe}_1120H_{tax_year}.pdf'
+    
+    # Generate output path
     output_dir = settings.PDF_TEMP_DIR
-    output_filename = f'form_1120h_{association.id}_{tax_year}.pdf'
     output_path = output_dir / output_filename
     
     # Ensure the output directory exists
@@ -67,7 +72,7 @@ def generate_pdf(financial_info, association, preparer, tax_year):
         generate_1120h_pdf(financial_info, association, preparer, str(template_path), str(output_path))
         
         if settings.USE_AZURE_STORAGE:
-            # Upload to Azure Storage
+            # Upload to Azure Storage with the standardized filename
             azure_path = f'tax_returns/{output_filename}'
             
             # Read the generated PDF

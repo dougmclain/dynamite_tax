@@ -1,5 +1,6 @@
 {% extends "tax_form/base.html" %}
 {% load crispy_forms_tags %}
+{% load static %}
 
 {% block title %}Edit Tax Year Info - {{ association.association_name }} ({{ tax_year }}){% endblock %}
 
@@ -10,40 +11,99 @@
             <h1 class="mb-4">Edit Tax Year Info: {{ association.association_name }} ({{ tax_year }})</h1>
             <form method="post" enctype="multipart/form-data" class="mb-4">
                 {% csrf_token %}
-                <div class="mb-3 form-check">
-                    <input type="checkbox" class="form-check-input" id="extension_filed" name="extension_filed" {% if extension.filed %}checked{% endif %}>
-                    <label class="form-check-label" for="extension_filed">Extension Filed</label>
+                
+                <!-- Extension Information -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h3 class="h5 mb-0">Extension Information</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="extension_filed" name="extension_filed" {% if extension.filed %}checked{% endif %}>
+                            <label class="form-check-label" for="extension_filed">Extension Filed</label>
+                        </div>
+                        <div class="mb-3">
+                            <label for="extension_filed_date" class="form-label">Extension Filed Date</label>
+                            <input type="date" class="form-control" id="extension_filed_date" name="extension_filed_date" value="{% if extension.filed_date %}{{ extension.filed_date|date:'Y-m-d' }}{% endif %}">
+                        </div>
+                        <div class="mb-3">
+                            <label for="extension_file" class="form-label">Extension File (PDF)</label>
+                            <div class="drop-zone mb-2" id="extensionDropZone">
+                                <span class="drop-zone__prompt">Drop extension file here or click to browse</span>
+                                <input type="file" class="drop-zone__input" id="extension_file" name="extension_file" accept=".pdf">
+                            </div>
+                            {% if extension.form_7004 %}
+                                <div class="mt-2">
+                                    <span class="badge bg-success">Current file: {{ extension.form_7004.name|slice:"-30:" }}</span>
+                                    <a href="{{ extension.form_7004.url }}" class="btn btn-sm btn-secondary ms-2" target="_blank">View</a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
                 </div>
-                <div class="mb-3">
-                    <label for="extension_filed_date" class="form-label">Extension Filed Date</label>
-                    <input type="date" class="form-control" id="extension_filed_date" name="extension_filed_date" value="{% if extension.filed_date %}{{ extension.filed_date|date:'Y-m-d' }}{% endif %}">
+                
+                <!-- Tax Return Information -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h3 class="h5 mb-0">Tax Return Information</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="tax_return_filed" name="tax_return_filed" {% if completed_tax_return.return_filed %}checked{% endif %}>
+                            <label class="form-check-label" for="tax_return_filed">Tax Return Filed</label>
+                        </div>
+                        <div class="mb-3">
+                            <label for="tax_return_filed_date" class="form-label">Tax Return Filed Date</label>
+                            <input type="date" class="form-control" id="tax_return_filed_date" name="tax_return_filed_date" value="{% if completed_tax_return.date_prepared %}{{ completed_tax_return.date_prepared|date:'Y-m-d' }}{% endif %}">
+                        </div>
+                        <div class="mb-3">
+                            <label for="tax_return_file" class="form-label">Tax Return File (PDF)</label>
+                            <div class="drop-zone mb-2" id="taxReturnDropZone">
+                                <span class="drop-zone__prompt">Drop tax return file here or click to browse</span>
+                                <input type="file" class="drop-zone__input" id="tax_return_file" name="tax_return_file" accept=".pdf">
+                            </div>
+                            {% if completed_tax_return.tax_return_pdf %}
+                                <div class="mt-2">
+                                    <span class="badge bg-success">Current file: {{ completed_tax_return.tax_return_pdf.name|slice:"-30:" }}</span>
+                                    <a href="{{ completed_tax_return.tax_return_pdf.url }}" class="btn btn-sm btn-secondary ms-2" target="_blank">View</a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
                 </div>
-                <div class="mb-3">
-                    <label for="extension_file" class="form-label">Extension File (PDF)</label>
-                    <input type="file" class="form-control" id="extension_file" name="extension_file" accept=".pdf">
-                    {% if extension.form_7004 %}
-                        <small class="form-text text-muted">Current file: {{ extension.form_7004.name }}</small>
-                    {% endif %}
+                
+                <!-- Financial Information -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h3 class="h5 mb-0">Financial Information</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="financial_info_file" class="form-label">Financial Info File (PDF)</label>
+                            <div class="drop-zone mb-2" id="financialInfoDropZone">
+                                <span class="drop-zone__prompt">Drop financial info file here or click to browse</span>
+                                <input type="file" class="drop-zone__input" id="financial_info_file" name="financial_info_file" accept=".pdf">
+                            </div>
+                            {% if financial.financial_info_pdf %}
+                                <div class="mt-2">
+                                    <span class="badge bg-success">Current file: {{ financial.financial_info_pdf.name|slice:"-30:" }}</span>
+                                    <a href="{{ financial.financial_info_pdf.url }}" class="btn btn-sm btn-secondary ms-2" target="_blank">View</a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
                 </div>
-                <div class="mb-3 form-check">
-                    <input type="checkbox" class="form-check-input" id="tax_return_filed" name="tax_return_filed" {% if completed_tax_return.return_filed %}checked{% endif %}>
-                    <label class="form-check-label" for="tax_return_filed">Tax Return Filed</label>
+                
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'association' %}?association_id={{ association.id }}&tax_year={{ tax_year }}" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary">Update Tax Year Info</button>
                 </div>
-                <div class="mb-3">
-                    <label for="tax_return_filed_date" class="form-label">Tax Return Filed Date</label>
-                    <input type="date" class="form-control" id="tax_return_filed_date" name="tax_return_filed_date" value="{% if completed_tax_return.date_prepared %}{{ completed_tax_return.date_prepared|date:'Y-m-d' }}{% endif %}">
-                </div>
-                <div class="mb-3">
-                    <label for="tax_return_file" class="form-label">Tax Return File (PDF)</label>
-                    <input type="file" class="form-control" id="tax_return_file" name="tax_return_file" accept=".pdf">
-                    {% if completed_tax_return.tax_return_pdf %}
-                        <small class="form-text text-muted">Current file: {{ completed_tax_return.tax_return_pdf.name }}</small>
-                    {% endif %}
-                </div>
-                <button type="submit" class="btn btn-primary">Update Tax Year Info</button>
-                <a href="{% url 'association' %}?association_id={{ association.id }}&tax_year={{ tax_year }}" class="btn btn-secondary">Cancel</a>
             </form>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/drag_drop_upload.js' %}"></script>
 {% endblock %}

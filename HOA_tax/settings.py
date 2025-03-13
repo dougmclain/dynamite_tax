@@ -93,8 +93,8 @@ else:
             'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
-    # Optionally, you can override with DATABASE_URL if provided
-    if env('DATABASE_URL', default=None):
+    # Optionally, you can override with DATABASE_URL if provided but only if explicitly requested
+    if env('USE_PRODUCTION_DB', default=False):
         DATABASES['default'] = dj_database_url.parse(env('DATABASE_URL'))
 
 # Password validation

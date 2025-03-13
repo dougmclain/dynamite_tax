@@ -9,6 +9,8 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+# Update for tax_form/views/dashboard.py
+
 class DashboardView(LoginRequiredMixin, View):
     template_name = 'tax_form/dashboard.html'
 
@@ -54,24 +56,44 @@ class DashboardView(LoginRequiredMixin, View):
 
         dashboard_data = []
 
+        # Check if Azure Storage is configured
+        use_azure = False
+        azure_account = None
+        azure_container = None
+        
+        if hasattr(settings, 'USE_AZURE_STORAGE') and settings.USE_AZURE_STORAGE:
+            use_azure = True
+            azure_account = getattr(settings, 'AZURE_ACCOUNT_NAME', '')
+            azure_container = getattr(settings, 'AZURE_CONTAINER', '')
+
         for association in associations:
             financial = financials.filter(association=association).first()
             extension = Extension.objects.filter(financial=financial).first() if financial else None
             completed_tax_return = CompletedTaxReturn.objects.filter(financial=financial).first() if financial else None
             engagement_letter = EngagementLetter.objects.filter(association=association, tax_year=selected_year).first()
             
-            # Check if files exist and generate direct Azure URLs
+            # Check if files exist and generate appropriate URLs
             extension_file_url = None
             if extension and extension.form_7004 and extension.form_7004.name:
-                extension_file_url = f"https://{settings.AZURE_ACCOUNT_NAME}.blob.core.windows.net/{settings.AZURE_CONTAINER}/{extension.form_7004.name}"
+                if use_azure and azure_account and azure_container:
+                    extension_file_url = f"https://{azure_account}.blob.core.windows.net/{azure_container}/{extension.form_7004.name}"
+                else:
+                    # Use Django's standard URL resolution
+                    extension_file_url = extension.form_7004.url if hasattr(extension.form_7004, 'url') else None
                 
             tax_return_file_url = None
             if completed_tax_return and completed_tax_return.tax_return_pdf and completed_tax_return.tax_return_pdf.name:
-                tax_return_file_url = f"https://{settings.AZURE_ACCOUNT_NAME}.blob.core.windows.net/{settings.AZURE_CONTAINER}/{completed_tax_return.tax_return_pdf.name}"
+                if use_azure and azure_account and azure_container:
+                    tax_return_file_url = f"https://{azure_account}.blob.core.windows.net/{azure_container}/{completed_tax_return.tax_return_pdf.name}"
+                else:
+                    tax_return_file_url = completed_tax_return.tax_return_pdf.url if hasattr(completed_tax_return.tax_return_pdf, 'url') else None
             
             engagement_letter_url = None
             if engagement_letter and engagement_letter.signed_pdf and engagement_letter.signed_pdf.name:
-                engagement_letter_url = f"https://{settings.AZURE_ACCOUNT_NAME}.blob.core.windows.net/{settings.AZURE_CONTAINER}/{engagement_letter.signed_pdf.name}"
+                if use_azure and azure_account and azure_container:
+                    engagement_letter_url = f"https://{azure_account}.blob.core.windows.net/{azure_container}/{engagement_letter.signed_pdf.name}"
+                else:
+                    engagement_letter_url = engagement_letter.signed_pdf.url if hasattr(engagement_letter.signed_pdf, 'url') else None
 
             try:
                 fiscal_year_end = association.get_fiscal_year_end(selected_year)

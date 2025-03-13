@@ -89,6 +89,7 @@ class Association(models.Model):
 class Financial(models.Model):
     association = models.ForeignKey('Association', on_delete=models.CASCADE)
     tax_year = models.IntegerField(default=2023, help_text="The year this financial data pertains to")
+    financial_info_pdf = models.FileField(upload_to='financial_info/', null=True, blank=True)
     
     # Engagement letter fields
     engagement_letter = models.FileField(upload_to='engagement_letters/', null=True, blank=True)

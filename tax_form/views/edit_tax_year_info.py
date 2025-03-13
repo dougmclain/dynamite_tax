@@ -13,6 +13,8 @@ import os
 
 logger = logging.getLogger(__name__)
 
+# Update the EditTaxYearInfoView in tax_form/views/edit_tax_year_info.py
+
 class EditTaxYearInfoView(LoginRequiredMixin, View):
     template_name = 'tax_form/edit_tax_year_info.html'
 
@@ -35,6 +37,7 @@ class EditTaxYearInfoView(LoginRequiredMixin, View):
             'tax_year': tax_year,
             'extension': extension,
             'completed_tax_return': completed_tax_return,
+            'financial': financial,  # Add financial to the context
         }
         return render(request, self.template_name, context)
 
@@ -91,10 +94,6 @@ class EditTaxYearInfoView(LoginRequiredMixin, View):
                 # Store the blob path in the model
                 extension.form_7004 = blob_path
                 logger.info(f"Uploaded extension file to Azure: {blob_path}")
-                
-                # Get the direct URL
-                full_url = f"https://{settings.AZURE_ACCOUNT_NAME}.blob.core.windows.net/{settings.AZURE_CONTAINER}/{blob_path}"
-                logger.debug(f"Extension file URL: {full_url}")
 
             # Handle tax return file upload
             if 'tax_return_file' in request.FILES:
@@ -123,10 +122,35 @@ class EditTaxYearInfoView(LoginRequiredMixin, View):
                 # Store the blob path in the model
                 completed_tax_return.tax_return_pdf = blob_path
                 logger.info(f"Uploaded tax return file to Azure: {blob_path}")
+
+            # Handle financial info file upload
+            if 'financial_info_file' in request.FILES:
+                financial_info_file = request.FILES['financial_info_file']
+                logger.debug(f"Received financial info file with size: {financial_info_file.size} bytes")
+
+                # Create a safe filename
+                safe_name = ''.join(c for c in association.association_name if c.isalnum() or c.isspace())
+                safe_name = safe_name.replace(' ', '_')
+                if len(safe_name) > 30:
+                    safe_name = safe_name[:30]
                 
-                # Get the direct URL
-                full_url = f"https://{settings.AZURE_ACCOUNT_NAME}.blob.core.windows.net/{settings.AZURE_CONTAINER}/{blob_path}"
-                logger.debug(f"Tax return file URL: {full_url}")
+                file_ext = os.path.splitext(financial_info_file.name)[1].lower()
+                filename = f"{safe_name}_financial_info_{tax_year}{file_ext}"
+                
+                # Full path for the blob
+                blob_path = f"financial_info/{filename}"
+                
+                # Read file content
+                file_content = financial_info_file.read()
+                
+                # Upload directly to Azure
+                blob_client = container_client.get_blob_client(blob_path)
+                blob_client.upload_blob(file_content, overwrite=True, content_type="application/pdf")
+                
+                # Store the blob path in the model
+                financial.financial_info_pdf = blob_path
+                logger.info(f"Uploaded financial info file to Azure: {blob_path}")
+                financial.save()  # Save financial model changes
 
             # Save updated models
             extension.save()

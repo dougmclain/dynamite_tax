@@ -232,12 +232,14 @@ class InstructionsGenerator:
             
             if amount_owed > 0:
                 payment_text = (f"The Association has a balance due of ${format_number(amount_owed)}. "
-                              "DO NOT SEND A CHECK WITH THIS RETURN. To pay your balance due, "
-                              "login to the Electronic Federal Tax Payment System (EFTPS) at "
-                              "www.eftps.gov or call 1-800-555-4477.")
+                            "DO NOT SEND A CHECK WITH THIS RETURN. To pay your balance due, "
+                            "login to the Electronic Federal Tax Payment System (EFTPS) at "
+                            "www.eftps.gov or call 1-800-555-4477.")
                 y = self.draw_wrapped_text(can, payment_text, 70, y, 480)
             elif refund_amount > 0:
                 can.drawString(70, y, f"You should receive a refund of ${format_number(refund_amount)}.")
+            else:
+                can.drawString(70, y, "There is $0 due with this return.")
             y -= 25
 
             # Extension information if applicable

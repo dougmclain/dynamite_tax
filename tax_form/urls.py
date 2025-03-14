@@ -20,6 +20,7 @@ urlpatterns = [
     path('engagement-letter/delete/<int:letter_id>/', engagement_letter.DeleteEngagementLetterView.as_view(), name='delete_engagement_letter'),
     path('engagement-letter/upload-signed/<int:letter_id>/', engagement_letter.UploadSignedEngagementLetterView.as_view(), name='upload_signed_engagement_letter'),
     path('engagement-letter/mark-sent/<int:letter_id>/', engagement_letter.MarkEngagementLetterSentView.as_view(), name='mark_sent_engagement_letter'),
+# Add this to your existing urlpatterns list in tax_form/urls.py
     path('filing-status/<int:association_id>/<int:tax_year>/', 
-         EditFilingStatusView.as_view(), name='edit_filing_status')
+         filing_status.EditFilingStatusView.as_view(), name='edit_filing_status'),
 ]

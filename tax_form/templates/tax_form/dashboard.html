@@ -156,10 +156,10 @@
                                     </td>
                                     <td>
                                         <div class="btn-group">
-                                            <a href="{% url 'edit_filing_status' association_id=data.association.id tax_year=selected_year %}" 
-                                            class="btn btn-sm btn-primary" onclick="event.stopPropagation();">
-                                             Filing Status
-                                         </a>
+                                            <a href="/filing-status/{{ data.association.id }}/{{ selected_year }}/" 
+                                               class="btn btn-sm btn-primary" onclick="event.stopPropagation();">
+                                                Filing Status
+                                            </a>
                                             <button type="button" class="btn btn-sm btn-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false" onclick="event.stopPropagation();">
                                                 <span class="visually-hidden">Toggle Dropdown</span>
                                             </button>

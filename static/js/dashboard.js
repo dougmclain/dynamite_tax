@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 if (sortBy === 'name') {
                     return isAscending ? bValue.localeCompare(aValue) : aValue.localeCompare(bValue);
-                } else if (sortBy === 'extension' || sortBy === 'return') {
+                } else if (sortBy === 'sent' || sortBy === 'return') {
                     // For date comparisons
                     return isAscending ? bValue.localeCompare(aValue) : aValue.localeCompare(bValue);
                 } else {
@@ -32,18 +32,22 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    // Prevent row clicks from capturing button or link clicks
+    document.querySelectorAll('#associationTable a, #associationTable button, #associationTable .btn-group, #associationTable .dropdown-menu, #associationTable .dropdown-item').forEach(element => {
+        element.addEventListener('click', function(event) {
+            event.stopPropagation();
+        });
+    });
+
     rows.forEach(row => {
         row.addEventListener('click', function(event) {
-            // Don't navigate if clicking on a button, link, dropdown or their children
+            // Don't navigate if clicking buttons, links, or their containers
             if (event.target.closest('a') || 
                 event.target.closest('button') || 
-                event.target.closest('.btn-group') || 
+                event.target.closest('.btn-group') ||
                 event.target.closest('.dropdown-menu')) {
-                // Don't do the default row navigation
                 return;
             }
-            
-            // Otherwise navigate to the row's href
             window.location.href = this.dataset.href;
         });
     });

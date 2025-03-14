@@ -34,9 +34,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
     rows.forEach(row => {
         row.addEventListener('click', function(event) {
-            if (!event.target.classList.contains('file-link')) {
-                window.location.href = this.dataset.href;
+            // Don't navigate if clicking on a button, link, dropdown or their children
+            if (event.target.closest('a') || 
+                event.target.closest('button') || 
+                event.target.closest('.btn-group') || 
+                event.target.closest('.dropdown-menu')) {
+                // Don't do the default row navigation
+                return;
             }
+            
+            // Otherwise navigate to the row's href
+            window.location.href = this.dataset.href;
         });
     });
 });

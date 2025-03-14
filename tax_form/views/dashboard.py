@@ -49,7 +49,7 @@ class DashboardView(LoginRequiredMixin, View):
             status, created = AssociationFilingStatus.objects.get_or_create(
                 association=assoc,
                 tax_year=selected_year,
-                defaults={'prepare_return': True}
+                defaults={'prepare_return': True, 'invoiced': False}
             )
             filing_statuses[assoc.id] = status
         

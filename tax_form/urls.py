@@ -1,7 +1,6 @@
 from django.urls import path
 from django.contrib.auth import views as auth_views
 from .views import main, association, financial, create_association, dashboard, edit_association, edit_tax_year_info, extension, engagement_letter, filing_status
-from .views.filing_status import EditFilingStatusView
 
 urlpatterns = [
     path('', main.index, name='index'),
@@ -22,5 +21,5 @@ urlpatterns = [
     path('engagement-letter/mark-sent/<int:letter_id>/', engagement_letter.MarkEngagementLetterSentView.as_view(), name='mark_sent_engagement_letter'),
 # Add this to your existing urlpatterns list in tax_form/urls.py
     path('filing-status/<int:association_id>/<int:tax_year>/', 
-         filing_status.EditFilingStatusView.as_view(), name='edit_filing_status'),
+        filing_status.EditFilingStatusView.as_view(), name='edit_filing_status'),
 ]

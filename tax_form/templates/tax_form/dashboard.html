@@ -1,6 +1,7 @@
 {% extends "tax_form/base.html" %}
 {% load humanize %}
 {% load static %}
+{% load custom_filters %}
 
 {% block title %}Association Dashboard{% endblock %}
 
@@ -30,81 +31,151 @@
                     <h3 class="card-title h5">Summary</h3>
                     <div class="row">
                         <div class="col-md-3">
-                            <p><strong>Total Associations:</strong> {{ total_associations }}</p>
+                            <div class="card bg-light mb-2">
+                                <div class="card-body py-2">
+                                    <h5 class="mb-0">Association Counts</h5>
+                                    <p class="mb-1">Total: {{ total_associations }}</p>
+                                    <p class="mb-1">To File: {{ associations_to_file }}</p>
+                                    <p class="mb-0">Not Filing: {{ total_associations|subtract:associations_to_file }}</p>
+                                </div>
+                            </div>
                         </div>
                         <div class="col-md-3">
-                            <p><strong>Filed Tax Returns:</strong> {{ filed_returns }}</p>
+                            <div class="card bg-light mb-2">
+                                <div class="card-body py-2">
+                                    <h5 class="mb-0">Return Status</h5>
+                                    <p class="mb-1">Filed: {{ filed_returns }}</p>
+                                    <p class="mb-1">Sent for Signature: {{ sent_returns }}</p>
+                                    <p class="mb-0">Unfiled: {{ unfiled_returns }}</p>
+                                </div>
+                            </div>
                         </div>
                         <div class="col-md-3">
-                            <p><strong>Unfiled Tax Returns:</strong> {{ unfiled_returns }}</p>
+                            <div class="card bg-light mb-2">
+                                <div class="card-body py-2">
+                                    <h5 class="mb-0">Engagement Letters</h5>
+                                    <p class="mb-1">Signed: {{ signed_engagement_letters }}</p>
+                                    <p class="mb-0">Needed: {{ associations_to_file|subtract:signed_engagement_letters }}</p>
+                                </div>
+                            </div>
                         </div>
                         <div class="col-md-3">
-                            <p><strong>Signed Engagement Letters:</strong> {{ signed_engagement_letters }}</p>
+                            <div class="card bg-light mb-2">
+                                <div class="card-body py-2">
+                                    <h5 class="mb-0">Invoicing</h5>
+                                    <p class="mb-1">Invoiced: {{ invoiced_associations }}</p>
+                                    <p class="mb-0">To Invoice: {{ uninvoiced_associations }}</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="table-responsive">
-               <!-- In tax_form/templates/tax_form/dashboard.html -->
-<!-- Replace the table header section with this: -->
-
-                <table class="table table-hover" id="associationTable">
-                    <thead>
-                        <tr>
-                            <th class="sortable" data-sort="name">Association Name</th>
-                            <th>Fiscal Year End</th>
-                            <th class="sortable" data-sort="sent">Tax Return Sent Date</th>
-                            <th class="sortable" data-sort="return">Tax Return Filed Date</th>
-                            <th>Filing Status</th>
-                            <th>Engagement Letter</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for data in dashboard_data %}
-                        <tr class="clickable-row" data-href="{% url 'association' %}?association_id={{ data.association.id }}&tax_year={{ selected_year }}">
-                            <td data-name="{{ data.association.association_name }}" title="{{ data.association.association_name }}">{{ data.association.association_name }}</td>
-                            <td title="{{ data.fiscal_year_end|date:'F d, Y' }}">{{ data.fiscal_year_end|date:"F d, Y" }}</td>
-                            <td data-sent="{{ data.tax_return_sent_date|date:'Y-m-d'|default:'9999-12-31' }}" title="{{ data.tax_return_sent_date|date:'F d, Y'|default:'Not Sent' }}">
-                                {% if data.tax_return_sent_date %}
-                                    {{ data.tax_return_sent_date|date:"F d, Y" }}
-                                {% else %}
-                                    Not Sent
-                                {% endif %}
-                            </td>
-                            <td data-return="{{ data.tax_return_prepared_date|date:'Y-m-d'|default:'9999-12-31' }}" title="{{ data.tax_return_prepared_date|date:'F d, Y'|default:'Not Filed' }}">
-                                {% if data.tax_return_prepared_date %}
-                                    {{ data.tax_return_prepared_date|date:"F d, Y" }}
-                                {% else %}
-                                    Not Filed
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if data.tax_return_filed %}
-                                    <span class="badge bg-success">{{ data.filing_status_display }}</span>
-                                {% else %}
-                                    <span class="badge bg-secondary">Not Filed</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% with letter=data.engagement_letter %}
-                                    {% if letter %}
-                                        {% if letter.status == 'signed' %}
-                                            <span class="badge bg-success">Signed</span>
-                                        {% elif letter.status == 'sent' %}
-                                            <span class="badge bg-info">Sent</span>
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title h5 mb-0">Association List</h3>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="show-all-associations" checked>
+                        <label class="form-check-label" for="show-all-associations">
+                            Show all associations
+                        </label>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="associationTable">
+                            <thead>
+                                <tr>
+                                    <th class="sortable" data-sort="name">Association Name</th>
+                                    <th>Fiscal Year End</th>
+                                    <th>Filing Status</th>
+                                    <th class="sortable" data-sort="sent">Tax Return Sent</th>
+                                    <th class="sortable" data-sort="return">Tax Return Filed</th>
+                                    <th>Engagement Letter</th>
+                                    <th>Invoice Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for data in dashboard_data %}
+                                <tr class="clickable-row {% if not data.prepare_return %}table-secondary not-filing{% endif %}" 
+                                    data-href="{% url 'association' %}?association_id={{ data.association.id }}&tax_year={{ selected_year }}">
+                                    <td data-name="{{ data.association.association_name }}" title="{{ data.association.association_name }}">
+                                        {{ data.association.association_name }}
+                                    </td>
+                                    <td title="{{ data.fiscal_year_end|date:'F d, Y' }}">
+                                        {{ data.fiscal_year_end|date:"F d, Y" }}
+                                    </td>
+                                    <td>
+                                        {% if data.prepare_return %}
+                                            <span class="badge bg-success">Will File</span>
                                         {% else %}
-                                            <span class="badge bg-warning">Pending</span>
+                                            <span class="badge bg-secondary" title="{{ data.not_filing_reason }}">Not Filing</span>
                                         {% endif %}
-                                    {% else %}
-                                        <span class="badge bg-secondary">Not Created</span>
-                                    {% endif %}
-                                {% endwith %}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                                    </td>
+                                    <td data-sent="{{ data.tax_return_sent_date|date:'Y-m-d'|default:'9999-12-31' }}">
+                                        {% if data.tax_return_sent_date %}
+                                            <span class="badge bg-info">{{ data.tax_return_sent_date|date:"F d, Y" }}</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Not Sent</span>
+                                        {% endif %}
+                                    </td>
+                                    <td data-return="{{ data.tax_return_prepared_date|date:'Y-m-d'|default:'9999-12-31' }}">
+                                        {% if data.tax_return_filed %}
+                                            <span class="badge bg-success">{{ data.filing_status_display }}</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Not Filed</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% with letter=data.engagement_letter %}
+                                            {% if letter %}
+                                                {% if letter.status == 'signed' %}
+                                                    <span class="badge bg-success">Signed</span>
+                                                {% elif letter.status == 'sent' %}
+                                                    <span class="badge bg-info">Sent</span>
+                                                {% else %}
+                                                    <span class="badge bg-warning">Pending</span>
+                                                {% endif %}
+                                            {% else %}
+                                                <span class="badge bg-secondary">Not Created</span>
+                                            {% endif %}
+                                        {% endwith %}
+                                    </td>
+                                    <td>
+                                        {% if data.invoiced %}
+                                            <span class="badge bg-success">Invoiced</span>
+                                        {% else %}
+                                            {% if data.prepare_return %}
+                                                <span class="badge bg-secondary">Not Invoiced</span>
+                                            {% else %}
+                                                <span class="badge bg-light text-dark">N/A</span>
+                                            {% endif %}
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <a href="{% url 'edit_filing_status' association_id=data.association.id tax_year=selected_year %}?next={{ request.path|urlencode }}" 
+                                               class="btn btn-sm btn-primary" onclick="event.stopPropagation();">
+                                                Filing Status
+                                            </a>
+                                            <button type="button" class="btn btn-sm btn-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false" onclick="event.stopPropagation();">
+                                                <span class="visually-hidden">Toggle Dropdown</span>
+                                            </button>
+                                            <ul class="dropdown-menu">
+                                                <li><a class="dropdown-item" href="{% url 'edit_tax_year_info' association_id=data.association.id tax_year=selected_year %}" onclick="event.stopPropagation();">Tax Info</a></li>
+                                                <li><a class="dropdown-item" href="{% url 'engagement_letter' %}?tax_year={{ selected_year }}" onclick="event.stopPropagation();">Engagement Letter</a></li>
+                                                <li><a class="dropdown-item" href="{% url 'form_1120h' %}?association_id={{ data.association.id }}&tax_year={{ selected_year }}" onclick="event.stopPropagation();">Form 1120-H</a></li>
+                                            </ul>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -113,4 +184,5 @@
 
 {% block extra_js %}
 <script src="{% static 'js/dashboard.js' %}"></script>
+<script src="{% static 'js/filing_status_filter.js' %}"></script>
 {% endblock %}

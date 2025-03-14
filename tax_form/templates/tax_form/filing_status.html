@@ -1,0 +1,64 @@
+{% extends "tax_form/base.html" %}
+{% load crispy_forms_tags %}
+{% load static %}
+
+{% block title %}Filing Status - {{ association.association_name }} ({{ tax_year }}){% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <h1 class="mb-4">Filing Status: {{ association.association_name }} ({{ tax_year }})</h1>
+            
+            <form method="post" class="mb-4">
+                {% csrf_token %}
+                
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h3 class="h5 mb-0">Tax Return Status</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3 form-check">
+                            {{ form.prepare_return }}
+                            <label class="form-check-label" for="{{ form.prepare_return.id_for_label }}">
+                                Prepare tax return for this association
+                            </label>
+                        </div>
+                        
+                        <div class="mb-3" id="reason-container">
+                            <label for="{{ form.not_filing_reason.id_for_label }}" class="form-label">
+                                Reason for not preparing
+                            </label>
+                            {{ form.not_filing_reason }}
+                            <div class="form-text">Only required if not preparing a tax return</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h3 class="h5 mb-0">Invoicing Status</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3 form-check">
+                            {{ form.invoiced }}
+                            <label class="form-check-label" for="{{ form.invoiced.id_for_label }}">
+                                Invoiced
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'dashboard' %}?tax_year={{ tax_year }}" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary">Update Filing Status</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/filing_status_form.js' %}"></script>
+{% endblock %}

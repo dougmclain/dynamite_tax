@@ -1,6 +1,7 @@
 from django.urls import path
 from django.contrib.auth import views as auth_views
-from .views import main, association, financial, create_association, dashboard, edit_association, edit_tax_year_info, extension, engagement_letter
+from .views import main, association, financial, create_association, dashboard, edit_association, edit_tax_year_info, extension, engagement_letter, filing_status
+from .views.filing_status import EditFilingStatusView
 
 urlpatterns = [
     path('', main.index, name='index'),
@@ -19,4 +20,6 @@ urlpatterns = [
     path('engagement-letter/delete/<int:letter_id>/', engagement_letter.DeleteEngagementLetterView.as_view(), name='delete_engagement_letter'),
     path('engagement-letter/upload-signed/<int:letter_id>/', engagement_letter.UploadSignedEngagementLetterView.as_view(), name='upload_signed_engagement_letter'),
     path('engagement-letter/mark-sent/<int:letter_id>/', engagement_letter.MarkEngagementLetterSentView.as_view(), name='mark_sent_engagement_letter'),
+    path('filing-status/<int:association_id>/<int:tax_year>/', 
+         EditFilingStatusView.as_view(), name='edit_filing_status')
 ]

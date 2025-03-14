@@ -1,15 +1,16 @@
+# Update tax_form/views/dashboard.py
+
 from django.views import View
 from django.shortcuts import render
 from django.contrib.auth.mixins import LoginRequiredMixin   
-from ..models import Association, Financial, Extension, CompletedTaxReturn, EngagementLetter
+from ..models import Association, Financial, Extension, CompletedTaxReturn, EngagementLetter, AssociationFilingStatus
 from django.utils import timezone
-from django.db.models import Min, Max, Count, Q
+from django.db.models import Min, Max, Count, Q, F, Value, BooleanField
+from django.db.models.functions import Coalesce
 from django.conf import settings
 import logging
 
 logger = logging.getLogger(__name__)
-
-# Update for tax_form/views/dashboard.py
 
 class DashboardView(LoginRequiredMixin, View):
     template_name = 'tax_form/dashboard.html'
@@ -38,39 +39,74 @@ class DashboardView(LoginRequiredMixin, View):
         # Ensure we're working with an integer
         selected_year = int(selected_year)
 
+        # Get all associations
         associations = Association.objects.all().order_by('association_name')
         total_associations = associations.count()
 
+        # Get filing statuses for selected year, creating defaults for those that don't exist
+        filing_statuses = {}
+        for assoc in associations:
+            status, created = AssociationFilingStatus.objects.get_or_create(
+                association=assoc,
+                tax_year=selected_year,
+                defaults={'prepare_return': True}
+            )
+            filing_statuses[assoc.id] = status
+        
+        # Count associations we'll be preparing returns for
+        associations_to_file = sum(1 for status in filing_statuses.values() if status.prepare_return)
+        
+        # Count tax returns that have been filed
         financials = Financial.objects.filter(tax_year=selected_year)
         filed_returns = CompletedTaxReturn.objects.filter(
             financial__tax_year=selected_year, 
-            return_filed=True
+            return_filed=True,
+            financial__association__filing_statuses__prepare_return=True,
+            financial__association__filing_statuses__tax_year=selected_year
         ).count()
-        unfiled_returns = total_associations - filed_returns
+        
+        # Count returns sent for signature
+        sent_returns = CompletedTaxReturn.objects.filter(
+            financial__tax_year=selected_year,
+            sent_for_signature=True,
+            financial__association__filing_statuses__prepare_return=True,
+            financial__association__filing_statuses__tax_year=selected_year
+        ).count()
+        
+        # Calculate unfiled returns (associations we'll file for minus those already filed)
+        unfiled_returns = associations_to_file - filed_returns
+        
+        # Count invoiced associations
+        invoiced_associations = AssociationFilingStatus.objects.filter(
+            tax_year=selected_year,
+            prepare_return=True,
+            invoiced=True
+        ).count()
+        
+        # Count uninvoiced associations that we'll prepare returns for
+        uninvoiced_associations = associations_to_file - invoiced_associations
 
         # Get signed engagement letters
         signed_engagement_letters = EngagementLetter.objects.filter(
             tax_year=selected_year,
-            status='signed'
+            status='signed',
+            association__filing_statuses__prepare_return=True,
+            association__filing_statuses__tax_year=selected_year
         ).count()
 
         dashboard_data = []
 
         # Check if Azure Storage is configured
         use_azure = False
-        azure_account = None
-        azure_container = None
-        
         if hasattr(settings, 'USE_AZURE_STORAGE') and settings.USE_AZURE_STORAGE:
             use_azure = True
-            azure_account = getattr(settings, 'AZURE_ACCOUNT_NAME', '')
-            azure_container = getattr(settings, 'AZURE_CONTAINER', '')
 
         for association in associations:
             financial = financials.filter(association=association).first()
             extension = Extension.objects.filter(financial=financial).first() if financial else None
             completed_tax_return = CompletedTaxReturn.objects.filter(financial=financial).first() if financial else None
             engagement_letter = EngagementLetter.objects.filter(association=association, tax_year=selected_year).first()
+            filing_status = filing_statuses.get(association.id)
             
             try:
                 fiscal_year_end = association.get_fiscal_year_end(selected_year)
@@ -95,6 +131,9 @@ class DashboardView(LoginRequiredMixin, View):
                 'tax_return_filed': completed_tax_return.return_filed if completed_tax_return else False,
                 'filing_status_display': filing_status_display,
                 'engagement_letter': engagement_letter,
+                'prepare_return': filing_status.prepare_return if filing_status else True,
+                'invoiced': filing_status.invoiced if filing_status else False,
+                'not_filing_reason': filing_status.not_filing_reason if filing_status and not filing_status.prepare_return else "",
             })
 
         context = {
@@ -102,8 +141,12 @@ class DashboardView(LoginRequiredMixin, View):
             'selected_year': selected_year,
             'available_years': available_years,
             'total_associations': total_associations,
+            'associations_to_file': associations_to_file,
             'filed_returns': filed_returns,
             'unfiled_returns': unfiled_returns,
+            'sent_returns': sent_returns,
             'signed_engagement_letters': signed_engagement_letters,
+            'invoiced_associations': invoiced_associations,
+            'uninvoiced_associations': uninvoiced_associations,
         }
         return render(request, self.template_name, context)

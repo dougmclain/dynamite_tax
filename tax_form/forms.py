@@ -1,5 +1,5 @@
 from django import forms
-from .models import Association, Financial, Preparer, Extension, CompletedTaxReturn, EngagementLetter
+from .models import Association, Financial, Preparer, Extension, CompletedTaxReturn, EngagementLetter, AssociationFilingStatus
 from django.forms.widgets import NumberInput, TextInput
 import logging
 
@@ -157,3 +157,18 @@ class EngagementLetterForm(forms.ModelForm):
             'tax_year': forms.NumberInput(attrs={'class': 'form-control'}),
             'price': forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'step': '50'}),
         }
+        
+class AssociationFilingStatusForm(forms.ModelForm):
+    class Meta:
+        model = AssociationFilingStatus
+        fields = ['prepare_return', 'not_filing_reason', 'invoiced']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Make the not_filing_reason field not required
+        self.fields['not_filing_reason'].required = False
+        
+        # Add classes to form elements
+        self.fields['prepare_return'].widget.attrs['class'] = 'form-check-input'
+        self.fields['invoiced'].widget.attrs['class'] = 'form-check-input'
+        self.fields['not_filing_reason'].widget.attrs['class'] = 'form-control'

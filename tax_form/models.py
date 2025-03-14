@@ -252,3 +252,32 @@ class EngagementLetter(models.Model):
     
     class Meta:
         unique_together = ('association', 'tax_year')
+        
+# Add to tax_form/models.py
+
+# Add to tax_form/models.py
+
+class AssociationFilingStatus(models.Model):
+    """Tracks filing status and invoicing per association and tax year"""
+    association = models.ForeignKey('Association', on_delete=models.CASCADE, related_name='filing_statuses')
+    tax_year = models.IntegerField(help_text="The tax year this status applies to")
+    
+    # Whether we'll be preparing/filing taxes for this association this year
+    prepare_return = models.BooleanField(default=True, 
+                      help_text="If False, we won't be preparing a tax return for this association this year")
+    
+    # Reason for not preparing, if applicable
+    not_filing_reason = models.CharField(max_length=255, blank=True, 
+                        help_text="Reason for not preparing a tax return")
+    
+    # Invoice tracking - simplified
+    invoiced = models.BooleanField(default=False, help_text="Has this association been invoiced?")
+    
+    class Meta:
+        unique_together = ('association', 'tax_year')
+        verbose_name_plural = "Association Filing Statuses"
+    
+    def __str__(self):
+        status = "Will prepare" if self.prepare_return else "Will NOT prepare"
+        invoice_status = "Invoiced" if self.invoiced else "Not invoiced"
+        return f"{self.association.association_name} - {self.tax_year}: {status}, {invoice_status}"

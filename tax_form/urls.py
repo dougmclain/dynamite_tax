@@ -4,6 +4,7 @@ from django.urls import path
 from django.contrib.auth import views as auth_views
 from .views import main, association, financial, create_association, dashboard, edit_association, edit_tax_year_info, extension, engagement_letter, filing_status, management_company
 from .views.delete_files import DeleteFinancialPDFView
+from .views.export import ExportAssociationsView
 
 urlpatterns = [
     # Existing URLs
@@ -32,4 +33,7 @@ urlpatterns = [
     path('management-companies/<int:pk>/', management_company.ManagementCompanyDetailView.as_view(), name='management_company_detail'),
     path('management-companies/<int:pk>/edit/', management_company.ManagementCompanyUpdateView.as_view(), name='management_company_update'),
     path('management-companies/<int:pk>/delete/', management_company.ManagementCompanyDeleteView.as_view(), name='management_company_delete'),
+    path('export-associations/', ExportAssociationsView.as_view(), name='export_associations'),
+    
+    
 ]

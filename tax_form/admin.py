@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.db import models
 from django.utils.html import format_html
 from django.contrib.humanize.templatetags.humanize import intcomma
-from .models import Association, Financial, Preparer, Extension, CompletedTaxReturn
+from .models import Association, Financial, Preparer, Extension, CompletedTaxReturn, ManagementCompany
 
 # Inline for Financial records in Association admin (optional)
 class FinancialInline(admin.TabularInline):
@@ -27,14 +27,42 @@ class CompletedTaxReturnInline(admin.StackedInline):
 
 @admin.register(Association)
 class AssociationAdmin(admin.ModelAdmin):
-    list_display = ('association_name', 'city', 'state', 'ein', 'association_type', 'get_full_contact_name', 'contact_email', 'fiscal_year_end_month')
+    list_display = (
+        'association_name', 'city', 'state', 'ein', 'association_type', 
+        'get_full_contact_name', 'contact_email', 'fiscal_year_end_month',
+        'management_status'
+    )
     search_fields = ('association_name', 'ein', 'contact_first_name', 'contact_last_name', 'contact_email')
-    list_filter = ('association_type', 'state', 'fiscal_year_end_month')
+    list_filter = ('association_type', 'state', 'fiscal_year_end_month', 'is_self_managed', 'management_company')
     inlines = [FinancialInline]  # Include this if you want Financials inline
+    
+    fieldsets = (
+        ('Association Information', {
+            'fields': ('association_name', 'ein', 'formation_date', 'association_type', 'fiscal_year_end_month', 'zoned')
+        }),
+        ('Address', {
+            'fields': ('mailing_address', 'city', 'state', 'zipcode')
+        }),
+        ('Contact Information', {
+            'fields': ('contact_first_name', 'contact_last_name', 'contact_email')
+        }),
+        ('Management', {
+            'fields': ('is_self_managed', 'management_company')
+        }),
+    )
     
     def get_full_contact_name(self, obj):
         return obj.get_full_contact_name()
     get_full_contact_name.short_description = 'Contact Name'
+    
+    def management_status(self, obj):
+        if obj.is_self_managed:
+            return format_html('<span class="badge bg-info">Self-managed</span>')
+        elif obj.management_company:
+            return format_html('<span class="badge bg-success">{}</span>', obj.management_company.name)
+        else:
+            return format_html('<span class="badge bg-warning">Unspecified</span>')
+    management_status.short_description = 'Management'
 
 @admin.register(Financial)
 class FinancialAdmin(admin.ModelAdmin):
@@ -170,3 +198,23 @@ class PreparerAdmin(admin.ModelAdmin):
 admin.site.site_header = "Dynamite Tax Services"
 admin.site.site_title = "Dynamite Tax Services"
 admin.site.index_title = "Dynamite Tax Services Admin Portal"
+
+@admin.register(ManagementCompany)
+class ManagementCompanyAdmin(admin.ModelAdmin):
+    list_display = ('name', 'contact_person', 'email', 'phone', 'get_associations_count')
+    search_fields = ('name', 'contact_person', 'email', 'phone')
+    fieldsets = (
+        ('Company Information', {
+            'fields': ('name', 'contact_person', 'email', 'phone')
+        }),
+        ('Address', {
+            'fields': ('address', 'city', 'state', 'zipcode')
+        }),
+        ('Additional Information', {
+            'fields': ('notes',)
+        }),
+    )
+    
+    def get_associations_count(self, obj):
+        return obj.associations.count()
+    get_associations_count.short_description = 'Associations'

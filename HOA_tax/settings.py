@@ -79,6 +79,10 @@ WSGI_APPLICATION = 'HOA_tax.wsgi.application'
 # Database configuration
 import dj_database_url
 
+# TEMPORARY: Force SQLite for local development
+IS_PRODUCTION = True
+USE_PRODUCTION_DB = True
+
 # Check if we're running in production or development
 if IS_PRODUCTION:
     # Production database (from DATABASE_URL env var)

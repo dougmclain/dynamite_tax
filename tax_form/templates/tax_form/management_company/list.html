@@ -1,0 +1,51 @@
+{% extends "tax_form/base.html" %}
+{% load static %}
+
+{% block title %}Management Companies{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Management Companies</h1>
+        <a href="{% url 'management_company_create' %}" class="btn btn-primary">Create New</a>
+    </div>
+
+    {% if management_companies %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Contact Person</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Associations</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for company in management_companies %}
+                    <tr>
+                        <td><a href="{% url 'management_company_detail' pk=company.id %}">{{ company.name }}</a></td>
+                        <td>{{ company.contact_person|default:"-" }}</td>
+                        <td>{{ company.email|default:"-" }}</td>
+                        <td>{{ company.phone|default:"-" }}</td>
+                        <td>{{ company.associations.count }}</td>
+                        <td>
+                            <div class="btn-group">
+                                <a href="{% url 'management_company_update' pk=company.id %}" class="btn btn-sm btn-outline-primary">Edit</a>
+                                <a href="{% url 'management_company_delete' pk=company.id %}" class="btn btn-sm btn-outline-danger">Delete</a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            No management companies found. <a href="{% url 'management_company_create' %}">Create one now</a>.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

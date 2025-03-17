@@ -1,9 +1,12 @@
+# Update tax_form/urls.py
+
 from django.urls import path
 from django.contrib.auth import views as auth_views
-from .views import main, association, financial, create_association, dashboard, edit_association, edit_tax_year_info, extension, engagement_letter, filing_status
+from .views import main, association, financial, create_association, dashboard, edit_association, edit_tax_year_info, extension, engagement_letter, filing_status, management_company
 from .views.delete_files import DeleteFinancialPDFView
 
 urlpatterns = [
+    # Existing URLs
     path('', main.index, name='index'),
     path('form-1120h/', main.form_1120h, name='form_1120h'),
     path('association/', association.AssociationView.as_view(), name='association'),
@@ -20,8 +23,13 @@ urlpatterns = [
     path('engagement-letter/delete/<int:letter_id>/', engagement_letter.DeleteEngagementLetterView.as_view(), name='delete_engagement_letter'),
     path('engagement-letter/upload-signed/<int:letter_id>/', engagement_letter.UploadSignedEngagementLetterView.as_view(), name='upload_signed_engagement_letter'),
     path('engagement-letter/mark-sent/<int:letter_id>/', engagement_letter.MarkEngagementLetterSentView.as_view(), name='mark_sent_engagement_letter'),
-# Add this to your existing urlpatterns list in tax_form/urls.py
-    path('filing-status/<int:association_id>/<int:tax_year>/', 
-        filing_status.EditFilingStatusView.as_view(), name='edit_filing_status'),
+    path('filing-status/<int:association_id>/<int:tax_year>/', filing_status.EditFilingStatusView.as_view(), name='edit_filing_status'),
     path('delete-financial-pdf/<int:financial_id>/', DeleteFinancialPDFView.as_view(), name='delete_financial_pdf'),
+    
+    # Management Company URLs
+    path('management-companies/', management_company.ManagementCompanyListView.as_view(), name='management_company_list'),
+    path('management-companies/create/', management_company.ManagementCompanyCreateView.as_view(), name='management_company_create'),
+    path('management-companies/<int:pk>/', management_company.ManagementCompanyDetailView.as_view(), name='management_company_detail'),
+    path('management-companies/<int:pk>/edit/', management_company.ManagementCompanyUpdateView.as_view(), name='management_company_update'),
+    path('management-companies/<int:pk>/delete/', management_company.ManagementCompanyDeleteView.as_view(), name='management_company_delete'),
 ]

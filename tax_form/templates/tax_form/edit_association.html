@@ -1,5 +1,6 @@
 {% extends "tax_form/base.html" %}
 {% load crispy_forms_tags %}
+{% load static %}
 
 {% block title %}Edit Association - {{ association.association_name }}{% endblock %}
 
@@ -10,7 +11,123 @@
             <h1 class="mb-4">Edit Association: {{ association.association_name }}</h1>
             <form method="post" class="mb-4">
                 {% csrf_token %}
-                {{ form|crispy }}
+                
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h2 class="h5 mb-0">Association Information</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.association_name|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                {{ form.ein|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.formation_date|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                {{ form.association_type|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.fiscal_year_end_month|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check mt-4">
+                                    {{ form.zoned }}
+                                    <label class="form-check-label" for="{{ form.zoned.id_for_label }}">
+                                        {{ form.zoned.label }}
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h2 class="h5 mb-0">Address</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                {{ form.mailing_address|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-5 mb-3">
+                                {{ form.city|as_crispy_field }}
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                {{ form.state|as_crispy_field }}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                {{ form.zipcode|as_crispy_field }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h2 class="h5 mb-0">Contact Information</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.contact_first_name|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                {{ form.contact_last_name|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                {{ form.contact_email|as_crispy_field }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h2 class="h5 mb-0">Management</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <div class="form-check">
+                                    {{ form.is_self_managed }}
+                                    <label class="form-check-label" for="{{ form.is_self_managed.id_for_label }}">
+                                        {{ form.is_self_managed.label }}
+                                    </label>
+                                    <div class="form-text">{{ form.is_self_managed.help_text }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-10 mb-3 management-company-field">
+                                {{ form.management_company|as_crispy_field }}
+                            </div>
+                            <div class="col-md-2 mb-3 align-self-end management-company-field">
+                                <a href="{% url 'management_company_create' %}" class="btn btn-outline-primary" id="new-management-company-btn">
+                                    <i class="fas fa-plus"></i> New
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
                 <input type="hidden" name="tax_year" value="{{ tax_year }}">
                 <button type="submit" class="btn btn-primary">Update Association</button>
                 <a href="{% url 'association' %}?association_id={{ association.id }}&tax_year={{ tax_year }}" class="btn btn-secondary">Cancel</a>
@@ -18,4 +135,45 @@
         </div>
     </div>
 </div>
+
+<!-- Modal for adding a new management company -->
+<div class="modal fade" id="management-company-modal" tabindex="-1" aria-labelledby="managementCompanyModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="managementCompanyModalLabel">Add New Management Company</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form action="{% url 'management_company_create' %}" method="post" id="modal-management-company-form">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="modal-name" class="form-label">Name</label>
+                        <input type="text" class="form-control" id="modal-name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="modal-contact-person" class="form-label">Contact Person</label>
+                        <input type="text" class="form-control" id="modal-contact-person" name="contact_person">
+                    </div>
+                    <div class="mb-3">
+                        <label for="modal-email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="modal-email" name="email">
+                    </div>
+                    <div class="mb-3">
+                        <label for="modal-phone" class="form-label">Phone</label>
+                        <input type="text" class="form-control" id="modal-phone" name="phone">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Create</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/management_company.js' %}"></script>
 {% endblock %}

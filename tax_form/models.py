@@ -7,6 +7,49 @@ from django.core.validators import RegexValidator, MinValueValidator
 from datetime import datetime, timedelta, date
 import calendar
 # Create your models here.
+
+
+
+class ManagementCompany(models.Model):
+    name = models.CharField(max_length=255)
+    contact_person = models.CharField(max_length=255, blank=True, null=True)
+    email = models.EmailField(blank=True, null=True)
+    phone = models.CharField(max_length=20, blank=True, null=True)
+    address = models.CharField(max_length=255, blank=True, null=True)
+    city = models.CharField(max_length=100, blank=True, null=True)
+    state = models.CharField(max_length=100, blank=True, null=True)
+    zipcode = models.CharField(max_length=20, blank=True, null=True)
+    notes = models.TextField(blank=True, null=True)
+    
+    class Meta:
+        verbose_name = "Management Company"
+        verbose_name_plural = "Management Companies"
+        ordering = ['name']
+    
+    def __str__(self):
+        return self.name
+    
+    def get_full_address(self):
+        """Return the full address as a formatted string"""
+        if self.address and self.city and self.state and self.zipcode:
+            return f"{self.address}, {self.city}, {self.state} {self.zipcode}"
+        return "No address provided"
+
+# Update the Association model by adding these fields:
+
+# In the Association model, add these fields:
+management_company = models.ForeignKey(
+    'ManagementCompany', 
+    on_delete=models.SET_NULL, 
+    blank=True, 
+    null=True, 
+    related_name='associations'
+)
+is_self_managed = models.BooleanField(
+    default=True, 
+    help_text="Check if this association is self-managed (no management company)"
+)
+
 class Association(models.Model):
     ASSOCIATION_TYPES = (
         ('condo', 'Condominium'),
@@ -38,6 +81,19 @@ class Association(models.Model):
     contact_first_name = models.CharField(max_length=100, null=True, blank=True)
     contact_last_name = models.CharField(max_length=100, null=True, blank=True)
     contact_email = models.EmailField(max_length=254, null=True, blank=True)
+    
+    # New fields for management company
+    management_company = models.ForeignKey(
+        'ManagementCompany', 
+        on_delete=models.SET_NULL, 
+        blank=True, 
+        null=True, 
+        related_name='associations'
+    )
+    is_self_managed = models.BooleanField(
+        default=True, 
+        help_text="Check if this association is self-managed (no management company)"
+    )
 
     def __str__(self):
         return self.association_name
@@ -281,3 +337,9 @@ class AssociationFilingStatus(models.Model):
         status = "Will prepare" if self.prepare_return else "Will NOT prepare"
         invoice_status = "Invoiced" if self.invoiced else "Not invoiced"
         return f"{self.association.association_name} - {self.tax_year}: {status}, {invoice_status}"
+    
+    
+# Update tax_form/models.py to add the ManagementCompany model
+# and update the Association model
+
+# Add this new model class

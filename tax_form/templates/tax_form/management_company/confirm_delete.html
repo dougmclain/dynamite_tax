@@ -1,0 +1,36 @@
+{% extends "tax_form/base.html" %}
+{% load static %}
+
+{% block title %}Delete {{ company.name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h1 class="h3 mb-0">Confirm Deletion</h1>
+                </div>
+                <div class="card-body">
+                    <p class="lead">Are you sure you want to delete the management company <strong>{{ company.name }}</strong>?</p>
+                    
+                    {% if associations_count > 0 %}
+                        <div class="alert alert-warning">
+                            <strong>Warning:</strong> This management company is currently assigned to {{ associations_count }} association{{ associations_count|pluralize }}. 
+                            If you delete this company, those associations will be marked as self-managed.
+                        </div>
+                    {% endif %}
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'management_company_detail' pk=company.id %}" class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-danger">Delete</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

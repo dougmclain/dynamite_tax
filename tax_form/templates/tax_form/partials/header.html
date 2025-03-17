@@ -32,6 +32,9 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'extension_form' %}">Extension - 7004</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'management_company_list' %}">Management Companies</a>
+                    </li>
                     {% if user.is_authenticated %}
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'logout' %}">Logout</a>

@@ -1,5 +1,5 @@
 from django import forms
-from .models import Association, Financial, Preparer, Extension, CompletedTaxReturn, EngagementLetter, AssociationFilingStatus
+from .models import Association, Financial, Preparer, Extension, CompletedTaxReturn, EngagementLetter, AssociationFilingStatus, ManagementCompany
 from django.forms.widgets import NumberInput, TextInput
 import logging
 
@@ -53,25 +53,36 @@ class AssociationForm(forms.ModelForm):
             'association_name', 'mailing_address', 'city', 'state', 'zipcode', 
             'zoned', 'ein', 'formation_date', 'association_type',
             'fiscal_year_end_month',
-            'contact_first_name', 'contact_last_name', 'contact_email'
+            'contact_first_name', 'contact_last_name', 'contact_email',
+            'is_self_managed', 'management_company'
         ]
         widgets = {
             'formation_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'association_type': forms.Select(attrs={'class': 'form-select'}),
             'fiscal_year_end_month': forms.Select(attrs={'class': 'form-select'}),
+            'management_company': forms.Select(attrs={'class': 'form-select'}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for field in self.fields:
-            if field != 'zoned':
+            if field not in ['zoned', 'is_self_managed']:
                 self.fields[field].widget.attrs['class'] = 'form-control'
+        
         self.fields['zoned'].widget.attrs['class'] = 'form-check-input'
+        self.fields['is_self_managed'].widget.attrs['class'] = 'form-check-input'
 
         self.fields['contact_first_name'].widget.attrs['placeholder'] = 'First Name'
         self.fields['contact_last_name'].widget.attrs['placeholder'] = 'Last Name'
         self.fields['contact_email'].widget.attrs['placeholder'] = 'Email'
         self.fields['fiscal_year_end_month'].label = 'Fiscal Year End Month'
+        
+        # Add an empty option for management company field
+        self.fields['management_company'].empty_label = "Select a management company"
+        
+        # Add help text for the management fields
+        self.fields['is_self_managed'].help_text = "Uncheck if the association is managed by a management company"
+        self.fields['management_company'].help_text = "Select the management company if the association is not self-managed"
 
 class DollarNumberInput(NumberInput):
     template_name = 'tax_form/dollar_number_input.html'
@@ -172,3 +183,28 @@ class AssociationFilingStatusForm(forms.ModelForm):
         self.fields['prepare_return'].widget.attrs['class'] = 'form-check-input'
         self.fields['invoiced'].widget.attrs['class'] = 'form-check-input'
         self.fields['not_filing_reason'].widget.attrs['class'] = 'form-control'
+        
+# Add to tax_form/forms.py
+
+class ManagementCompanyForm(forms.ModelForm):
+    class Meta:
+        model = ManagementCompany
+        fields = [
+            'name', 'contact_person', 'email', 'phone',
+            'address', 'city', 'state', 'zipcode',
+            'notes'
+        ]
+        widgets = {
+            'notes': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields:
+            self.fields[field].widget.attrs['class'] = 'form-control'
+
+        # Add placeholders for common fields
+        self.fields['name'].widget.attrs['placeholder'] = 'Management Company Name'
+        self.fields['contact_person'].widget.attrs['placeholder'] = 'Contact Person'
+        self.fields['email'].widget.attrs['placeholder'] = 'Email'
+        self.fields['phone'].widget.attrs['placeholder'] = 'Phone'

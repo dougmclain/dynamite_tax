@@ -1,6 +1,8 @@
 {% extends "tax_form/base.html" %}
 {% load humanize %}
+{% load static %}
 {% block title %}Association Details{% endblock %}
+
 {% block content %}
 <div class="container mt-5">
     <h1 class="mb-4">Association Details</h1>
@@ -83,7 +85,7 @@
                             </p>
                             <p><strong>Extension Form:</strong>
                                 {% if extension_data and extension_data.form_7004 %}
-                                    <a href="{{ extension_data.form_7004.url }}" class="btn btn-sm btn-secondary" target="_blank">View Form 7004</a>
+                                    <a href="{{ extension_data.form_7004.url }}?v={{ request.session.pdf_timestamp|default:'0' }}" class="btn btn-sm btn-secondary" target="_blank">View Form 7004</a>
                                 {% else %}
                                     Not available
                                 {% endif %}
@@ -93,7 +95,7 @@
                                     {% if completed_tax_return_data.sent_for_signature %}
                                         Yes{% if completed_tax_return_data.sent_date %} (Sent on {{ completed_tax_return_data.sent_date|date:"F d, Y" }}){% endif %}
                                         {% if completed_tax_return_data.sent_tax_return_pdf %}
-                                            <a href="{{ completed_tax_return_data.sent_tax_return_pdf.url }}" class="btn btn-sm btn-secondary" target="_blank">View Sent Return</a>
+                                            <a href="{{ completed_tax_return_data.sent_tax_return_pdf.url }}?v={{ request.session.pdf_timestamp|default:'0' }}" class="btn btn-sm btn-secondary" target="_blank">View Sent Return</a>
                                         {% endif %}
                                     {% else %}
                                         No
@@ -116,15 +118,15 @@
                             </p>
                             <p><strong>Signed Tax Return:</strong>
                                 {% if completed_tax_return_data and completed_tax_return_data.tax_return_pdf %}
-                                    <a href="{{ completed_tax_return_data.tax_return_pdf.url }}" class="btn btn-sm btn-secondary" target="_blank">View Signed Return</a>
+                                    <a href="{{ completed_tax_return_data.tax_return_pdf.url }}?v={{ request.session.pdf_timestamp|default:'0' }}" class="btn btn-sm btn-secondary" target="_blank">View Signed Return</a>
                                 {% else %}
                                     Not available
                                 {% endif %}
                             </p>
                             <p><strong>Financial Info PDF:</strong>
                                 {% if financial_data and financial_data.financial_info_pdf %}
-                                    <div class="d-flex align-items-center">
-                                        <a href="{{ financial_data.financial_info_pdf.url }}" class="btn btn-sm btn-secondary me-2" target="_blank">View Financial Info</a>
+                                    <div class="file-actions">
+                                        <a href="{{ financial_data.financial_info_pdf.url }}?v={{ request.session.pdf_timestamp|default:'0' }}" class="btn btn-sm btn-secondary" target="_blank">View Financial Info</a>
                                         <!-- Add delete button with confirmation -->
                                         <form method="post" action="{% url 'delete_financial_pdf' financial_id=financial_data.id %}" 
                                               onsubmit="return confirm('Are you sure you want to delete this financial PDF? This action cannot be undone.');" 
@@ -223,4 +225,8 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/pdf_cache_buster.js' %}"></script>
 {% endblock %}

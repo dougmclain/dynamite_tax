@@ -1,4 +1,4 @@
-# Add this to tax_form/views/delete_files.py
+# Update tax_form/views/delete_files.py
 
 from django.views import View
 from django.shortcuts import redirect, get_object_or_404
@@ -9,6 +9,7 @@ from django.conf import settings
 from ..models import Financial
 from azure.storage.blob import BlobServiceClient
 import logging
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -35,10 +36,21 @@ class DeleteFinancialPDFView(LoginRequiredMixin, View):
                     blob_service_client = BlobServiceClient.from_connection_string(connection_string)
                     container_client = blob_service_client.get_container_client(settings.AZURE_CONTAINER)
                     
-                    # Delete the blob
+                    # Check if blob exists before trying to delete
                     blob_client = container_client.get_blob_client(file_path)
-                    blob_client.delete_blob()
-                    logger.info(f"Deleted blob: {file_path}")
+                    blob_exists = True
+                    try:
+                        blob_client.get_blob_properties()
+                    except Exception:
+                        blob_exists = False
+                    
+                    if blob_exists:
+                        # Delete the blob
+                        blob_client.delete_blob()
+                        logger.info(f"Deleted blob: {file_path}")
+                        
+                        # Add a small delay to ensure Azure storage consistency
+                        time.sleep(0.5)
                 else:
                     # For local storage
                     import os
@@ -50,6 +62,9 @@ class DeleteFinancialPDFView(LoginRequiredMixin, View):
                 # Clear the file reference in the model
                 financial.financial_info_pdf = None
                 financial.save()
+                
+                # Add timestamp to session to force reload of cached content
+                request.session['pdf_timestamp'] = int(time.time())
                 
                 messages.success(request, f"Financial PDF for {financial.association.association_name} - {financial.tax_year} deleted successfully.")
             except Exception as e:

@@ -6,14 +6,13 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.conf import settings
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
-from azure.storage.blob import BlobServiceClient
+from azure.storage.blob import BlobServiceClient, ContentSettings
 from ..models import Association, Financial, Extension, CompletedTaxReturn
 import logging
 import os
+import time
 
 logger = logging.getLogger(__name__)
-
-# Update the EditTaxYearInfoView in tax_form/views/edit_tax_year_info.py
 
 class EditTaxYearInfoView(LoginRequiredMixin, View):
     template_name = 'tax_form/edit_tax_year_info.html'
@@ -37,12 +36,9 @@ class EditTaxYearInfoView(LoginRequiredMixin, View):
             'tax_year': tax_year,
             'extension': extension,
             'completed_tax_return': completed_tax_return,
-            'financial': financial,  # Add financial to the context
+            'financial': financial,
         }
         return render(request, self.template_name, context)
-
-# In tax_form/views/edit_tax_year_info.py
-# Update the post method to handle the new fields:
 
     def post(self, request, association_id, tax_year):
         try:
@@ -76,20 +72,24 @@ class EditTaxYearInfoView(LoginRequiredMixin, View):
             connection_string = f"DefaultEndpointsProtocol=https;AccountName={settings.AZURE_ACCOUNT_NAME};AccountKey={settings.AZURE_ACCOUNT_KEY};EndpointSuffix=core.windows.net"
             blob_service_client = BlobServiceClient.from_connection_string(connection_string)
             container_client = blob_service_client.get_container_client(settings.AZURE_CONTAINER)
+            
+            # Generate a timestamp for this update (used for cache busting)
+            current_timestamp = int(time.time())
+            request.session['pdf_timestamp'] = current_timestamp
 
             # Handle extension file upload
             if 'extension_file' in request.FILES:
                 extension_file = request.FILES['extension_file']
                 logger.debug(f"Received extension file with size: {extension_file.size} bytes")
 
-                # Create a safe filename
+                # Create a safe filename with timestamp
                 safe_name = ''.join(c for c in association.association_name if c.isalnum() or c.isspace())
                 safe_name = safe_name.replace(' ', '_')
                 if len(safe_name) > 30:
                     safe_name = safe_name[:30]
                 
                 file_ext = os.path.splitext(extension_file.name)[1].lower()
-                filename = f"{safe_name}_extension_{tax_year}{file_ext}"
+                filename = f"{safe_name}_extension_{tax_year}_{current_timestamp}{file_ext}"
                 
                 # Full path for the blob
                 blob_path = f"extensions/{filename}"
@@ -97,9 +97,26 @@ class EditTaxYearInfoView(LoginRequiredMixin, View):
                 # Read file content
                 file_content = extension_file.read()
                 
+                # Set content type and cache control
+                content_settings = ContentSettings(
+                    content_type="application/pdf",
+                    cache_control="no-cache, no-store, must-revalidate",
+                    content_disposition=f"inline; filename={filename}"
+                )
+                
+                # Delete old file if it exists
+                if extension.form_7004:
+                    old_path = extension.form_7004.name
+                    try:
+                        old_blob_client = container_client.get_blob_client(old_path)
+                        old_blob_client.delete_blob()
+                        logger.info(f"Deleted old extension file: {old_path}")
+                    except Exception as e:
+                        logger.warning(f"Error deleting old extension file: {str(e)}")
+                
                 # Upload directly to Azure
                 blob_client = container_client.get_blob_client(blob_path)
-                blob_client.upload_blob(file_content, overwrite=True, content_type="application/pdf")
+                blob_client.upload_blob(file_content, overwrite=True, content_settings=content_settings)
                 
                 # Store the blob path in the model
                 extension.form_7004 = blob_path
@@ -110,14 +127,14 @@ class EditTaxYearInfoView(LoginRequiredMixin, View):
                 sent_tax_return_file = request.FILES['sent_tax_return_file']
                 logger.debug(f"Received sent tax return file with size: {sent_tax_return_file.size} bytes")
 
-                # Create a safe filename
+                # Create a safe filename with timestamp
                 safe_name = ''.join(c for c in association.association_name if c.isalnum() or c.isspace())
                 safe_name = safe_name.replace(' ', '_')
                 if len(safe_name) > 30:
                     safe_name = safe_name[:30]
                 
                 file_ext = os.path.splitext(sent_tax_return_file.name)[1].lower()
-                filename = f"{safe_name}_sent_tax_return_{tax_year}{file_ext}"
+                filename = f"{safe_name}_sent_tax_return_{tax_year}_{current_timestamp}{file_ext}"
                 
                 # Full path for the blob
                 blob_path = f"sent_tax_returns/{filename}"
@@ -125,9 +142,26 @@ class EditTaxYearInfoView(LoginRequiredMixin, View):
                 # Read file content
                 file_content = sent_tax_return_file.read()
                 
+                # Set content type and cache control
+                content_settings = ContentSettings(
+                    content_type="application/pdf",
+                    cache_control="no-cache, no-store, must-revalidate",
+                    content_disposition=f"inline; filename={filename}"
+                )
+                
+                # Delete old file if it exists
+                if completed_tax_return.sent_tax_return_pdf:
+                    old_path = completed_tax_return.sent_tax_return_pdf.name
+                    try:
+                        old_blob_client = container_client.get_blob_client(old_path)
+                        old_blob_client.delete_blob()
+                        logger.info(f"Deleted old sent tax return file: {old_path}")
+                    except Exception as e:
+                        logger.warning(f"Error deleting old sent tax return file: {str(e)}")
+                
                 # Upload directly to Azure
                 blob_client = container_client.get_blob_client(blob_path)
-                blob_client.upload_blob(file_content, overwrite=True, content_type="application/pdf")
+                blob_client.upload_blob(file_content, overwrite=True, content_settings=content_settings)
                 
                 # Store the blob path in the model
                 completed_tax_return.sent_tax_return_pdf = blob_path
@@ -138,14 +172,14 @@ class EditTaxYearInfoView(LoginRequiredMixin, View):
                 tax_return_file = request.FILES['tax_return_file']
                 logger.debug(f"Received tax return file with size: {tax_return_file.size} bytes")
 
-                # Create a safe filename
+                # Create a safe filename with timestamp
                 safe_name = ''.join(c for c in association.association_name if c.isalnum() or c.isspace())
                 safe_name = safe_name.replace(' ', '_')
                 if len(safe_name) > 30:
                     safe_name = safe_name[:30]
                 
                 file_ext = os.path.splitext(tax_return_file.name)[1].lower()
-                filename = f"{safe_name}_tax_return_{tax_year}{file_ext}"
+                filename = f"{safe_name}_tax_return_{tax_year}_{current_timestamp}{file_ext}"
                 
                 # Full path for the blob
                 blob_path = f"completed_tax_returns/{filename}"
@@ -153,9 +187,26 @@ class EditTaxYearInfoView(LoginRequiredMixin, View):
                 # Read file content
                 file_content = tax_return_file.read()
                 
+                # Set content type and cache control
+                content_settings = ContentSettings(
+                    content_type="application/pdf",
+                    cache_control="no-cache, no-store, must-revalidate",
+                    content_disposition=f"inline; filename={filename}"
+                )
+                
+                # Delete old file if it exists
+                if completed_tax_return.tax_return_pdf:
+                    old_path = completed_tax_return.tax_return_pdf.name
+                    try:
+                        old_blob_client = container_client.get_blob_client(old_path)
+                        old_blob_client.delete_blob()
+                        logger.info(f"Deleted old tax return file: {old_path}")
+                    except Exception as e:
+                        logger.warning(f"Error deleting old tax return file: {str(e)}")
+                
                 # Upload directly to Azure
                 blob_client = container_client.get_blob_client(blob_path)
-                blob_client.upload_blob(file_content, overwrite=True, content_type="application/pdf")
+                blob_client.upload_blob(file_content, overwrite=True, content_settings=content_settings)
                 
                 # Store the blob path in the model
                 completed_tax_return.tax_return_pdf = blob_path
@@ -166,14 +217,14 @@ class EditTaxYearInfoView(LoginRequiredMixin, View):
                 financial_info_file = request.FILES['financial_info_file']
                 logger.debug(f"Received financial info file with size: {financial_info_file.size} bytes")
 
-                # Create a safe filename
+                # Create a safe filename with timestamp
                 safe_name = ''.join(c for c in association.association_name if c.isalnum() or c.isspace())
                 safe_name = safe_name.replace(' ', '_')
                 if len(safe_name) > 30:
                     safe_name = safe_name[:30]
                 
                 file_ext = os.path.splitext(financial_info_file.name)[1].lower()
-                filename = f"{safe_name}_financial_info_{tax_year}{file_ext}"
+                filename = f"{safe_name}_financial_info_{tax_year}_{current_timestamp}{file_ext}"
                 
                 # Full path for the blob
                 blob_path = f"financial_info/{filename}"
@@ -181,18 +232,35 @@ class EditTaxYearInfoView(LoginRequiredMixin, View):
                 # Read file content
                 file_content = financial_info_file.read()
                 
+                # Set content type and cache control
+                content_settings = ContentSettings(
+                    content_type="application/pdf",
+                    cache_control="no-cache, no-store, must-revalidate",
+                    content_disposition=f"inline; filename={filename}"
+                )
+                
+                # Delete old file if it exists
+                if financial.financial_info_pdf:
+                    old_path = financial.financial_info_pdf.name
+                    try:
+                        old_blob_client = container_client.get_blob_client(old_path)
+                        old_blob_client.delete_blob()
+                        logger.info(f"Deleted old financial info file: {old_path}")
+                    except Exception as e:
+                        logger.warning(f"Error deleting old financial info file: {str(e)}")
+                
                 # Upload directly to Azure
                 blob_client = container_client.get_blob_client(blob_path)
-                blob_client.upload_blob(file_content, overwrite=True, content_type="application/pdf")
+                blob_client.upload_blob(file_content, overwrite=True, content_settings=content_settings)
                 
                 # Store the blob path in the model
                 financial.financial_info_pdf = blob_path
                 logger.info(f"Uploaded financial info file to Azure: {blob_path}")
-                financial.save()  # Save financial model changes
 
             # Save updated models
             extension.save()
             completed_tax_return.save()
+            financial.save()
 
             messages.success(request, f'Tax year {tax_year} information updated successfully.')
             return redirect(f"{reverse('association')}?association_id={association_id}&tax_year={tax_year}")

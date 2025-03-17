@@ -3,7 +3,7 @@
 from django.views import View
 from django.shortcuts import render
 from django.contrib.auth.mixins import LoginRequiredMixin   
-from ..models import Association, Financial, Extension, CompletedTaxReturn, EngagementLetter, AssociationFilingStatus
+from ..models import Association, Financial, Extension, CompletedTaxReturn, EngagementLetter, AssociationFilingStatus, ManagementCompany
 from django.utils import timezone
 from django.db.models import Min, Max, Count, Q, F, Value, BooleanField
 from django.db.models.functions import Coalesce
@@ -16,6 +16,7 @@ class DashboardView(LoginRequiredMixin, View):
     template_name = 'tax_form/dashboard.html'
 
     def get(self, request):
+        # Get tax year range from financial records
         year_range = Financial.objects.aggregate(Min('tax_year'), Max('tax_year'))
         min_year = year_range['tax_year__min'] or timezone.now().year
         max_year = max(year_range['tax_year__max'] or timezone.now().year, timezone.now().year)
@@ -39,8 +40,23 @@ class DashboardView(LoginRequiredMixin, View):
         # Ensure we're working with an integer
         selected_year = int(selected_year)
 
-        # Get all associations
-        associations = Association.objects.all().order_by('association_name')
+        # Get management company filter from URL or default to all
+        management_company_id = request.GET.get('management_company')
+        
+        # Get all management companies for the filter dropdown
+        management_companies = ManagementCompany.objects.all().order_by('name')
+
+        # Get all associations, applying management company filter if selected
+        query = Association.objects.all()
+        if management_company_id:
+            if management_company_id == 'self':
+                # Filter for self-managed associations
+                query = query.filter(is_self_managed=True)
+            elif management_company_id != 'all':
+                # Filter for specific management company
+                query = query.filter(management_company_id=management_company_id)
+        
+        associations = query.order_by('association_name')
         total_associations = associations.count()
 
         # Get filing statuses for selected year, creating defaults for those that don't exist
@@ -123,6 +139,14 @@ class DashboardView(LoginRequiredMixin, View):
                 }
                 filing_status_display = filing_status_map.get(completed_tax_return.filing_status, "Filed")
 
+            # Get management information
+            if association.is_self_managed:
+                management_info = "Self-Managed"
+            elif association.management_company:
+                management_info = association.management_company.name
+            else:
+                management_info = "Unspecified"
+
             dashboard_data.append({
                 'association': association,
                 'fiscal_year_end': fiscal_year_end,
@@ -134,6 +158,7 @@ class DashboardView(LoginRequiredMixin, View):
                 'prepare_return': filing_status.prepare_return if filing_status else True,
                 'invoiced': filing_status.invoiced if filing_status else False,
                 'not_filing_reason': filing_status.not_filing_reason if filing_status and not filing_status.prepare_return else "",
+                'management_info': management_info,
             })
 
         context = {
@@ -148,5 +173,7 @@ class DashboardView(LoginRequiredMixin, View):
             'signed_engagement_letters': signed_engagement_letters,
             'invoiced_associations': invoiced_associations,
             'uninvoiced_associations': uninvoiced_associations,
+            'management_companies': management_companies,
+            'selected_management_company': management_company_id,
         }
         return render(request, self.template_name, context)

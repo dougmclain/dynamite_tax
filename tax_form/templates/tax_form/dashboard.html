@@ -11,15 +11,28 @@
     
     <div class="row justify-content-center">
         <div class="col-12">
-            <form method="get" class="mb-4">
+            <form method="get" class="mb-4 dashboard-filters">
                 <div class="row">
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <label for="tax_year" class="form-label">Select Tax Year:</label>
-                        <select name="tax_year" id="tax_year" class="form-select" onchange="this.form.submit()">
+                        <select name="tax_year" id="tax_year" class="form-select">
                             {% for year in available_years %}
                                 <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>{{ year }}</option>
                             {% endfor %}
                         </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="management_company" class="form-label">Management Company:</label>
+                        <select name="management_company" id="management_company" class="form-select">
+                            <option value="all" {% if selected_management_company == 'all' or not selected_management_company %}selected{% endif %}>All Companies</option>
+                            <option value="self" {% if selected_management_company == 'self' %}selected{% endif %}>Self-Managed</option>
+                            {% for company in management_companies %}
+                                <option value="{{ company.id }}" {% if selected_management_company == company.id|stringformat:"s" %}selected{% endif %}>{{ company.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary">Apply Filters</button>
                     </div>
                 </div>
             </form>
@@ -88,6 +101,7 @@
                             <thead>
                                 <tr>
                                     <th class="sortable" data-sort="name">Association Name</th>
+                                    <th>Management</th>
                                     <th>Fiscal Year End</th>
                                     <th>Filing Status</th>
                                     <th class="sortable" data-sort="sent">Tax Return Sent</th>
@@ -99,10 +113,13 @@
                             </thead>
                             <tbody>
                                 {% for data in dashboard_data %}
-                                <tr class="clickable-row {% if not data.prepare_return %}table-secondary not-filing{% endif %}" 
+                                <tr class="clickable-row {% if not data.prepare_return %}not-filing{% endif %}" 
                                     data-href="{% url 'association' %}?association_id={{ data.association.id }}&tax_year={{ selected_year }}">
                                     <td data-name="{{ data.association.association_name }}" title="{{ data.association.association_name }}">
                                         {{ data.association.association_name }}
+                                    </td>
+                                    <td title="{{ data.management_info }}" class="management-column">
+                                        {{ data.management_info }}
                                     </td>
                                     <td title="{{ data.fiscal_year_end|date:'F d, Y' }}">
                                         {{ data.fiscal_year_end|date:"F d, Y" }}
@@ -111,7 +128,7 @@
                                         {% if data.prepare_return %}
                                             <span class="badge bg-success">Will File</span>
                                         {% else %}
-                                            <span class="badge bg-secondary" title="{{ data.not_filing_reason }}">Not Filing</span>
+                                            <span class="badge bg-danger" title="{{ data.not_filing_reason }}">Not Filing</span>
                                         {% endif %}
                                     </td>
                                     <td data-sent="{{ data.tax_return_sent_date|date:'Y-m-d'|default:'9999-12-31' }}">

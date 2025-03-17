@@ -410,3 +410,92 @@ tr.not-filing:hover {
         margin-bottom: 1rem;
     }
 }
+
+/* Add these styles to your existing static/css/styles.css file */
+
+/* Style for non-filing associations - updated with more noticeable colors */
+tr.not-filing {
+    background-color: #ffecec !important; /* Light red background */
+    color: #6c0a0a !important; /* Darker red text for contrast */
+}
+
+tr.not-filing:hover {
+    background-color: #ffdada !important; /* Slightly darker on hover */
+}
+
+/* Make the badges for "Not Filing" more visible */
+tr.not-filing .badge.bg-danger {
+    background-color: #dc3545 !important; /* Bright red */
+    color: white !important;
+    font-weight: bold;
+}
+
+/* Make not-filing row stand out even when checkbox is unchecked */
+tr.not-filing.d-none {
+    display: table-row !important;
+    opacity: 0.8;
+}
+
+/* Management Company column styling */
+.management-column {
+    font-weight: 500;
+    color: #5b6d9a;
+}
+
+/* Improve filter section */
+.dashboard-filters {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.dashboard-filters label {
+    font-weight: 500;
+}
+
+.dashboard-filters .btn-primary {
+    margin-top: 0;
+}
+
+/* Improve badges in the table */
+.table .badge {
+    font-size: 85%;
+    padding: 0.35em 0.65em;
+}
+
+/* Additional styling for better readability */
+#associationTable thead th {
+    background-color: #f0f0f0;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+/* Make the clickable rows more visibly interactive */
+.clickable-row {
+    cursor: pointer;
+    transition: transform 0.1s ease;
+}
+
+.clickable-row:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+/* Summary cards styling */
+.card-body.py-2 h5 {
+    color: var(--tax-purple);
+    font-size: 1rem;
+}
+
+.card-body.py-2 p {
+    margin-bottom: 0.3rem;
+    font-size: 0.9rem;
+}
+
+.card-body.py-2 p:last-child {
+    margin-bottom: 0;
+    font-weight: 500;
+}

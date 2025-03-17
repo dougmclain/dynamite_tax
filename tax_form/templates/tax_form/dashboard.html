@@ -6,7 +6,7 @@
 {% block title %}Association Dashboard{% endblock %}
 
 {% block content %}
-<div class="container-fluid mt-5">
+<div class="container-fluid dashboard-container mt-5">
     <h1 class="mb-4">Association Dashboard</h1>
     
     <div class="row justify-content-center">
@@ -37,7 +37,19 @@
                 </div>
             </form>
 
-            <h2 class="h4 mb-3">Tax Year {{ selected_year }}</h2>
+            <h2 class="h4 mb-3">Tax Year {{ selected_year }} {% if selected_management_company and selected_management_company != 'all' %}
+                <span class="filter-indicator">
+                    {% if selected_management_company == 'self' %}
+                        (Self-Managed Only)
+                    {% else %}
+                        {% for company in management_companies %}
+                            {% if selected_management_company == company.id|stringformat:"s" %}
+                                ({{ company.name }} Only)
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                </span>
+            {% endif %}</h2>
 
             <div class="card mb-4">
                 <div class="card-body">
@@ -68,7 +80,7 @@
                                 <div class="card-body py-2">
                                     <h5 class="mb-0">Engagement Letters</h5>
                                     <p class="mb-1">Signed: {{ signed_engagement_letters }}</p>
-                                    <p class="mb-0">Needed: {{ associations_to_file|subtract:signed_engagement_letters }}</p>
+                                    <p class="mb-0">Needed: {{ engagement_letters_needed }}</p>
                                 </div>
                             </div>
                         </div>

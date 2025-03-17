@@ -53,6 +53,26 @@
                             <p><strong>Formation Date:</strong> {{ association_info.formation_date|date:"F d, Y" }}</p>
                             <p><strong>Association Type:</strong> {{ association_info.association_type }}</p>
                             
+                            <!-- New Management section -->
+                            <h3 class="h5 mt-4">Management Information</h3>
+                            {% if selected_association.is_self_managed %}
+                                <p><strong>Management Type:</strong> <span class="badge bg-info">Self-Managed</span></p>
+                            {% elif selected_association.management_company %}
+                                <p><strong>Management Type:</strong> <span class="badge bg-success">Managed</span></p>
+                                <p><strong>Management Company:</strong> {{ selected_association.management_company.name }}</p>
+                                {% if selected_association.management_company.contact_person %}
+                                    <p><strong>Contact Person:</strong> {{ selected_association.management_company.contact_person }}</p>
+                                {% endif %}
+                                {% if selected_association.management_company.email %}
+                                    <p><strong>Email:</strong> <a href="mailto:{{ selected_association.management_company.email }}">{{ selected_association.management_company.email }}</a></p>
+                                {% endif %}
+                                {% if selected_association.management_company.phone %}
+                                    <p><strong>Phone:</strong> <a href="tel:{{ selected_association.management_company.phone }}">{{ selected_association.management_company.phone }}</a></p>
+                                {% endif %}
+                            {% else %}
+                                <p><strong>Management Type:</strong> <span class="badge bg-warning">Unspecified</span></p>
+                            {% endif %}
+
                             <h3 class="h5 mt-4">Contact Information</h3>
                             <p><strong>Name:</strong> {{ association_info.contact_name }}</p>
                             <p><strong>Email:</strong> {{ association_info.contact_email }}</p>

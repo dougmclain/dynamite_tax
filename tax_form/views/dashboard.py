@@ -59,7 +59,7 @@ class DashboardView(LoginRequiredMixin, View):
         associations = query.order_by('association_name')
         total_associations = associations.count()
 
-        # Get filing statuses for selected year, creating defaults for those that don't exist
+        # Get filing statuses for the filtered associations and selected year
         filing_statuses = {}
         for assoc in associations:
             status, created = AssociationFilingStatus.objects.get_or_create(
@@ -72,43 +72,43 @@ class DashboardView(LoginRequiredMixin, View):
         # Count associations we'll be preparing returns for
         associations_to_file = sum(1 for status in filing_statuses.values() if status.prepare_return)
         
-        # Count tax returns that have been filed
-        financials = Financial.objects.filter(tax_year=selected_year)
+        # Get associations we're filing for in this filter
+        filing_association_ids = [assoc_id for assoc_id, status in filing_statuses.items() 
+                               if status.prepare_return]
+        
+        # Count tax returns that have been filed - filtered by current selection
         filed_returns = CompletedTaxReturn.objects.filter(
             financial__tax_year=selected_year, 
             return_filed=True,
-            financial__association__filing_statuses__prepare_return=True,
-            financial__association__filing_statuses__tax_year=selected_year
+            financial__association__in=associations.filter(id__in=filing_association_ids)
         ).count()
         
-        # Count returns sent for signature
+        # Count returns sent for signature - filtered by current selection
         sent_returns = CompletedTaxReturn.objects.filter(
             financial__tax_year=selected_year,
             sent_for_signature=True,
-            financial__association__filing_statuses__prepare_return=True,
-            financial__association__filing_statuses__tax_year=selected_year
+            financial__association__in=associations.filter(id__in=filing_association_ids)
         ).count()
         
         # Calculate unfiled returns (associations we'll file for minus those already filed)
         unfiled_returns = associations_to_file - filed_returns
         
-        # Count invoiced associations
-        invoiced_associations = AssociationFilingStatus.objects.filter(
-            tax_year=selected_year,
-            prepare_return=True,
-            invoiced=True
-        ).count()
+        # Count invoiced associations - filtered by current selection
+        invoiced_count = sum(1 for status in filing_statuses.values() 
+                          if status.prepare_return and status.invoiced)
         
         # Count uninvoiced associations that we'll prepare returns for
-        uninvoiced_associations = associations_to_file - invoiced_associations
+        uninvoiced_associations = associations_to_file - invoiced_count
 
-        # Get signed engagement letters
+        # Get signed engagement letters - filtered by current selection
         signed_engagement_letters = EngagementLetter.objects.filter(
             tax_year=selected_year,
             status='signed',
-            association__filing_statuses__prepare_return=True,
-            association__filing_statuses__tax_year=selected_year
+            association__in=associations.filter(id__in=filing_association_ids)
         ).count()
+        
+        # Calculate number of engagement letters needed
+        engagement_letters_needed = max(0, associations_to_file - signed_engagement_letters)
 
         dashboard_data = []
 
@@ -118,7 +118,11 @@ class DashboardView(LoginRequiredMixin, View):
             use_azure = True
 
         for association in associations:
-            financial = financials.filter(association=association).first()
+            financial = Financial.objects.filter(
+                association=association,
+                tax_year=selected_year
+            ).first()
+            
             extension = Extension.objects.filter(financial=financial).first() if financial else None
             completed_tax_return = CompletedTaxReturn.objects.filter(financial=financial).first() if financial else None
             engagement_letter = EngagementLetter.objects.filter(association=association, tax_year=selected_year).first()
@@ -171,7 +175,8 @@ class DashboardView(LoginRequiredMixin, View):
             'unfiled_returns': unfiled_returns,
             'sent_returns': sent_returns,
             'signed_engagement_letters': signed_engagement_letters,
-            'invoiced_associations': invoiced_associations,
+            'engagement_letters_needed': engagement_letters_needed,
+            'invoiced_associations': invoiced_count,
             'uninvoiced_associations': uninvoiced_associations,
             'management_companies': management_companies,
             'selected_management_company': management_company_id,

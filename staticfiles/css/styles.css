@@ -379,40 +379,6 @@ a:hover {
     }
 }
 
-/* Style for non-filing associations */
-tr.not-filing {
-    background-color: #f8f9fa;
-    color: #6c757d;
-}
-
-tr.not-filing:hover {
-    background-color: #e9ecef;
-}
-
-/* Improve table row styling */
-#associationTable tbody tr {
-    cursor: pointer;
-}
-
-#associationTable tbody tr:hover {
-    background-color: rgba(0,0,0,0.05);
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    .financial-info-card .table-sm td:first-child {
-        width: 60%;
-    }
-}
-
-@media (max-width: 991px) {
-    .card {
-        margin-bottom: 1rem;
-    }
-}
-
-/* Add these styles to your existing static/css/styles.css file */
-
 /* Style for non-filing associations - updated with more noticeable colors */
 tr.not-filing {
     background-color: #ffecec !important; /* Light red background */
@@ -498,4 +464,172 @@ tr.not-filing.d-none {
 .card-body.py-2 p:last-child {
     margin-bottom: 0;
     font-weight: 500;
+}
+
+/* Association information card styling */
+.card .h5 {
+    color: var(--tax-purple);
+    border-bottom: 1px solid #eee;
+    padding-bottom: 0.5rem;
+    margin-top: 1.5rem;
+}
+
+.card .h5:first-of-type {
+    margin-top: 0;
+}
+
+/* Style for management badges */
+.badge.bg-info {
+    background-color: #17a2b8 !important;
+}
+
+.badge.bg-success {
+    background-color: #28a745 !important;
+}
+
+.badge.bg-warning {
+    background-color: #ffc107 !important;
+    color: #212529 !important;
+}
+
+/* Management information section */
+.management-info p {
+    margin-bottom: 0.5rem;
+}
+
+.management-info a {
+    color: var(--tax-blue);
+    text-decoration: none;
+}
+
+.management-info a:hover {
+    text-decoration: underline;
+}
+
+/* Improve contact section layout */
+.contact-info {
+    margin-top: 1.5rem;
+}
+
+/* Style management company name to stand out */
+.management-company-name {
+    font-weight: 600;
+    color: var(--tax-blue);
+}
+
+/* Improve dashboard summary cards */
+.card-body.py-2 h5 {
+    color: var(--tax-purple);
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.card-body.py-2 p {
+    margin-bottom: 0.3rem;
+    font-size: 0.9rem;
+    display: flex;
+    justify-content: space-between;
+}
+
+.card-body.py-2 p:last-child {
+    margin-bottom: 0;
+    font-weight: 500;
+}
+
+/* Make dashboard wider on larger screens */
+@media (min-width: 1400px) {
+    .dashboard-container {
+        max-width: 1600px;
+    }
+}
+
+@media (min-width: 1800px) {
+    .dashboard-container {
+        max-width: 1800px;
+    }
+}
+
+/* Show filter indicator for management company */
+.filter-indicator {
+    font-size: 0.9rem;
+    font-weight: normal;
+    color: var(--tax-purple);
+    opacity: 0.8;
+    margin-left: 10px;
+}
+
+/* Make sure the table takes up full width */
+.table-responsive {
+    width: 100%;
+}
+
+#associationTable {
+    width: 100%;
+    table-layout: auto;
+}
+
+/* Adjust column widths better */
+#associationTable th:nth-child(1) {
+    width: 20%; /* Association Name */
+}
+
+#associationTable th:nth-child(2) {
+    width: 12%; /* Management */
+}
+
+#associationTable th:nth-child(3) {
+    width: 10%; /* Fiscal Year End */
+}
+
+#associationTable th:nth-child(4),
+#associationTable th:nth-child(5),
+#associationTable th:nth-child(6),
+#associationTable th:nth-child(7),
+#associationTable th:nth-child(8) {
+    width: 9%; /* Status columns */
+}
+
+#associationTable th:nth-child(9) {
+    width: 10%; /* Actions */
+}
+
+/* Ensure the entire row is clickable but action buttons work */
+.clickable-row {
+    position: relative;
+}
+
+.clickable-row td .btn-group {
+    position: relative;
+    z-index: 2;
+}
+
+/* Make sure overflow text gets an ellipsis */
+#associationTable td {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 0;
+}
+
+#associationTable td:first-child {
+    font-weight: 500;
+}
+
+/* Add hover styles to action buttons */
+.btn-group .btn:hover {
+    background-color: var(--tax-blue);
+    border-color: var(--tax-blue);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .financial-info-card .table-sm td:first-child {
+        width: 60%;
+    }
+}
+
+@media (max-width: 991px) {
+    .card {
+        margin-bottom: 1rem;
+    }
 }

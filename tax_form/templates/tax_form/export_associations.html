@@ -1,20 +1,20 @@
 {% extends "tax_form/base.html" %}
 {% load static %}
 
-{% block title %}Export Associations - {{ tax_year }}{% endblock %}
+{% block title %}Export Associations To File - {{ tax_year }}{% endblock %}
 
 {% block content %}
 <div class="container-fluid mt-5 export-container">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Association List - {{ tax_year }}</h1>
+        <h1>Associations To File - {{ tax_year }}</h1>
         <div class="export-actions">
             <a href="?{{ request.GET.urlencode }}&format=csv" class="btn btn-success">
-                <i class="fas fa-file-csv"></i> Download CSV
+                <i class="fas fa-download"></i> Download CSV
             </a>
             <a href="javascript:window.print();" class="btn btn-primary ms-2">
                 <i class="fas fa-print"></i> Print
             </a>
-            <a href="{% url 'dashboard' %}?tax_year={{ tax_year }}" class="btn btn-secondary ms-2">
+            <a href="{% url 'dashboard' %}?tax_year={{ tax_year }}&management_company={{ request.GET.management_company }}" class="btn btn-secondary ms-2">
                 <i class="fas fa-arrow-left"></i> Back to Dashboard
             </a>
         </div>
@@ -23,7 +23,10 @@
     <div class="card">
         <div class="card-header">
             <h2 class="h4 mb-0">Management Company: {{ management_company_name }}</h2>
-            <p class="text-muted mb-0">Total Associations: {{ associations_data|length }}</p>
+            <p class="text-muted mb-0">
+                Associations To File: {{ associations_data|length }}
+                <span class="badge bg-info ms-2">Filing Status: Will File Only</span>
+            </p>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -31,12 +34,13 @@
                     <thead class="table-light">
                         <tr>
                             <th width="5%">#</th>
-                            <th width="40%">Association Name</th>
+                            <th width="35%">Association Name</th>
                             <th width="15%">EIN</th>
                             <th width="10%">Management</th>
-                            <th width="10%">Tax Year</th>
+                            <th width="8%">Tax Year</th>
                             <th width="10%">Return Sent</th>
                             <th width="10%">Return Filed</th>
+                            <th width="7%">Invoiced</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -49,10 +53,11 @@
                             <td>{{ tax_year }}</td>
                             <td>{{ assoc.sent_status }}</td>
                             <td>{{ assoc.filed_status }}</td>
+                            <td>{{ assoc.invoiced }}</td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="7" class="text-center">No associations found</td>
+                            <td colspan="8" class="text-center">No associations to file found</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -103,7 +108,7 @@
         
         /* Add a title for printing */
         .export-container:before {
-            content: "Association List - {{ tax_year }} - {{ management_company_name }}";
+            content: "Associations To File - {{ tax_year }} - {{ management_company_name }}";
             display: block;
             text-align: center;
             font-size: 18pt;
@@ -124,6 +129,12 @@
     
     .export-container {
         max-width: 1600px;
+    }
+    
+    /* Make the title more specific about what's being shown */
+    .badge.bg-info {
+        font-size: 0.8rem;
+        font-weight: 500;
     }
 </style>
 {% endblock %}

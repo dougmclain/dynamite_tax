@@ -1,6 +1,7 @@
 from django.urls import path
 from django.contrib.auth import views as auth_views
 from .views import main, association, financial, create_association, dashboard, edit_association, edit_tax_year_info, extension, engagement_letter, filing_status
+from .views.delete_files import DeleteFinancialPDFView
 
 urlpatterns = [
     path('', main.index, name='index'),
@@ -22,4 +23,5 @@ urlpatterns = [
 # Add this to your existing urlpatterns list in tax_form/urls.py
     path('filing-status/<int:association_id>/<int:tax_year>/', 
         filing_status.EditFilingStatusView.as_view(), name='edit_filing_status'),
+    path('delete-financial-pdf/<int:financial_id>/', DeleteFinancialPDFView.as_view(), name='delete_financial_pdf'),
 ]

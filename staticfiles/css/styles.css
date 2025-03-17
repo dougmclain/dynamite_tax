@@ -410,3 +410,36 @@ tr.not-filing:hover {
         margin-bottom: 1rem;
     }
 }
+
+/* Add these styles to your static/css/styles.css file */
+
+.btn-danger {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: white;
+}
+
+.btn-danger:hover {
+    background-color: #c82333;
+    border-color: #bd2130;
+    color: white;
+}
+
+/* File actions container */
+.file-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* For better mobile display */
+@media (max-width: 576px) {
+    .file-actions {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .file-actions form {
+        margin-top: 0.5rem;
+    }
+}

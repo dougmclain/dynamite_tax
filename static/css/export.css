@@ -1,0 +1,128 @@
+/* Styles specific to the export functionality */
+
+/* Container styles */
+.export-container {
+    max-width: 100%;
+    padding: 0 15px;
+}
+
+/* Table styles for export view */
+.export-table {
+    font-size: 0.9rem;
+    table-layout: fixed;
+    width: 100%;
+}
+
+.export-table th {
+    font-weight: 600;
+    background-color: #f5f5f5;
+    white-space: normal;
+    word-wrap: break-word;
+}
+
+.export-table td {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Badge styling */
+.badge.bg-info {
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+/* Export actions styling */
+.export-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* Ensure table uses full width */
+.table-responsive {
+    overflow-x: auto;
+    width: 100%;
+}
+
+/* Print styles */
+@media print {
+    @page {
+        size: landscape;  /* Force landscape orientation */
+        margin: 0.5cm;    /* Reduce margins to fit more content */
+    }
+    
+    body {
+        width: 100%;
+        margin: 0;
+        padding: 0;
+    }
+    
+    .navbar, .export-actions, footer {
+        display: none !important;
+    }
+    
+    .container-fluid {
+        width: 100%;
+        max-width: 100%;
+        margin: 0;
+        padding: 0;
+    }
+    
+    .card {
+        border: none !important;
+        box-shadow: none !important;
+        margin: 0 !important;
+    }
+    
+    .card-header {
+        background-color: #fff !important;
+        color: #000 !important;
+        border-bottom: 2px solid #000 !important;
+        padding-top: 0 !important;
+    }
+    
+    .table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+        font-size: 9pt !important; /* Smaller font for printing */
+        table-layout: fixed !important; /* Fixed table layout */
+    }
+    
+    .table th, .table td {
+        border: 1px solid #000 !important;
+        padding: 4px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+    
+    /* Ensure table doesn't break across pages */
+    .table tr {
+        page-break-inside: avoid !important;
+    }
+    
+    /* Ensure columns fit properly in landscape mode */
+    .table th:nth-child(1), .table td:nth-child(1) { width: 3% !important; }
+    .table th:nth-child(2), .table td:nth-child(2) { width: 31% !important; }
+    .table th:nth-child(3), .table td:nth-child(3) { width: 12% !important; }
+    .table th:nth-child(4), .table td:nth-child(4) { width: 15% !important; }
+    .table th:nth-child(5), .table td:nth-child(5) { width: 8% !important; }
+    .table th:nth-child(6), .table td:nth-child(6) { width: 12% !important; }
+    .table th:nth-child(7), .table td:nth-child(7) { width: 12% !important; }
+    .table th:nth-child(8), .table td:nth-child(8) { width: 7% !important; }
+    
+    /* Add a title for printing */
+    .export-container:before {
+        content: "Associations To File - Tax Year";
+        display: block;
+        text-align: center;
+        font-size: 14pt;
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+    
+    /* Hide any unnecessary elements */
+    .badge, .btn {
+        display: none !important;
+    }
+}

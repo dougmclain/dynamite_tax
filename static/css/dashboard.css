@@ -1,0 +1,237 @@
+/* Dashboard-specific styles */
+
+/* Main container styles */
+.dashboard-container {
+    max-width: 100%;
+    padding: 0 15px;
+}
+
+/* Summary cards styling */
+.card-body.py-2 h5 {
+    color: var(--tax-purple);
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.card-body.py-2 p {
+    margin-bottom: 0.3rem;
+    font-size: 0.9rem;
+    display: flex;
+    justify-content: space-between;
+}
+
+.card-body.py-2 p:last-child {
+    margin-bottom: 0;
+    font-weight: 500;
+}
+
+/* Dashboard filters section */
+.dashboard-filters {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.dashboard-filters label {
+    font-weight: 500;
+}
+
+.dashboard-filters .btn-primary {
+    margin-top: 0;
+}
+
+/* Table styles for the dashboard */
+#associationTable {
+    width: 100%;
+    table-layout: fixed;
+    margin-bottom: 0;
+}
+
+#associationTable thead th {
+    background-color: #f0f0f0;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    white-space: normal;
+    hyphens: auto;
+    vertical-align: bottom;
+}
+
+#associationTable td {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: 0.75rem;
+}
+
+/* Column width adjustments - ensuring all content is visible */
+@media (min-width: 992px) {
+    #associationTable th:nth-child(1),
+    #associationTable td:nth-child(1) {
+        width: 22%; /* Association Name */
+    }
+
+    #associationTable th:nth-child(2),
+    #associationTable td:nth-child(2) {
+        width: 14%; /* Management */
+    }
+
+    #associationTable th:nth-child(3),
+    #associationTable td:nth-child(3) {
+        width: 11%; /* Fiscal Year End */
+    }
+
+    #associationTable th:nth-child(4),
+    #associationTable td:nth-child(4) {
+        width: 8%; /* Filing Status */
+    }
+
+    #associationTable th:nth-child(5),
+    #associationTable td:nth-child(5) {
+        width: 9%; /* Tax Return Sent */
+    }
+
+    #associationTable th:nth-child(6),
+    #associationTable td:nth-child(6) {
+        width: 9%; /* Tax Return Filed */
+    }
+
+    #associationTable th:nth-child(7),
+    #associationTable td:nth-child(7) {
+        width: 9%; /* Engagement Letter */
+    }
+
+    #associationTable th:nth-child(8),
+    #associationTable td:nth-child(8) {
+        width: 8%; /* Invoice Status */
+    }
+
+    #associationTable th:nth-child(9),
+    #associationTable td:nth-child(9) {
+        width: 10%; /* Actions - wider to prevent button cutoff */
+    }
+}
+
+/* For very wide screens, allow the dashboard to use more screen space */
+@media (min-width: 1800px) {
+    .dashboard-container {
+        max-width: 95%;
+    }
+}
+
+/* Make sure buttons don't get cut off */
+#associationTable .btn-group {
+    width: 100%;
+}
+
+#associationTable .btn-group .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+    white-space: nowrap;
+}
+
+/* Ensure dropdown button is visible */
+#associationTable .dropdown-toggle-split {
+    padding-left: 0.4rem;
+    padding-right: 0.4rem;
+}
+
+/* Make sure the entire dropdown menu is clickable */
+.dropdown-menu {
+    min-width: 150px;
+}
+
+.dropdown-item {
+    padding: 0.25rem 1rem;
+    white-space: normal;
+    word-wrap: break-word;
+}
+
+/* Styles for clickable rows */
+.clickable-row {
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.1s ease;
+}
+
+.clickable-row:hover {
+    background-color: #f0f0f0;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+/* Style for not-filing rows */
+tr.not-filing {
+    background-color: #ffecec !important; /* Light red background */
+    color: #6c0a0a !important; /* Darker red text for contrast */
+}
+
+tr.not-filing:hover {
+    background-color: #ffdada !important; /* Slightly darker on hover */
+}
+
+tr.not-filing .badge.bg-danger {
+    background-color: #dc3545 !important; /* Bright red */
+    color: white !important;
+    font-weight: bold;
+}
+
+/* Sortable column styles */
+.sortable {
+    cursor: pointer;
+    position: relative;
+    padding-right: 18px; /* Make room for the arrow */
+}
+
+.sortable::after {
+    content: '\2195'; /* Unicode for up/down arrow */
+    position: absolute;
+    right: 5px;
+    bottom: 5px; /* Adjust position to bottom */
+    opacity: 0.5;
+}
+
+.sortable.asc::after {
+    content: '\2191'; /* Unicode for up arrow */
+    opacity: 1;
+}
+
+.sortable.desc::after {
+    content: '\2193'; /* Unicode for down arrow */
+    opacity: 1;
+}
+
+/* Filter indicator styling */
+.filter-indicator {
+    font-size: 0.9rem;
+    font-weight: normal;
+    color: var(--tax-purple);
+    opacity: 0.8;
+    margin-left: 10px;
+}
+
+/* Make sure the buttons don't get cut off in smaller screens */
+@media (max-width: 1200px) {
+    #associationTable .btn-group {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    #associationTable .dropdown-toggle-split {
+        margin-top: 2px;
+        width: 100%;
+    }
+    
+    #associationTable .btn-group .btn:first-child {
+        border-radius: 0.25rem;
+        width: 100%;
+    }
+}
+
+/* Management column styling */
+.management-column {
+    font-weight: 500;
+    color: #5b6d9a;
+}

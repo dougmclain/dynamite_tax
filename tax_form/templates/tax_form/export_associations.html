@@ -3,6 +3,10 @@
 
 {% block title %}Export Associations To File - {{ tax_year }}{% endblock %}
 
+{% block extra_css %}
+<link href="{% static 'css/export.css' %}" rel="stylesheet">
+{% endblock %}
+
 {% block content %}
 <div class="container-fluid mt-5 export-container">
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -33,13 +37,13 @@
                 <table class="table table-striped table-bordered export-table">
                     <thead class="table-light">
                         <tr>
-                            <th width="5%">#</th>
-                            <th width="35%">Association Name</th>
-                            <th width="15%">EIN</th>
-                            <th width="10%">Management</th>
+                            <th width="3%">#</th>
+                            <th width="31%">Association Name</th>
+                            <th width="12%">EIN</th>
+                            <th width="15%">Management</th>
                             <th width="8%">Tax Year</th>
-                            <th width="10%">Return Sent</th>
-                            <th width="10%">Return Filed</th>
+                            <th width="12%">Return Sent</th>
+                            <th width="12%">Return Filed</th>
                             <th width="7%">Invoiced</th>
                         </tr>
                     </thead>
@@ -47,7 +51,7 @@
                         {% for assoc in associations_data %}
                         <tr>
                             <td>{{ assoc.number }}</td>
-                            <td>{{ assoc.name }}</td>
+                            <td class="text-nowrap text-truncate">{{ assoc.name }}</td>
                             <td>{{ assoc.ein }}</td>
                             <td>{{ assoc.management }}</td>
                             <td>{{ tax_year }}</td>
@@ -66,75 +70,4 @@
         </div>
     </div>
 </div>
-{% endblock %}
-
-{% block extra_css %}
-<style>
-    /* Print styles */
-    @media print {
-        .navbar, .export-actions, footer {
-            display: none !important;
-        }
-        
-        .container-fluid {
-            width: 100%;
-            max-width: 100%;
-        }
-        
-        .card {
-            border: none !important;
-            box-shadow: none !important;
-        }
-        
-        .card-header {
-            background-color: #fff !important;
-            color: #000 !important;
-            border-bottom: 2px solid #000 !important;
-        }
-        
-        .table {
-            width: 100% !important;
-            border-collapse: collapse !important;
-        }
-        
-        .table th, .table td {
-            border: 1px solid #000 !important;
-        }
-        
-        /* Ensure table doesn't break across pages */
-        .table tr {
-            page-break-inside: avoid !important;
-        }
-        
-        /* Add a title for printing */
-        .export-container:before {
-            content: "Associations To File - {{ tax_year }} - {{ management_company_name }}";
-            display: block;
-            text-align: center;
-            font-size: 18pt;
-            font-weight: bold;
-            margin-bottom: 20px;
-        }
-    }
-
-    /* Normal screen styles */
-    .export-table {
-        font-size: 0.9rem;
-    }
-    
-    .export-table th {
-        font-weight: 600;
-        background-color: #f5f5f5;
-    }
-    
-    .export-container {
-        max-width: 1600px;
-    }
-    
-    /* Make the title more specific about what's being shown */
-    .badge.bg-info {
-        font-size: 0.8rem;
-        font-weight: 500;
-    }
-</style>
 {% endblock %}

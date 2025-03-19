@@ -46,6 +46,19 @@ def calculate_financial_info(financial, association):
     except Extension.DoesNotExist:
         pass  # No extension exists for this financial record
 
+    # Add detailed breakdown of other income
+    info['additional_income'] = []
+    
+    # Add only the custom non-exempt income items (not interest, dividends, or rentals as they appear on the main form)
+    for i in range(1, 4):
+        income_amount = getattr(financial, f'non_exempt_income_amount{i}')
+        if income_amount > 0:
+            description = getattr(financial, f'non_exempt_income_description{i}', f'Other Non-Exempt Income {i}')
+            info['additional_income'].append({
+                'description': description,
+                'amount': income_amount
+            })
+
     # Add detailed breakdown of other deductions
     tax_prep_expenses = calculate_tax_prep_expenses(financial)
     management_fees = calculate_management_fees(financial, tax_prep_expenses)

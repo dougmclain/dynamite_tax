@@ -7,6 +7,7 @@ django-crispy-forms==2.3
 django-environ==0.12.0
 django-unfold==0.39.0
 gunicorn==23.0.0
+openpyxl==3.1.5
 packaging==24.2
 pillow==10.4.0
 psycopg2==2.9.9

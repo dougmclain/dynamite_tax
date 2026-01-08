@@ -1,9 +1,32 @@
 /* Dashboard-specific styles */
 
+/* Override parent container constraint from base.html */
+main.container:has(.dashboard-container) {
+    max-width: 1600px;
+    width: 100%;
+    margin: 0 auto;
+    padding-left: 20px;
+    padding-right: 20px;
+}
+
 /* Main container styles */
 .dashboard-container {
-    max-width: 100%;
-    padding: 0 15px;
+    width: 100%;
+    max-width: none;
+    padding: 0;
+}
+
+@media (min-width: 1200px) {
+    main.container:has(.dashboard-container) {
+        padding-left: 40px;
+        padding-right: 40px;
+    }
+}
+
+@media (min-width: 1800px) {
+    main.container:has(.dashboard-container) {
+        max-width: 1700px;
+    }
 }
 
 /* Summary cards styling */
@@ -42,11 +65,18 @@
     margin-top: 0;
 }
 
+/* Table wrapper - ensure horizontal scroll when needed */
+.dashboard-container .table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
 /* Table styles for the dashboard */
 #associationTable {
     width: 100%;
-    table-layout: fixed;
+    table-layout: auto;
     margin-bottom: 0;
+    font-size: 0.9rem;
 }
 
 #associationTable thead th {
@@ -54,99 +84,173 @@
     position: sticky;
     top: 0;
     z-index: 10;
-    white-space: normal;
-    hyphens: auto;
+    white-space: nowrap;
     vertical-align: bottom;
+    padding: 0.6rem 0.4rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border-bottom: 2px solid #dee2e6;
 }
 
 #associationTable td {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    padding: 0.75rem;
+    padding: 0.5rem 0.4rem;
+    vertical-align: middle;
 }
 
-/* Column width adjustments - ensuring all content is visible */
-@media (min-width: 992px) {
+/* Association name column - allow wrapping */
+#associationTable td:first-child {
+    white-space: normal;
+    word-wrap: break-word;
+    max-width: 200px;
+}
+
+/* Management column */
+#associationTable td:nth-child(2) {
+    white-space: nowrap;
+}
+
+/* Status badge columns - center them */
+#associationTable td:nth-child(4),
+#associationTable td:nth-child(5),
+#associationTable td:nth-child(6),
+#associationTable td:nth-child(7),
+#associationTable td:nth-child(8) {
+    text-align: center;
+}
+
+/* Compact badges for table */
+#associationTable .badge {
+    font-size: 0.7rem;
+    padding: 0.35em 0.5em;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+/* Zebra striping for better readability */
+#associationTable tbody tr:nth-child(even):not(.not-filing) {
+    background-color: #f8f9fa;
+}
+
+#associationTable tbody tr:nth-child(even):not(.not-filing):hover {
+    background-color: #e9ecef;
+}
+
+/* Header alignment for status columns */
+#associationTable thead th:nth-child(4),
+#associationTable thead th:nth-child(5),
+#associationTable thead th:nth-child(6),
+#associationTable thead th:nth-child(7),
+#associationTable thead th:nth-child(8) {
+    text-align: center;
+}
+
+/* Column width hints - let table-layout:auto handle sizing but provide hints */
+#associationTable th:nth-child(1),
+#associationTable td:nth-child(1) {
+    min-width: 180px; /* Association Name */
+}
+
+#associationTable th:nth-child(2),
+#associationTable td:nth-child(2) {
+    min-width: 130px; /* Management */
+}
+
+#associationTable th:nth-child(3),
+#associationTable td:nth-child(3) {
+    min-width: 100px; /* Fiscal Year End */
+    white-space: nowrap;
+}
+
+#associationTable th:nth-child(4),
+#associationTable td:nth-child(4) {
+    min-width: 70px; /* Filing Status */
+}
+
+#associationTable th:nth-child(5),
+#associationTable td:nth-child(5) {
+    min-width: 80px; /* Tax Return Sent */
+}
+
+#associationTable th:nth-child(6),
+#associationTable td:nth-child(6) {
+    min-width: 80px; /* Tax Return Filed */
+}
+
+#associationTable th:nth-child(7),
+#associationTable td:nth-child(7) {
+    min-width: 80px; /* Engagement Letter */
+}
+
+#associationTable th:nth-child(8),
+#associationTable td:nth-child(8) {
+    min-width: 80px; /* Invoice Status */
+}
+
+#associationTable th:nth-child(9),
+#associationTable td:nth-child(9) {
+    min-width: 90px; /* Actions */
+}
+
+/* Large screen: more spacious table */
+@media (min-width: 1400px) {
+    .dashboard-container .card {
+        width: 100%;
+    }
+
+    .dashboard-container .table-responsive {
+        width: 100%;
+    }
+
+    #associationTable {
+        width: 100%;
+        font-size: 0.95rem;
+    }
+
+    #associationTable thead th {
+        padding: 0.75rem 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    #associationTable td {
+        padding: 0.6rem 0.5rem;
+    }
+
+    #associationTable .badge {
+        font-size: 0.75rem;
+        padding: 0.4em 0.6em;
+    }
+
     #associationTable th:nth-child(1),
     #associationTable td:nth-child(1) {
-        width: 22%; /* Association Name */
-    }
-
-    #associationTable th:nth-child(2),
-    #associationTable td:nth-child(2) {
-        width: 14%; /* Management */
-    }
-
-    #associationTable th:nth-child(3),
-    #associationTable td:nth-child(3) {
-        width: 11%; /* Fiscal Year End */
-    }
-
-    #associationTable th:nth-child(4),
-    #associationTable td:nth-child(4) {
-        width: 8%; /* Filing Status */
-    }
-
-    #associationTable th:nth-child(5),
-    #associationTable td:nth-child(5) {
-        width: 9%; /* Tax Return Sent */
-    }
-
-    #associationTable th:nth-child(6),
-    #associationTable td:nth-child(6) {
-        width: 9%; /* Tax Return Filed */
-    }
-
-    #associationTable th:nth-child(7),
-    #associationTable td:nth-child(7) {
-        width: 9%; /* Engagement Letter */
-    }
-
-    #associationTable th:nth-child(8),
-    #associationTable td:nth-child(8) {
-        width: 8%; /* Invoice Status */
-    }
-
-    #associationTable th:nth-child(9),
-    #associationTable td:nth-child(9) {
-        width: 10%; /* Actions - wider to prevent button cutoff */
+        min-width: 220px;
+        max-width: 350px;
     }
 }
 
-/* For very wide screens, allow the dashboard to use more screen space */
-@media (min-width: 1800px) {
-    .dashboard-container {
-        max-width: 95%;
-    }
-}
-
-/* Make sure buttons don't get cut off */
+/* Action buttons styling */
 #associationTable .btn-group {
-    width: 100%;
+    display: inline-flex;
+    white-space: nowrap;
 }
 
 #associationTable .btn-group .btn {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.875rem;
+    padding: 0.2rem 0.5rem;
+    font-size: 0.75rem;
     white-space: nowrap;
 }
 
-/* Ensure dropdown button is visible */
 #associationTable .dropdown-toggle-split {
-    padding-left: 0.4rem;
-    padding-right: 0.4rem;
+    padding-left: 0.3rem;
+    padding-right: 0.3rem;
 }
 
-/* Make sure the entire dropdown menu is clickable */
 .dropdown-menu {
     min-width: 150px;
 }
 
 .dropdown-item {
     padding: 0.25rem 1rem;
-    white-space: normal;
-    word-wrap: break-word;
+    font-size: 0.85rem;
 }
 
 /* Styles for clickable rows */
@@ -211,22 +315,29 @@ tr.not-filing .badge.bg-danger {
     margin-left: 10px;
 }
 
-/* Make sure the buttons don't get cut off in smaller screens */
+/* Responsive table handling */
 @media (max-width: 1200px) {
-    #associationTable .btn-group {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
+    #associationTable {
+        font-size: 0.8rem;
     }
-    
-    #associationTable .dropdown-toggle-split {
-        margin-top: 2px;
-        width: 100%;
+
+    #associationTable thead th {
+        font-size: 0.75rem;
+        padding: 0.5rem 0.3rem;
     }
-    
-    #associationTable .btn-group .btn:first-child {
-        border-radius: 0.25rem;
-        width: 100%;
+
+    #associationTable td {
+        padding: 0.4rem 0.3rem;
+    }
+
+    #associationTable .badge {
+        font-size: 0.65rem;
+        padding: 0.25em 0.4em;
+    }
+
+    #associationTable .btn-group .btn {
+        font-size: 0.7rem;
+        padding: 0.15rem 0.35rem;
     }
 }
 

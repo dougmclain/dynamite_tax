@@ -5,7 +5,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponse
 from django.core.files.base import ContentFile
 from django.utils import timezone
-from ..models import Association, EngagementLetter
+from ..models import Association, EngagementLetter, EngagementLetterTemplate, StateEngagementTemplate
 from ..forms import EngagementLetterForm
 from django.template.loader import get_template
 from datetime import datetime
@@ -45,10 +45,14 @@ class EngagementLetterView(LoginRequiredMixin, View):
         default_tax_year = current_year - 1
         form = EngagementLetterForm(initial={'tax_year': default_tax_year})
         engagement_letters = EngagementLetter.objects.all().order_by('-tax_year', 'association__association_name')
-        
+
+        # Get distinct tax years for filtering
+        tax_years = EngagementLetter.objects.values_list('tax_year', flat=True).distinct().order_by('-tax_year')
+
         context = {
             'form': form,
             'engagement_letters': engagement_letters,
+            'tax_years': tax_years,
             'today': timezone.now().date(),
         }
         return render(request, self.template_name, context)
@@ -60,15 +64,24 @@ class EngagementLetterView(LoginRequiredMixin, View):
             # Check if engagement letter already exists for this association and year
             association = form.cleaned_data['association']
             tax_year = form.cleaned_data['tax_year']
-            
+            price = form.cleaned_data['price']
+            state_fee = form.cleaned_data.get('state_fee', 0) or 0
+            override_filing_state = form.cleaned_data.get('override_filing_state', '')
+
+            # If user specified a filing state, update the association
+            if override_filing_state:
+                association.filing_state = override_filing_state
+                association.save()
+
             engagement_letter, created = EngagementLetter.objects.get_or_create(
                 association=association,
                 tax_year=tax_year,
-                defaults={'price': form.cleaned_data['price']}
+                defaults={'price': price, 'state_fee': state_fee}
             )
-            
+
             if not created:
-                engagement_letter.price = form.cleaned_data['price']
+                engagement_letter.price = price
+                engagement_letter.state_fee = state_fee
                 engagement_letter.save()
             
             try:
@@ -394,13 +407,597 @@ class UploadSignedEngagementLetterView(LoginRequiredMixin, View):
 
 class MarkEngagementLetterSentView(LoginRequiredMixin, View):
     """View to mark an engagement letter as sent"""
-    
+
     def get(self, request, letter_id):
         engagement_letter = get_object_or_404(EngagementLetter, id=letter_id)
-        
+
         # Update status
         engagement_letter.status = 'sent'
         engagement_letter.save()
-        
+
         messages.success(request, f'Engagement letter for {engagement_letter.association.association_name} marked as sent.')
         return redirect('engagement_letter')
+
+
+class BulkEngagementLetterView(LoginRequiredMixin, View):
+    """View to bulk create engagement letters for a new tax year based on previous year's filings"""
+    template_name = 'tax_form/bulk_engagement_letter.html'
+
+    def get(self, request):
+        from ..models import Financial, CompletedTaxReturn, ManagementCompany
+
+        current_year = timezone.now().year
+        source_year = int(request.GET.get('source_year', current_year - 1))
+        target_year = int(request.GET.get('target_year', current_year))
+        include_unfiled = request.GET.get('include_unfiled', '') == 'on'
+
+        # Management company filter
+        management_company_id = request.GET.get('management_company', '')
+        selected_management_company = None
+        if management_company_id:
+            try:
+                selected_management_company = ManagementCompany.objects.get(id=int(management_company_id))
+            except (ManagementCompany.DoesNotExist, ValueError):
+                pass
+
+        # Check for self-managed filter
+        show_self_managed = request.GET.get('self_managed', '') == 'on'
+
+        # Get available years from Financial records
+        available_years = Financial.objects.values_list('tax_year', flat=True).distinct().order_by('-tax_year')
+
+        # Get all management companies for the dropdown
+        management_companies = ManagementCompany.objects.all().order_by('name')
+
+        # Build preview data - track associations we've already added
+        preview_data = []
+        added_association_ids = set()
+
+        # First, find associations with filed returns for source year
+        filed_returns = CompletedTaxReturn.objects.filter(
+            return_filed=True,
+            financial__tax_year=source_year
+        ).select_related('financial__association')
+
+        for completed_return in filed_returns:
+            association = completed_return.financial.association
+            added_association_ids.add(association.id)
+
+            # Check if target year engagement letter already exists
+            existing_letter = EngagementLetter.objects.filter(
+                association=association,
+                tax_year=target_year
+            ).first()
+
+            # Get source year engagement letter for price
+            source_letter = EngagementLetter.objects.filter(
+                association=association,
+                tax_year=source_year
+            ).first()
+
+            price = source_letter.price if source_letter else 150  # Default price
+
+            preview_data.append({
+                'association': association,
+                'source_letter': source_letter,
+                'existing_letter': existing_letter,
+                'price': price,
+                'can_create': existing_letter is None,
+                'return_filed': True,
+            })
+
+        # If include_unfiled is checked, also include associations with financials but no filed return
+        if include_unfiled:
+            # Get all financials for source year
+            financials = Financial.objects.filter(tax_year=source_year).select_related('association')
+            for financial in financials:
+                association = financial.association
+                if association.id in added_association_ids:
+                    continue  # Skip if already added from filed returns
+
+                added_association_ids.add(association.id)
+
+                # Check if target year engagement letter already exists
+                existing_letter = EngagementLetter.objects.filter(
+                    association=association,
+                    tax_year=target_year
+                ).first()
+
+                # Get source year engagement letter for price
+                source_letter = EngagementLetter.objects.filter(
+                    association=association,
+                    tax_year=source_year
+                ).first()
+
+                price = source_letter.price if source_letter else 150  # Default price
+
+                preview_data.append({
+                    'association': association,
+                    'source_letter': source_letter,
+                    'existing_letter': existing_letter,
+                    'price': price,
+                    'can_create': existing_letter is None,
+                    'return_filed': False,
+                })
+
+        # Filter by management company if selected
+        if selected_management_company:
+            preview_data = [p for p in preview_data if p['association'].management_company_id == selected_management_company.id]
+        elif show_self_managed:
+            preview_data = [p for p in preview_data if p['association'].is_self_managed or p['association'].management_company is None]
+
+        # Sort by association name
+        preview_data.sort(key=lambda x: x['association'].association_name)
+
+        # Count stats
+        total_associations = len(preview_data)
+        total_filed = sum(1 for p in preview_data if p.get('return_filed', True))
+        can_create_count = sum(1 for p in preview_data if p['can_create'])
+        already_exists_count = total_associations - can_create_count
+
+        context = {
+            'source_year': source_year,
+            'target_year': target_year,
+            'available_years': available_years,
+            'preview_data': preview_data,
+            'total_filed': total_filed,
+            'total_associations': total_associations,
+            'can_create_count': can_create_count,
+            'already_exists_count': already_exists_count,
+            'include_unfiled': include_unfiled,
+            'management_companies': management_companies,
+            'selected_management_company': selected_management_company,
+            'show_self_managed': show_self_managed,
+        }
+        return render(request, self.template_name, context)
+
+    def post(self, request):
+        from ..models import Financial, CompletedTaxReturn
+
+        source_year = int(request.POST.get('source_year', timezone.now().year - 1))
+        target_year = int(request.POST.get('target_year', timezone.now().year))
+
+        # Get selected association IDs
+        selected_ids = request.POST.getlist('selected_associations')
+
+        if not selected_ids:
+            messages.warning(request, 'No associations selected.')
+            return redirect(f"{request.path}?source_year={source_year}&target_year={target_year}")
+
+        created_count = 0
+        skipped_count = 0
+
+        for assoc_id in selected_ids:
+            try:
+                association = Association.objects.get(id=assoc_id)
+
+                # Check if target year letter already exists
+                if EngagementLetter.objects.filter(association=association, tax_year=target_year).exists():
+                    skipped_count += 1
+                    continue
+
+                # Get source year price
+                source_letter = EngagementLetter.objects.filter(
+                    association=association,
+                    tax_year=source_year
+                ).first()
+                price = source_letter.price if source_letter else 150
+
+                # Get state fee from source letter or state template
+                state_fee = 0
+                if source_letter and source_letter.state_fee:
+                    state_fee = source_letter.state_fee
+                else:
+                    # Check for state template default fee
+                    filing_state = association.get_filing_state()
+                    if filing_state:
+                        state_template = StateEngagementTemplate.objects.filter(
+                            state=filing_state,
+                            is_active=True
+                        ).first()
+                        if state_template:
+                            state_fee = state_template.default_state_fee
+
+                # Create new engagement letter
+                EngagementLetter.objects.create(
+                    association=association,
+                    tax_year=target_year,
+                    price=price,
+                    state_fee=state_fee,
+                    status='pending'
+                )
+                created_count += 1
+
+            except Association.DoesNotExist:
+                logger.warning(f"Association {assoc_id} not found during bulk creation")
+                continue
+            except Exception as e:
+                logger.error(f"Error creating engagement letter for association {assoc_id}: {e}")
+                continue
+
+        if created_count > 0:
+            messages.success(request, f'Successfully created {created_count} engagement letter(s) for {target_year}.')
+        if skipped_count > 0:
+            messages.info(request, f'Skipped {skipped_count} association(s) that already had {target_year} engagement letters.')
+
+        return redirect('engagement_letter')
+
+
+class EngagementLetterTemplateView(LoginRequiredMixin, View):
+    """View to edit the base engagement letter template for a tax year"""
+    template_name = 'tax_form/engagement_letter_template.html'
+
+    def get(self, request):
+        current_year = timezone.now().year
+        selected_year = int(request.GET.get('year', current_year))
+
+        # Get or create template for selected year
+        template, created = EngagementLetterTemplate.objects.get_or_create(
+            tax_year=selected_year,
+            defaults={'default_price': 150}
+        )
+
+        # Get available years
+        available_years = list(range(current_year - 2, current_year + 2))
+
+        context = {
+            'template': template,
+            'selected_year': selected_year,
+            'available_years': available_years,
+            'created': created,
+        }
+        return render(request, self.template_name, context)
+
+    def post(self, request):
+        selected_year = int(request.POST.get('tax_year', timezone.now().year))
+
+        template, created = EngagementLetterTemplate.objects.get_or_create(
+            tax_year=selected_year
+        )
+
+        # Update template fields
+        template.services_text = request.POST.get('services_text', template.services_text)
+        template.fees_text = request.POST.get('fees_text', template.fees_text)
+        template.responsibilities_text = request.POST.get('responsibilities_text', template.responsibilities_text)
+        template.consent_text = request.POST.get('consent_text', template.consent_text)
+        template.default_price = int(request.POST.get('default_price', 150))
+        template.save()
+
+        messages.success(request, f'Template for {selected_year} saved successfully.')
+        return redirect(f"{request.path}?year={selected_year}")
+
+
+class EditEngagementLetterView(LoginRequiredMixin, View):
+    """View to edit an individual engagement letter"""
+    template_name = 'tax_form/edit_engagement_letter.html'
+
+    def get(self, request, letter_id):
+        letter = get_object_or_404(EngagementLetter, id=letter_id)
+        template = letter.get_template()
+
+        context = {
+            'letter': letter,
+            'template': template,
+            'services_text': letter.custom_services_text or (template.services_text.replace('{tax_year}', str(letter.tax_year)) if template else ''),
+            'fees_text': letter.custom_fees_text or (template.fees_text if template else ''),
+            'responsibilities_text': letter.custom_responsibilities_text or (template.responsibilities_text if template else ''),
+            'consent_text': letter.custom_consent_text or (template.consent_text if template else ''),
+        }
+        return render(request, self.template_name, context)
+
+    def post(self, request, letter_id):
+        letter = get_object_or_404(EngagementLetter, id=letter_id)
+
+        # Check if using custom or template
+        use_custom = request.POST.get('use_custom_text') == 'on'
+
+        # Update price and state fee (handle decimal input)
+        price_value = request.POST.get('price', str(letter.price))
+        letter.price = int(float(price_value)) if price_value else letter.price
+        state_fee_value = request.POST.get('state_fee', str(letter.state_fee))
+        letter.state_fee = int(float(state_fee_value)) if state_fee_value else 0
+
+        if use_custom:
+            letter.custom_services_text = request.POST.get('services_text', '')
+            letter.custom_fees_text = request.POST.get('fees_text', '')
+            letter.custom_responsibilities_text = request.POST.get('responsibilities_text', '')
+            letter.custom_consent_text = request.POST.get('consent_text', '')
+        else:
+            # Clear custom text to use template
+            letter.custom_services_text = None
+            letter.custom_fees_text = None
+            letter.custom_responsibilities_text = None
+            letter.custom_consent_text = None
+
+        letter.save()
+
+        messages.success(request, f'Engagement letter for {letter.association.association_name} updated.')
+        return redirect('engagement_letter')
+
+
+class PreviewEngagementLetterView(LoginRequiredMixin, View):
+    """View to preview an engagement letter PDF without downloading"""
+
+    def get(self, request, letter_id):
+        letter = get_object_or_404(EngagementLetter, id=letter_id)
+
+        # Generate PDF using the updated method
+        pdf_response = self.generate_preview_pdf(letter)
+
+        # Return as inline PDF (opens in browser)
+        response = HttpResponse(pdf_response, content_type='application/pdf')
+        response['Content-Disposition'] = f'inline; filename="preview_{letter.association.association_name}_{letter.tax_year}.pdf"'
+        return response
+
+    def generate_preview_pdf(self, engagement_letter):
+        """Generate a PDF engagement letter using template/custom text"""
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=letter,
+                                rightMargin=50, leftMargin=50,
+                                topMargin=50, bottomMargin=50)
+
+        styles = getSampleStyleSheet()
+        elements = []
+
+        # Header with logo
+        logo_path = os.path.join(settings.STATIC_ROOT, 'images', 'dynamite_logo.png')
+        if os.path.exists(logo_path):
+            logo = Image(logo_path)
+            logo.drawHeight = 0.8*inch
+            logo.drawWidth = 2*inch
+
+            company_header = Paragraph("""
+            <para align="right">
+            <b>Dynamite Management, LLC</b><br/>
+            PO Box 8, Vancouver, WA 98666<br/>
+            Phone: 360-524-9665<br/>
+            Email: info@hoafiscal.com
+            </para>""", styles['Normal'])
+
+            header_data = [[logo, company_header]]
+            header_table = Table(header_data, colWidths=[3*inch, 3*inch])
+            header_table.setStyle(TableStyle([
+                ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                ('ALIGN', (0, 0), (0, 0), 'LEFT'),
+                ('ALIGN', (1, 0), (1, 0), 'RIGHT'),
+                ('LEFTPADDING', (0, 0), (0, 0), 0),
+                ('RIGHTPADDING', (1, 0), (1, 0), 0),
+            ]))
+            elements.append(header_table)
+        else:
+            company_header = Paragraph("""
+            <para align="right">
+            <b>Dynamite Management, LLC</b><br/>
+            PO Box 8, Vancouver, WA 98666<br/>
+            Phone: 360-524-9665<br/>
+            Email: info@hoafiscal.com
+            </para>""", styles['Normal'])
+            elements.append(company_header)
+
+        elements.append(Spacer(1, 0.5*inch))
+
+        # Introduction
+        intro = f"""We are pleased to confirm our understanding of the services we are to provide for:
+        <b>{engagement_letter.association.association_name}</b>, for the year ended December 31, {engagement_letter.tax_year}.
+        This letter sets forth the terms of our engagement."""
+        elements.append(Paragraph(intro, styles['Normal']))
+        elements.append(Spacer(1, 0.25*inch))
+
+        # Services section - use template/custom text
+        services = f"<b>Services Provided:</b><br/>{engagement_letter.get_services_text()}"
+        elements.append(Paragraph(services, styles['Normal']))
+
+        # State-specific services (if applicable)
+        state_services = engagement_letter.get_state_services_text()
+        if state_services:
+            elements.append(Spacer(1, 0.1*inch))
+            elements.append(Paragraph(state_services, styles['Normal']))
+
+        elements.append(Spacer(1, 0.25*inch))
+
+        # Fees section - use template/custom text
+        fees = f"<b>Fees:</b><br/>{engagement_letter.get_fees_text()}"
+        elements.append(Paragraph(fees, styles['Normal']))
+
+        # State fee (if applicable)
+        state_fee_text = engagement_letter.get_state_fee_text()
+        if state_fee_text:
+            elements.append(Spacer(1, 0.1*inch))
+            elements.append(Paragraph(state_fee_text, styles['Normal']))
+
+        # Total fee (if there's a state fee)
+        if engagement_letter.state_fee > 0:
+            elements.append(Spacer(1, 0.1*inch))
+            total = engagement_letter.get_total_fee()
+            elements.append(Paragraph(f"<b>Total Fee: ${total}</b>", styles['Normal']))
+
+        elements.append(Spacer(1, 0.25*inch))
+
+        # Responsibilities section
+        responsibilities_text = engagement_letter.get_responsibilities_text()
+        if responsibilities_text:
+            responsibilities = f"<b>Responsibilities:</b><br/>{responsibilities_text}"
+            elements.append(Paragraph(responsibilities, styles['Normal']))
+            elements.append(Spacer(1, 0.25*inch))
+
+        # Consent section
+        consent_text = engagement_letter.get_consent_text()
+        if consent_text:
+            consent = f"<b>Consent to Use of Tax Return Information:</b><br/>{consent_text}"
+            elements.append(Paragraph(consent, styles['Normal']))
+            elements.append(Spacer(1, 0.25*inch))
+
+        # State disclosure section (if applicable)
+        state_disclosure = engagement_letter.get_state_disclosure_text()
+        if state_disclosure:
+            state_template = engagement_letter.get_state_template()
+            state_name = state_template.get_state_name() if state_template else engagement_letter.association.state
+            disclosure = f"<b>{state_name} State Disclosure:</b><br/>{state_disclosure}"
+            elements.append(Paragraph(disclosure, styles['Normal']))
+            elements.append(Spacer(1, 0.25*inch))
+
+        # Signature section
+        signature = """To indicate your agreement to the arrangements above, please sign and date this letter."""
+        elements.append(Paragraph(signature, styles['Normal']))
+        elements.append(Spacer(1, 0.5*inch))
+
+        sig_data = [
+            ["Signature:_________________________", "Date:_________________"],
+            ["Title:_____________________________", ""]
+        ]
+        sig_table = Table(sig_data, colWidths=[4*inch, 2*inch])
+        sig_table.setStyle(TableStyle([
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('TOPPADDING', (0, 0), (-1, -1), 12),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
+        ]))
+        elements.append(sig_table)
+
+        doc.build(elements)
+        pdf = buffer.getvalue()
+        buffer.close()
+        return pdf
+
+
+class DownloadCombinedEngagementLettersView(LoginRequiredMixin, View):
+    """View to download multiple engagement letters as a single combined PDF"""
+
+    def post(self, request):
+        from PyPDF2 import PdfMerger
+
+        letter_ids_str = request.POST.get('letter_ids', '')
+        if not letter_ids_str:
+            messages.error(request, 'No engagement letters selected.')
+            return redirect('engagement_letter')
+
+        letter_ids = [int(id) for id in letter_ids_str.split(',') if id.strip().isdigit()]
+        if not letter_ids:
+            messages.error(request, 'Invalid engagement letter selection.')
+            return redirect('engagement_letter')
+
+        # Get the letters in order
+        letters = EngagementLetter.objects.filter(id__in=letter_ids).order_by('association__association_name')
+
+        if not letters.exists():
+            messages.error(request, 'No engagement letters found.')
+            return redirect('engagement_letter')
+
+        # Create PDF merger
+        merger = PdfMerger()
+        preview_view = PreviewEngagementLetterView()
+
+        try:
+            for letter in letters:
+                # Generate PDF for each letter
+                pdf_content = preview_view.generate_pdf(letter)
+                pdf_buffer = BytesIO(pdf_content)
+                merger.append(pdf_buffer)
+
+            # Write combined PDF to buffer
+            output_buffer = BytesIO()
+            merger.write(output_buffer)
+            merger.close()
+
+            output_buffer.seek(0)
+            combined_pdf = output_buffer.getvalue()
+
+            # Determine filename
+            if letters.count() == 1:
+                filename = f"engagement_letter_{letters.first().association.association_name[:20]}_{letters.first().tax_year}.pdf"
+            else:
+                tax_years = letters.values_list('tax_year', flat=True).distinct()
+                if len(set(tax_years)) == 1:
+                    filename = f"engagement_letters_{list(tax_years)[0]}_{letters.count()}_letters.pdf"
+                else:
+                    filename = f"engagement_letters_combined_{letters.count()}_letters.pdf"
+
+            # Clean filename
+            filename = ''.join(c for c in filename if c.isalnum() or c in '._-')
+
+            response = HttpResponse(combined_pdf, content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+            return response
+
+        except Exception as e:
+            logger.error(f"Error generating combined PDF: {str(e)}", exc_info=True)
+            messages.error(request, f"Error generating combined PDF: {str(e)}")
+            return redirect('engagement_letter')
+
+
+class StateEngagementTemplateListView(LoginRequiredMixin, View):
+    """View to list and manage state engagement templates"""
+    template_name = 'tax_form/state_engagement_templates.html'
+
+    def get(self, request):
+        # Get all state templates
+        state_templates = StateEngagementTemplate.objects.all()
+
+        # Get states that don't have templates yet
+        existing_states = set(state_templates.values_list('state', flat=True))
+        available_states = [
+            (code, name) for code, name in StateEngagementTemplate.STATE_CHOICES
+            if code not in existing_states
+        ]
+
+        context = {
+            'state_templates': state_templates,
+            'available_states': available_states,
+        }
+        return render(request, self.template_name, context)
+
+
+class StateEngagementTemplateEditView(LoginRequiredMixin, View):
+    """View to edit a state engagement template"""
+    template_name = 'tax_form/edit_state_template.html'
+
+    def get(self, request, state_code=None):
+        if state_code:
+            template = get_object_or_404(StateEngagementTemplate, state=state_code)
+            is_new = False
+        else:
+            # Creating new template
+            state_code = request.GET.get('state')
+            if not state_code:
+                messages.error(request, 'State code is required.')
+                return redirect('state_engagement_templates')
+            template = StateEngagementTemplate(state=state_code)
+            is_new = True
+
+        context = {
+            'template': template,
+            'is_new': is_new,
+            'state_name': dict(StateEngagementTemplate.STATE_CHOICES).get(state_code, state_code),
+        }
+        return render(request, self.template_name, context)
+
+    def post(self, request, state_code=None):
+        if state_code:
+            template = get_object_or_404(StateEngagementTemplate, state=state_code)
+        else:
+            state_code = request.POST.get('state')
+            template, created = StateEngagementTemplate.objects.get_or_create(state=state_code)
+
+        # Update fields
+        template.is_active = request.POST.get('is_active') == 'on'
+        template.state_form_name = request.POST.get('state_form_name', '')
+        template.state_services_text = request.POST.get('state_services_text', '')
+        # Handle decimal input by converting to float first, then int
+        fee_value = request.POST.get('default_state_fee', '0')
+        template.default_state_fee = int(float(fee_value)) if fee_value else 0
+        template.state_fee_text = request.POST.get('state_fee_text', '')
+        template.state_disclosure_text = request.POST.get('state_disclosure_text', '')
+        template.save()
+
+        messages.success(request, f'State template for {template.get_state_display()} saved successfully.')
+        return redirect('state_engagement_templates')
+
+
+class StateEngagementTemplateDeleteView(LoginRequiredMixin, View):
+    """View to delete a state engagement template"""
+
+    def post(self, request, state_code):
+        template = get_object_or_404(StateEngagementTemplate, state=state_code)
+        state_name = template.get_state_display()
+        template.delete()
+        messages.success(request, f'State template for {state_name} deleted.')
+        return redirect('state_engagement_templates')

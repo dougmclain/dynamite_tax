@@ -67,6 +67,70 @@ class Association(models.Model):
     city = models.CharField(max_length=100)
     state = models.CharField(max_length=100)
     zipcode = models.CharField(max_length=20)
+
+    # Filing state - where the association needs to file state returns (may differ from mailing address)
+    STATE_CHOICES = (
+        ('', 'Same as mailing address'),
+        ('AL', 'Alabama'),
+        ('AK', 'Alaska'),
+        ('AZ', 'Arizona'),
+        ('AR', 'Arkansas'),
+        ('CA', 'California'),
+        ('CO', 'Colorado'),
+        ('CT', 'Connecticut'),
+        ('DE', 'Delaware'),
+        ('DC', 'District of Columbia'),
+        ('FL', 'Florida'),
+        ('GA', 'Georgia'),
+        ('HI', 'Hawaii'),
+        ('ID', 'Idaho'),
+        ('IL', 'Illinois'),
+        ('IN', 'Indiana'),
+        ('IA', 'Iowa'),
+        ('KS', 'Kansas'),
+        ('KY', 'Kentucky'),
+        ('LA', 'Louisiana'),
+        ('ME', 'Maine'),
+        ('MD', 'Maryland'),
+        ('MA', 'Massachusetts'),
+        ('MI', 'Michigan'),
+        ('MN', 'Minnesota'),
+        ('MS', 'Mississippi'),
+        ('MO', 'Missouri'),
+        ('MT', 'Montana'),
+        ('NE', 'Nebraska'),
+        ('NV', 'Nevada'),
+        ('NH', 'New Hampshire'),
+        ('NJ', 'New Jersey'),
+        ('NM', 'New Mexico'),
+        ('NY', 'New York'),
+        ('NC', 'North Carolina'),
+        ('ND', 'North Dakota'),
+        ('OH', 'Ohio'),
+        ('OK', 'Oklahoma'),
+        ('OR', 'Oregon'),
+        ('PA', 'Pennsylvania'),
+        ('RI', 'Rhode Island'),
+        ('SC', 'South Carolina'),
+        ('SD', 'South Dakota'),
+        ('TN', 'Tennessee'),
+        ('TX', 'Texas'),
+        ('UT', 'Utah'),
+        ('VT', 'Vermont'),
+        ('VA', 'Virginia'),
+        ('WA', 'Washington'),
+        ('WV', 'West Virginia'),
+        ('WI', 'Wisconsin'),
+        ('WY', 'Wyoming'),
+    )
+    filing_state = models.CharField(
+        max_length=2,
+        choices=STATE_CHOICES,
+        blank=True,
+        default='',
+        help_text="State where the association files state tax returns (if different from mailing address)"
+    )
+
     zoned = models.BooleanField(default=True)
     ein = models.CharField(max_length=11, unique=True, validators=[
         RegexValidator(
@@ -100,6 +164,25 @@ class Association(models.Model):
 
     def get_full_contact_name(self):
         return f"{self.contact_first_name} {self.contact_last_name}"
+
+    def get_filing_state(self):
+        """Returns the state where this association needs to file state returns.
+        Uses filing_state if set, otherwise falls back to the mailing address state."""
+        if self.filing_state:
+            return self.filing_state
+        # Convert mailing address state to 2-letter code if needed
+        state_map = {
+            'Washington': 'WA', 'Oregon': 'OR', 'Illinois': 'IL',
+            'California': 'CA', 'Texas': 'TX', 'Florida': 'FL',
+            'Arizona': 'AZ', 'Nevada': 'NV', 'Colorado': 'CO',
+        }
+        return state_map.get(self.state, self.state[:2].upper() if len(self.state) >= 2 else self.state)
+
+    def get_filing_state_display(self):
+        """Returns the full name of the filing state."""
+        state_code = self.get_filing_state()
+        state_names = dict(self.STATE_CHOICES)
+        return state_names.get(state_code, state_code)
 
     def get_fiscal_year_end(self, tax_year):
         _, last_day = calendar.monthrange(tax_year, self.fiscal_year_end_month)
@@ -285,16 +368,155 @@ class Preparer(models.Model):
     def __str__(self):
         return self.name
 
+class EngagementLetterTemplate(models.Model):
+    """Base template for engagement letters per tax year"""
+    tax_year = models.IntegerField(unique=True, help_text="Tax year this template applies to")
+
+    # Customizable sections
+    services_text = models.TextField(
+        default="Dynamite Management, LLC will prepare the federal Form 1120H for the tax year ending December 31, {tax_year}. Our services will include the preparation of the tax forms based on the financial information provided by you. It is your responsibility to provide all the necessary information required for the preparation of complete and accurate returns.",
+        help_text="Services section text. Use {tax_year} as placeholder."
+    )
+    fees_text = models.TextField(
+        default="The fee for the preparation of the Form 1120H will be: ${price}. These fees are based on the assumption that all information provided by you is accurate and complete and that you will provide all required information in a timely manner. Any additional services or consultations beyond the scope of this engagement will be billed separately.",
+        help_text="Fees section text. Use {price} as placeholder."
+    )
+    responsibilities_text = models.TextField(
+        default="It is your responsibility to provide all the information required for the preparation of the tax returns. You are also responsible for reviewing the returns for accuracy and completeness before they are filed. You are responsible for the payment of all taxes due. You should retain all the documents and other data that form the basis of this return for at least seven (7) years.\n\nBy signing below, you are also taking responsibility for making all management decisions and performing all management functions; for designating an individual with suitable skill, knowledge, or experience to oversee the tax services provided.",
+        help_text="Responsibilities section text."
+    )
+    consent_text = models.TextField(
+        default="You acknowledge and agree that Dynamite Management, LLC may use your association's tax return information provided for the purpose of preparing your tax returns.",
+        help_text="Consent section text."
+    )
+    default_price = models.PositiveIntegerField(default=150, help_text="Default price for new engagement letters")
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Engagement Letter Template - {self.tax_year}"
+
+    class Meta:
+        ordering = ['-tax_year']
+
+
+class StateEngagementTemplate(models.Model):
+    """State-specific add-on content for engagement letters"""
+    # All 50 US states + DC
+    STATE_CHOICES = (
+        ('AL', 'Alabama'),
+        ('AK', 'Alaska'),
+        ('AZ', 'Arizona'),
+        ('AR', 'Arkansas'),
+        ('CA', 'California'),
+        ('CO', 'Colorado'),
+        ('CT', 'Connecticut'),
+        ('DE', 'Delaware'),
+        ('DC', 'District of Columbia'),
+        ('FL', 'Florida'),
+        ('GA', 'Georgia'),
+        ('HI', 'Hawaii'),
+        ('ID', 'Idaho'),
+        ('IL', 'Illinois'),
+        ('IN', 'Indiana'),
+        ('IA', 'Iowa'),
+        ('KS', 'Kansas'),
+        ('KY', 'Kentucky'),
+        ('LA', 'Louisiana'),
+        ('ME', 'Maine'),
+        ('MD', 'Maryland'),
+        ('MA', 'Massachusetts'),
+        ('MI', 'Michigan'),
+        ('MN', 'Minnesota'),
+        ('MS', 'Mississippi'),
+        ('MO', 'Missouri'),
+        ('MT', 'Montana'),
+        ('NE', 'Nebraska'),
+        ('NV', 'Nevada'),
+        ('NH', 'New Hampshire'),
+        ('NJ', 'New Jersey'),
+        ('NM', 'New Mexico'),
+        ('NY', 'New York'),
+        ('NC', 'North Carolina'),
+        ('ND', 'North Dakota'),
+        ('OH', 'Ohio'),
+        ('OK', 'Oklahoma'),
+        ('OR', 'Oregon'),
+        ('PA', 'Pennsylvania'),
+        ('RI', 'Rhode Island'),
+        ('SC', 'South Carolina'),
+        ('SD', 'South Dakota'),
+        ('TN', 'Tennessee'),
+        ('TX', 'Texas'),
+        ('UT', 'Utah'),
+        ('VT', 'Vermont'),
+        ('VA', 'Virginia'),
+        ('WA', 'Washington'),
+        ('WV', 'West Virginia'),
+        ('WI', 'Wisconsin'),
+        ('WY', 'Wyoming'),
+    )
+
+    state = models.CharField(max_length=2, choices=STATE_CHOICES, unique=True)
+    is_active = models.BooleanField(default=True, help_text="Whether this state requires additional engagement letter content")
+
+    # State form name (e.g., "Form IL-1120-ST", "Annual Report")
+    state_form_name = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text="Name of the state form (e.g., 'Form IL-1120-ST', 'Annual Report')"
+    )
+
+    # State-specific services (e.g., state tax return preparation)
+    state_services_text = models.TextField(
+        blank=True,
+        help_text="Additional services text for this state. Use {tax_year}, {state_name}, and {state_form_name} as placeholders."
+    )
+
+    # Default state filing fee
+    default_state_fee = models.PositiveIntegerField(
+        default=0,
+        help_text="Default additional fee for state filing"
+    )
+
+    # State fee description (how to describe the fee)
+    state_fee_text = models.TextField(
+        blank=True,
+        default="Additionally, there will be a fee of ${state_fee} for the preparation of the {state_name} state filing.",
+        help_text="Text describing the state fee. Use {state_fee} and {state_name} as placeholders."
+    )
+
+    # State disclosure requirements
+    state_disclosure_text = models.TextField(
+        blank=True,
+        help_text="State-specific disclosure or legal requirements text."
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"State Template - {self.get_state_display()}"
+
+    def get_state_name(self):
+        return dict(self.STATE_CHOICES).get(self.state, self.state)
+
+    class Meta:
+        ordering = ['state']
+
+
 class EngagementLetter(models.Model):
     STATUS_CHOICES = (
         ('pending', 'Pending'),
         ('sent', 'Sent'),
         ('signed', 'Signed'),
     )
-    
+
     association = models.ForeignKey('Association', on_delete=models.CASCADE, related_name='engagement_letters')
     tax_year = models.IntegerField(default=datetime.now().year, help_text="Tax year this engagement is for")
-    price = models.PositiveIntegerField(default=150, help_text="Price for tax preparation services")
+    price = models.PositiveIntegerField(default=150, help_text="Price for federal tax preparation services")
+    state_fee = models.PositiveIntegerField(default=0, help_text="Additional fee for state filing (0 if no state filing needed)")
     date_created = models.DateField(auto_now_add=True)
     date_signed = models.DateField(null=True, blank=True)
     signed_by = models.CharField(max_length=100, blank=True, null=True)
@@ -302,10 +524,91 @@ class EngagementLetter(models.Model):
     pdf_file = models.FileField(upload_to='engagement_letters/', null=True, blank=True)
     signed_pdf = models.FileField(upload_to='signed_engagement_letters/', null=True, blank=True)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
-    
+
+    # Custom overrides (if blank, uses template defaults)
+    custom_services_text = models.TextField(blank=True, null=True, help_text="Override services text for this letter only")
+    custom_fees_text = models.TextField(blank=True, null=True, help_text="Override fees text for this letter only")
+    custom_responsibilities_text = models.TextField(blank=True, null=True, help_text="Override responsibilities text for this letter only")
+    custom_consent_text = models.TextField(blank=True, null=True, help_text="Override consent text for this letter only")
+
     def __str__(self):
         return f"{self.association.association_name} - {self.tax_year} Engagement Letter"
-    
+
+    def get_template(self):
+        """Get the template for this letter's tax year, or None if not found"""
+        return EngagementLetterTemplate.objects.filter(tax_year=self.tax_year).first()
+
+    def get_state_template(self):
+        """Get the state template for this letter's association filing state"""
+        state = self.association.get_filing_state()
+        if state:
+            return StateEngagementTemplate.objects.filter(state=state, is_active=True).first()
+        return None
+
+    def get_services_text(self):
+        if self.custom_services_text:
+            return self.custom_services_text
+        template = self.get_template()
+        if template:
+            return template.services_text.replace('{tax_year}', str(self.tax_year))
+        return f"Dynamite Management, LLC will prepare the federal Form 1120H for the tax year ending December 31, {self.tax_year}."
+
+    def get_state_services_text(self):
+        """Get state-specific services text if applicable"""
+        state_template = self.get_state_template()
+        if state_template and state_template.state_services_text:
+            text = state_template.state_services_text
+            text = text.replace('{tax_year}', str(self.tax_year))
+            text = text.replace('{state_name}', state_template.get_state_name())
+            text = text.replace('{state_form_name}', state_template.state_form_name or '')
+            return text
+        return ""
+
+    def get_fees_text(self):
+        if self.custom_fees_text:
+            return self.custom_fees_text.replace('{price}', str(self.price))
+        template = self.get_template()
+        if template:
+            return template.fees_text.replace('{price}', str(self.price))
+        return f"The fee for the preparation of the Form 1120H will be: ${self.price}"
+
+    def get_state_fee_text(self):
+        """Get state fee text if applicable"""
+        if self.state_fee > 0:
+            state_template = self.get_state_template()
+            if state_template and state_template.state_fee_text:
+                text = state_template.state_fee_text
+                text = text.replace('{state_fee}', str(self.state_fee))
+                text = text.replace('{state_name}', state_template.get_state_name())
+                return text
+            # Default text if no template
+            state_name = dict(StateEngagementTemplate.STATE_CHOICES).get(self.association.state, self.association.state)
+            return f"Additionally, there will be a fee of ${self.state_fee} for the preparation of the {state_name} state filing."
+        return ""
+
+    def get_total_fee(self):
+        """Get total fee (federal + state)"""
+        return self.price + self.state_fee
+
+    def get_responsibilities_text(self):
+        if self.custom_responsibilities_text:
+            return self.custom_responsibilities_text
+        template = self.get_template()
+        return template.responsibilities_text if template else ""
+
+    def get_consent_text(self):
+        if self.custom_consent_text:
+            return self.custom_consent_text
+        template = self.get_template()
+        return template.consent_text if template else ""
+
+    def get_state_disclosure_text(self):
+        """Get state-specific disclosure text if applicable"""
+        state_template = self.get_state_template()
+        if state_template and state_template.state_disclosure_text:
+            return state_template.state_disclosure_text
+        return ""
+
     class Meta:
         unique_together = ('association', 'tax_year')
         

@@ -50,8 +50,8 @@ class AssociationForm(forms.ModelForm):
     class Meta:
         model = Association
         fields = [
-            'association_name', 'mailing_address', 'city', 'state', 'zipcode', 
-            'zoned', 'ein', 'formation_date', 'association_type',
+            'association_name', 'mailing_address', 'city', 'state', 'zipcode',
+            'filing_state', 'zoned', 'ein', 'formation_date', 'association_type',
             'fiscal_year_end_month',
             'contact_first_name', 'contact_last_name', 'contact_email',
             'is_self_managed', 'management_company'
@@ -61,6 +61,7 @@ class AssociationForm(forms.ModelForm):
             'association_type': forms.Select(attrs={'class': 'form-select'}),
             'fiscal_year_end_month': forms.Select(attrs={'class': 'form-select'}),
             'management_company': forms.Select(attrs={'class': 'form-select'}),
+            'filing_state': forms.Select(attrs={'class': 'form-select'}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -160,15 +161,29 @@ class ExtensionForm(forms.ModelForm):
         
 # Fix the indentation of EngagementLetterForm - it should not be nested inside ExtensionForm
 class EngagementLetterForm(forms.ModelForm):
+    # Add a non-model field to override filing state for this letter
+    override_filing_state = forms.ChoiceField(
+        choices=[('', 'Use association default')] + list(Association.STATE_CHOICES[1:]),  # Skip the "same as mailing" option
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label='Filing State'
+    )
+
     class Meta:
         model = EngagementLetter
-        fields = ['association', 'tax_year', 'price']
+        fields = ['association', 'tax_year', 'price', 'state_fee']
         widgets = {
             'association': forms.Select(attrs={'class': 'form-select'}),
             'tax_year': forms.NumberInput(attrs={'class': 'form-control'}),
             'price': forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'step': '50'}),
+            'state_fee': forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'step': '25'}),
         }
-        
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['state_fee'].initial = 0
+        self.fields['state_fee'].label = 'State Fee ($)'
+
 class AssociationFilingStatusForm(forms.ModelForm):
     class Meta:
         model = AssociationFilingStatus

@@ -1,0 +1,126 @@
+{% extends "tax_form/base.html" %}
+{% load static %}
+
+{% block title %}{% if is_new %}Create{% else %}Edit{% endif %} State Template - {{ state_name }}{% endblock %}
+
+{% block content %}
+<div class="edit-state-container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">{% if is_new %}Create{% else %}Edit{% endif %} State Template: {{ state_name }}</h2>
+        <a href="{% url 'state_engagement_templates' %}" class="btn btn-secondary">Back to State Templates</a>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        {% if is_new %}
+            <input type="hidden" name="state" value="{{ template.state }}">
+        {% endif %}
+
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3 class="card-title h5 mb-0">State Settings</h3>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="is_active" name="is_active"
+                                   {% if template.is_active or is_new %}checked{% endif %}>
+                            <label class="form-check-label" for="is_active">
+                                <strong>Active</strong>
+                                <small class="text-muted d-block">When active, this state's content will be included in engagement letters</small>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="state_form_name" class="form-label"><strong>State Form Name</strong></label>
+                        <input type="text" class="form-control" id="state_form_name" name="state_form_name"
+                               value="{{ template.state_form_name }}" placeholder="e.g., Form IL-1120-ST">
+                        <small class="text-muted">Name of the state form to be prepared</small>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="default_state_fee" class="form-label"><strong>Default State Fee ($)</strong></label>
+                        <input type="number" class="form-control" id="default_state_fee" name="default_state_fee"
+                               value="{{ template.default_state_fee|default:0 }}" style="max-width: 200px;">
+                        <small class="text-muted">Default additional fee for {{ state_name }} state filing</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3 class="card-title h5 mb-0">State-Specific Content</h3>
+            </div>
+            <div class="card-body">
+                <div class="mb-4">
+                    <label for="state_services_text" class="form-label"><strong>State Services Text</strong></label>
+                    <textarea class="form-control" id="state_services_text" name="state_services_text" rows="4">{{ template.state_services_text }}</textarea>
+                    <small class="text-muted">
+                        Additional services for {{ state_name }}. Use <code>{tax_year}</code>, <code>{state_name}</code>, and <code>{state_form_name}</code> as placeholders.<br>
+                        Example: "We will also prepare {state_form_name} for {tax_year}."
+                    </small>
+                </div>
+
+                <div class="mb-4">
+                    <label for="state_fee_text" class="form-label"><strong>State Fee Text</strong></label>
+                    <textarea class="form-control" id="state_fee_text" name="state_fee_text" rows="3">{{ template.state_fee_text|default:"Additionally, there will be a fee of ${state_fee} for the preparation of the {state_name} state filing." }}</textarea>
+                    <small class="text-muted">
+                        How to describe the state fee. Use <code>{state_fee}</code> and <code>{state_name}</code> as placeholders.
+                    </small>
+                </div>
+
+                <div class="mb-4">
+                    <label for="state_disclosure_text" class="form-label"><strong>State Disclosure Text</strong></label>
+                    <textarea class="form-control" id="state_disclosure_text" name="state_disclosure_text" rows="4">{{ template.state_disclosure_text }}</textarea>
+                    <small class="text-muted">
+                        Any state-specific legal disclosures or requirements. This will appear as a separate section in the engagement letter.
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-between">
+            <a href="{% url 'state_engagement_templates' %}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary">{% if is_new %}Create{% else %}Save{% endif %} State Template</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    main.container:has(.edit-state-container) {
+        max-width: 1000px;
+        width: 100%;
+        margin: 0 auto;
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+
+    @media (min-width: 1200px) {
+        main.container:has(.edit-state-container) {
+            padding-left: 40px;
+            padding-right: 40px;
+        }
+    }
+
+    .edit-state-container {
+        width: 100%;
+    }
+
+    .card {
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border: none;
+    }
+
+    .card-header {
+        background-color: #f7f7f7;
+    }
+
+    textarea.form-control {
+        font-family: monospace;
+        font-size: 0.9rem;
+    }
+</style>
+{% endblock %}

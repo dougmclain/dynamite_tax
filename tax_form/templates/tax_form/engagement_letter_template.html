@@ -1,0 +1,130 @@
+{% extends "tax_form/base.html" %}
+{% load static %}
+
+{% block title %}Edit Engagement Letter Template{% endblock %}
+
+{% block content %}
+<div class="template-container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Engagement Letter Template</h2>
+        <div>
+            <a href="{% url 'state_engagement_templates' %}" class="btn btn-outline-primary me-2">State Templates</a>
+            <a href="{% url 'engagement_letter' %}" class="btn btn-secondary">Back to Engagement Letters</a>
+        </div>
+    </div>
+
+    <!-- Year Selection -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3 class="card-title h5 mb-0">Select Tax Year</h3>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label for="year" class="form-label">Tax Year</label>
+                    <select name="year" id="year" class="form-select" onchange="this.form.submit()">
+                        {% for year in available_years %}
+                            <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>{{ year }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-8">
+                    <p class="mb-0 text-muted">
+                        {% if created %}
+                            <span class="badge bg-info">New template created with default text</span>
+                        {% else %}
+                            Editing existing template for {{ selected_year }}
+                        {% endif %}
+                    </p>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Template Editor -->
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="tax_year" value="{{ selected_year }}">
+
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3 class="card-title h5 mb-0">Template Content for {{ selected_year }}</h3>
+            </div>
+            <div class="card-body">
+                <div class="mb-4">
+                    <label for="default_price" class="form-label"><strong>Default Price ($)</strong></label>
+                    <input type="number" class="form-control" id="default_price" name="default_price"
+                           value="{{ template.default_price }}" style="max-width: 200px;">
+                    <small class="text-muted">Default price for new engagement letters</small>
+                </div>
+
+                <hr>
+
+                <div class="mb-4">
+                    <label for="services_text" class="form-label"><strong>Services Provided Section</strong></label>
+                    <textarea class="form-control" id="services_text" name="services_text" rows="5">{{ template.services_text }}</textarea>
+                    <small class="text-muted">Use <code>{tax_year}</code> as a placeholder for the tax year</small>
+                </div>
+
+                <div class="mb-4">
+                    <label for="fees_text" class="form-label"><strong>Fees Section</strong></label>
+                    <textarea class="form-control" id="fees_text" name="fees_text" rows="4">{{ template.fees_text }}</textarea>
+                    <small class="text-muted">Use <code>{price}</code> as a placeholder for the letter's price</small>
+                </div>
+
+                <div class="mb-4">
+                    <label for="responsibilities_text" class="form-label"><strong>Responsibilities Section</strong></label>
+                    <textarea class="form-control" id="responsibilities_text" name="responsibilities_text" rows="6">{{ template.responsibilities_text }}</textarea>
+                </div>
+
+                <div class="mb-4">
+                    <label for="consent_text" class="form-label"><strong>Consent Section</strong></label>
+                    <textarea class="form-control" id="consent_text" name="consent_text" rows="3">{{ template.consent_text }}</textarea>
+                </div>
+            </div>
+            <div class="card-footer d-flex justify-content-between">
+                <a href="{% url 'engagement_letter' %}" class="btn btn-secondary">Cancel</a>
+                <button type="submit" class="btn btn-primary">Save Template</button>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Override parent container for wider layout */
+    main.container:has(.template-container) {
+        max-width: 1200px;
+        width: 100%;
+        margin: 0 auto;
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+
+    @media (min-width: 1200px) {
+        main.container:has(.template-container) {
+            padding-left: 40px;
+            padding-right: 40px;
+        }
+    }
+
+    .template-container {
+        width: 100%;
+    }
+
+    .card {
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border: none;
+    }
+
+    .card-header {
+        background-color: #f7f7f7;
+    }
+
+    textarea.form-control {
+        font-family: monospace;
+        font-size: 0.9rem;
+    }
+</style>
+{% endblock %}

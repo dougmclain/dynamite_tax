@@ -1,0 +1,292 @@
+{% extends "tax_form/base.html" %}
+{% load static %}
+
+{% block title %}Bulk Create Engagement Letters{% endblock %}
+
+{% block content %}
+<div class="bulk-engagement-container mt-5">
+    <h2 class="mb-4">Bulk Create Engagement Letters</h2>
+
+    <!-- Year Selection Form -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3 class="card-title h5 mb-0">Filter Options</h3>
+        </div>
+        <div class="card-body">
+            <form method="get">
+                <div class="row g-3 align-items-end mb-3">
+                    <div class="col-md-3">
+                        <label for="source_year" class="form-label">Source Year</label>
+                        <select name="source_year" id="source_year" class="form-select">
+                            {% for year in available_years %}
+                                <option value="{{ year }}" {% if year == source_year %}selected{% endif %}>{{ year }}</option>
+                            {% endfor %}
+                        </select>
+                        <small class="text-muted">Associations with financial data</small>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="target_year" class="form-label">Target Year (new letters)</label>
+                        <select name="target_year" id="target_year" class="form-select">
+                            {% for year in available_years %}
+                                <option value="{{ year|add:1 }}" {% if year|add:1 == target_year %}selected{% endif %}>{{ year|add:1 }}</option>
+                            {% endfor %}
+                            <option value="{{ source_year|add:1 }}" {% if source_year|add:1 == target_year %}selected{% endif %}>{{ source_year|add:1 }}</option>
+                        </select>
+                        <small class="text-muted">Create engagement letters for this year</small>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="management_company" class="form-label">Management Company</label>
+                        <select name="management_company" id="management_company" class="form-select">
+                            <option value="">All Management Companies</option>
+                            {% for mc in management_companies %}
+                                <option value="{{ mc.id }}" {% if selected_management_company and selected_management_company.id == mc.id %}selected{% endif %}>{{ mc.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <small class="text-muted">Filter by management company</small>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" name="self_managed" id="self_managed" {% if show_self_managed %}checked{% endif %}>
+                            <label class="form-check-label" for="self_managed">
+                                Self-managed only
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="include_unfiled" id="include_unfiled" {% if include_unfiled %}checked{% endif %}>
+                            <label class="form-check-label" for="include_unfiled">
+                                Include unfiled returns
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary">Preview Associations</button>
+                        <a href="{% url 'bulk_engagement_letter' %}" class="btn btn-outline-secondary ms-2">Clear Filters</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Summary Stats -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row text-center">
+                <div class="col-md-3">
+                    <h4 class="text-primary">{{ total_associations }}</h4>
+                    <p class="mb-0">Total Associations</p>
+                </div>
+                <div class="col-md-3">
+                    <h4 class="text-info">{{ total_filed }}</h4>
+                    <p class="mb-0">Filed in {{ source_year }}</p>
+                </div>
+                <div class="col-md-3">
+                    <h4 class="text-success">{{ can_create_count }}</h4>
+                    <p class="mb-0">Ready to create for {{ target_year }}</p>
+                </div>
+                <div class="col-md-3">
+                    <h4 class="text-secondary">{{ already_exists_count }}</h4>
+                    <p class="mb-0">Already have {{ target_year }} letters</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Association List -->
+    {% if preview_data %}
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h3 class="card-title h5 mb-0">Associations with {{ source_year }} Financial Data</h3>
+            <div>
+                <button type="button" class="btn btn-sm btn-outline-primary" id="select-all">Select All Available</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="deselect-all">Deselect All</button>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <form method="post" id="bulk-create-form">
+                {% csrf_token %}
+                <input type="hidden" name="source_year" value="{{ source_year }}">
+                <input type="hidden" name="target_year" value="{{ target_year }}">
+
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" id="associationTable">
+                        <thead>
+                            <tr>
+                                <th style="width: 50px;">Select</th>
+                                <th>Association Name</th>
+                                <th>Management Co.</th>
+                                <th>Filing State</th>
+                                <th>{{ source_year }} Filed</th>
+                                <th>{{ source_year }} Price</th>
+                                <th>{{ target_year }} Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in preview_data %}
+                            <tr class="{% if not item.can_create %}table-secondary{% endif %}">
+                                <td>
+                                    {% if item.can_create %}
+                                        <input type="checkbox" class="form-check-input association-checkbox"
+                                               name="selected_associations" value="{{ item.association.id }}">
+                                    {% else %}
+                                        <input type="checkbox" class="form-check-input" disabled checked>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {{ item.association.association_name }}
+                                    {% if item.association.filing_state and item.association.filing_state != item.association.state %}
+                                        <small class="text-muted d-block">(Mailing: {{ item.association.state }})</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if item.association.management_company %}
+                                        <span class="text-nowrap">{{ item.association.management_company.name }}</span>
+                                    {% else %}
+                                        <span class="text-muted">Self-managed</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if item.association.filing_state %}
+                                        <span class="badge bg-info">{{ item.association.get_filing_state_display }}</span>
+                                    {% else %}
+                                        <span class="text-muted">{{ item.association.state }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if item.return_filed %}
+                                        <span class="badge bg-success">Yes</span>
+                                    {% else %}
+                                        <span class="badge bg-warning text-dark">No</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if item.source_letter %}
+                                        ${{ item.price }}
+                                    {% else %}
+                                        <span class="text-muted">${{ item.price }} (default)</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if item.existing_letter %}
+                                        <span class="badge bg-success">Already Exists</span>
+                                    {% else %}
+                                        <span class="badge bg-warning text-dark">Will Create</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card-footer d-flex justify-content-between align-items-center">
+                    <span id="selected-count">0 associations selected</span>
+                    <div>
+                        <a href="{% url 'engagement_letter' %}" class="btn btn-secondary me-2">Cancel</a>
+                        <button type="submit" class="btn btn-primary" id="create-btn" disabled>
+                            Create Engagement Letters
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        No associations found with filed returns for {{ source_year }}.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Override parent container for wider layout */
+    main.container:has(.bulk-engagement-container) {
+        max-width: 1400px;
+        width: 100%;
+        margin: 0 auto;
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+
+    @media (min-width: 1200px) {
+        main.container:has(.bulk-engagement-container) {
+            padding-left: 40px;
+            padding-right: 40px;
+        }
+    }
+
+    .bulk-engagement-container {
+        width: 100%;
+    }
+
+    .card {
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border: none;
+    }
+
+    .card-header {
+        background-color: #f7f7f7;
+    }
+
+    #associationTable th {
+        background-color: #f0f0f0;
+        position: sticky;
+        top: 0;
+    }
+
+    #associationTable tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+
+    .table-secondary {
+        opacity: 0.7;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const checkboxes = document.querySelectorAll('.association-checkbox');
+    const selectAllBtn = document.getElementById('select-all');
+    const deselectAllBtn = document.getElementById('deselect-all');
+    const selectedCountSpan = document.getElementById('selected-count');
+    const createBtn = document.getElementById('create-btn');
+
+    function updateCount() {
+        const checked = document.querySelectorAll('.association-checkbox:checked').length;
+        selectedCountSpan.textContent = checked + ' association' + (checked !== 1 ? 's' : '') + ' selected';
+        createBtn.disabled = checked === 0;
+    }
+
+    checkboxes.forEach(cb => {
+        cb.addEventListener('change', updateCount);
+    });
+
+    if (selectAllBtn) {
+        selectAllBtn.addEventListener('click', function() {
+            checkboxes.forEach(cb => cb.checked = true);
+            updateCount();
+        });
+    }
+
+    if (deselectAllBtn) {
+        deselectAllBtn.addEventListener('click', function() {
+            checkboxes.forEach(cb => cb.checked = false);
+            updateCount();
+        });
+    }
+
+    // Confirm before submitting
+    document.getElementById('bulk-create-form')?.addEventListener('submit', function(e) {
+        const checked = document.querySelectorAll('.association-checkbox:checked').length;
+        if (!confirm(`Create ${checked} engagement letter(s) for {{ target_year }}?`)) {
+            e.preventDefault();
+        }
+    });
+});
+</script>
+{% endblock %}

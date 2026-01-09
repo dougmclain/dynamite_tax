@@ -1,0 +1,209 @@
+{% extends "tax_form/base.html" %}
+{% load static %}
+
+{% block title %}Edit Engagement Letter{% endblock %}
+
+{% block content %}
+<div class="edit-letter-container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Edit Engagement Letter</h2>
+        <div>
+            <a href="{% url 'preview_engagement_letter' letter.id %}" class="btn btn-info" target="_blank">
+                <i class="fas fa-eye"></i> Preview PDF
+            </a>
+            <a href="{% url 'engagement_letter' %}" class="btn btn-secondary">Back to List</a>
+        </div>
+    </div>
+
+    <!-- Letter Info -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3 class="card-title h5 mb-0">{{ letter.association.association_name }} - {{ letter.tax_year }}</h3>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <strong>Status:</strong>
+                    {% if letter.status == 'signed' %}
+                        <span class="badge bg-success">Signed</span>
+                    {% elif letter.status == 'sent' %}
+                        <span class="badge bg-info">Sent</span>
+                    {% else %}
+                        <span class="badge bg-warning text-dark">Pending</span>
+                    {% endif %}
+                </div>
+                <div class="col-md-3">
+                    <strong>State:</strong> {{ letter.association.state|default:"N/A" }}
+                </div>
+                <div class="col-md-3">
+                    <strong>Created:</strong> {{ letter.date_created|date:"F d, Y" }}
+                </div>
+                <div class="col-md-3">
+                    <strong>Template:</strong>
+                    {% if template %}
+                        <a href="{% url 'engagement_letter_template' %}?year={{ letter.tax_year }}">{{ letter.tax_year }} Template</a>
+                    {% else %}
+                        <span class="text-muted">No template</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Form -->
+    <form method="post">
+        {% csrf_token %}
+
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h3 class="card-title h5 mb-0">Letter Details</h3>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <label for="price" class="form-label"><strong>Federal Fee ($)</strong></label>
+                        <input type="number" class="form-control" id="price" name="price" value="{{ letter.price }}">
+                        <small class="text-muted">Fee for Form 1120-H preparation</small>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="state_fee" class="form-label"><strong>State Fee ($)</strong></label>
+                        <input type="number" class="form-control" id="state_fee" name="state_fee" value="{{ letter.state_fee }}">
+                        <small class="text-muted">Additional fee for state filing (0 if none)</small>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label"><strong>Total Fee</strong></label>
+                        <div class="form-control-plaintext">
+                            <strong id="total-fee">${{ letter.price|add:letter.state_fee }}</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <hr>
+
+                <div class="form-check form-switch mb-4">
+                    <input class="form-check-input" type="checkbox" id="use_custom_text" name="use_custom_text"
+                           {% if letter.custom_services_text %}checked{% endif %}>
+                    <label class="form-check-label" for="use_custom_text">
+                        <strong>Use custom text for this letter</strong>
+                        <small class="text-muted d-block">When unchecked, this letter will use the {{ letter.tax_year }} template</small>
+                    </label>
+                </div>
+
+                <div id="custom-text-section" {% if not letter.custom_services_text %}style="display: none;"{% endif %}>
+                    <div class="mb-4">
+                        <label for="services_text" class="form-label"><strong>Services Provided Section</strong></label>
+                        <textarea class="form-control" id="services_text" name="services_text" rows="5">{{ services_text }}</textarea>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="fees_text" class="form-label"><strong>Fees Section</strong></label>
+                        <textarea class="form-control" id="fees_text" name="fees_text" rows="4">{{ fees_text }}</textarea>
+                        <small class="text-muted">Use <code>{price}</code> as a placeholder for the price</small>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="responsibilities_text" class="form-label"><strong>Responsibilities Section</strong></label>
+                        <textarea class="form-control" id="responsibilities_text" name="responsibilities_text" rows="6">{{ responsibilities_text }}</textarea>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="consent_text" class="form-label"><strong>Consent Section</strong></label>
+                        <textarea class="form-control" id="consent_text" name="consent_text" rows="3">{{ consent_text }}</textarea>
+                    </div>
+                </div>
+
+                <div id="template-notice" {% if letter.custom_services_text %}style="display: none;"{% endif %}>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        This letter is using the <strong>{{ letter.tax_year }} template</strong>.
+                        {% if template %}
+                            <a href="{% url 'engagement_letter_template' %}?year={{ letter.tax_year }}">Edit the template</a> to change the text for all {{ letter.tax_year }} letters, or enable custom text above to customize just this letter.
+                        {% else %}
+                            <a href="{% url 'engagement_letter_template' %}?year={{ letter.tax_year }}">Create a template</a> for {{ letter.tax_year }}, or enable custom text above.
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer d-flex justify-content-between">
+                <a href="{% url 'engagement_letter' %}" class="btn btn-secondary">Cancel</a>
+                <div>
+                    <a href="{% url 'preview_engagement_letter' letter.id %}" class="btn btn-info" target="_blank">Preview PDF</a>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Override parent container for wider layout */
+    main.container:has(.edit-letter-container) {
+        max-width: 1200px;
+        width: 100%;
+        margin: 0 auto;
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+
+    @media (min-width: 1200px) {
+        main.container:has(.edit-letter-container) {
+            padding-left: 40px;
+            padding-right: 40px;
+        }
+    }
+
+    .edit-letter-container {
+        width: 100%;
+    }
+
+    .card {
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border: none;
+    }
+
+    .card-header {
+        background-color: #f7f7f7;
+    }
+
+    textarea.form-control {
+        font-family: monospace;
+        font-size: 0.9rem;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const toggle = document.getElementById('use_custom_text');
+    const customSection = document.getElementById('custom-text-section');
+    const templateNotice = document.getElementById('template-notice');
+
+    toggle.addEventListener('change', function() {
+        if (this.checked) {
+            customSection.style.display = 'block';
+            templateNotice.style.display = 'none';
+        } else {
+            customSection.style.display = 'none';
+            templateNotice.style.display = 'block';
+        }
+    });
+
+    // Update total fee dynamically
+    const priceInput = document.getElementById('price');
+    const stateFeeInput = document.getElementById('state_fee');
+    const totalFeeDisplay = document.getElementById('total-fee');
+
+    function updateTotal() {
+        const price = parseInt(priceInput.value) || 0;
+        const stateFee = parseInt(stateFeeInput.value) || 0;
+        totalFeeDisplay.textContent = '$' + (price + stateFee);
+    }
+
+    priceInput.addEventListener('input', updateTotal);
+    stateFeeInput.addEventListener('input', updateTotal);
+});
+</script>
+{% endblock %}

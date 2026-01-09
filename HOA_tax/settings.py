@@ -79,9 +79,8 @@ WSGI_APPLICATION = 'HOA_tax.wsgi.application'
 # Database configuration
 import dj_database_url
 
-# TEMPORARY: Force SQLite for local development
-IS_PRODUCTION = True
-USE_PRODUCTION_DB = True
+# Use environment variable to determine production mode
+USE_PRODUCTION_DB = env.bool('USE_PRODUCTION_DB', False)
 
 # Check if we're running in production or development
 if IS_PRODUCTION:
@@ -154,8 +153,10 @@ if USE_AZURE_STORAGE:
     AZURE_DEFAULT_CONTENT_TYPE = 'application/octet-stream'
     
     # Create the temp_pdfs directory locally (still needed for temporary PDF generation)
-    PDF_TEMPLATE_DIR = Path('/opt/render/project/src/tax_form/pdf_templates') if IS_PRODUCTION else BASE_DIR / 'tax_form' / 'pdf_templates'
-    PDF_TEMP_DIR = Path('/opt/render/project/src/tax_form/temp_pdfs') if IS_PRODUCTION else BASE_DIR / 'tax_form' / 'temp_pdfs'
+    # Check if we're actually on Render (not just using Azure storage locally)
+    ON_RENDER = 'RENDER' in os.environ
+    PDF_TEMPLATE_DIR = Path('/opt/render/project/src/tax_form/pdf_templates') if ON_RENDER else BASE_DIR / 'tax_form' / 'pdf_templates'
+    PDF_TEMP_DIR = Path('/opt/render/project/src/tax_form/temp_pdfs') if ON_RENDER else BASE_DIR / 'tax_form' / 'temp_pdfs'
     os.makedirs(PDF_TEMP_DIR, exist_ok=True)
 else:
     # Local media configuration

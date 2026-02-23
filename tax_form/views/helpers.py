@@ -32,6 +32,7 @@ def calculate_financial_info(financial, association):
         'address_change': bool(financial.address_change),
         'condo': association.association_type == 'condo',
         'homeowners': association.association_type == 'homeowners',
+        'amended_return': bool(financial.amended_return),
     }
 
     # Add extension information if it exists
@@ -155,12 +156,18 @@ def prepare_pdf_data(financial_info, association, preparer):
         "f1_1": association.association_name,
         "f1_2": association.ein,
         "f1_3": association.mailing_address,
+        "f1_3_suite": association.room_suite,
         "f1_4": f"{association.city}, {association.state} {association.zipcode}",
+        # Split address fields for 2025 form (city/state/zip are separate boxes)
+        "f1_4_city": association.city,
+        "f1_4_state": association.state,
+        "f1_4_zip": association.zipcode,
         "f1_5": association.formation_date.strftime("%m/%d/%Y"),
         
         # Checkboxes as booleans
         "name_change": financial_info.get('name_change', False),
         "address_change": financial_info.get('address_change', False),
+        "amended_return": financial_info.get('amended_return', False),
         "condo": financial_info.get('condo', False),
         "homeowners": financial_info.get('homeowners', False),
         

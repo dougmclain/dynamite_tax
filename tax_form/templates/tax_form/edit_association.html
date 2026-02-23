@@ -57,8 +57,11 @@
                     </div>
                     <div class="card-body">
                         <div class="row">
-                            <div class="col-md-12 mb-3">
+                            <div class="col-md-8 mb-3">
                                 {{ form.mailing_address|as_crispy_field }}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                {{ form.room_suite|as_crispy_field }}
                             </div>
                         </div>
                         

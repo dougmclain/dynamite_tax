@@ -67,6 +67,7 @@ class Association(models.Model):
     city = models.CharField(max_length=100)
     state = models.CharField(max_length=100)
     zipcode = models.CharField(max_length=20)
+    room_suite = models.CharField(max_length=50, blank=True, default='')
 
     # Filing state - where the association needs to file state returns (may differ from mailing address)
     STATE_CHOICES = (
@@ -237,6 +238,7 @@ class Financial(models.Model):
     # Existing fields
     name_change = models.BooleanField(default=False)
     address_change = models.BooleanField(default=False)
+    amended_return = models.BooleanField(default=False)
     prior_year_over_payment = models.PositiveIntegerField(default=0, blank=True, null=True)
     extension_payment = models.PositiveIntegerField(default=0, blank=True, null=True)
     estimated_payment = models.PositiveIntegerField(default=0, blank=True, null=True)

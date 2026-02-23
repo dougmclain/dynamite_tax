@@ -50,7 +50,7 @@ class AssociationForm(forms.ModelForm):
     class Meta:
         model = Association
         fields = [
-            'association_name', 'mailing_address', 'city', 'state', 'zipcode',
+            'association_name', 'mailing_address', 'room_suite', 'city', 'state', 'zipcode',
             'filing_state', 'zoned', 'ein', 'formation_date', 'association_type',
             'fiscal_year_end_month',
             'contact_first_name', 'contact_last_name', 'contact_email',

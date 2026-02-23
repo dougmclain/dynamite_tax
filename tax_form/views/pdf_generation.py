@@ -69,7 +69,7 @@ def generate_pdf(financial_info, association, preparer, tax_year):
 
     try:
         # Generate the PDF locally first
-        generate_1120h_pdf(financial_info, association, preparer, str(template_path), str(output_path))
+        generate_1120h_pdf(financial_info, association, preparer, str(template_path), str(output_path), tax_year=tax_year)
         
         if settings.USE_AZURE_STORAGE:
             # Upload to Azure Storage with the standardized filename
@@ -115,45 +115,99 @@ def generate_pdf(financial_info, association, preparer, tax_year):
         logger.error(f"Error in PDF generation: {str(e)}", exc_info=True)
         raise
 
-FIELD_POSITIONS = {
-    'f1_1': (75, 675),   # Name
-    'f1_2': (450, 675),  # Employer identification number
-    'f1_3': (75, 650),   # Number, street, and room or suite no.
-    'f1_4': (75, 627),   # City or town, state or province, country, and ZIP
-    'f1_5': (450, 627),  # Date association formed
-    'name_change': (227, 615),      # Name change checkbox
-    'address_change': (357, 615),  # Address change checkbox
-    'condo': (213, 602),            # Condominium management association checkbox
-    'homeowners': (357, 602),      # Residential real estate association checkbox
-    'f1_6': (495, 590),  # B Total exempt function income
-    'f1_7': (495, 578),  # C Total expenditures (90% test)
-    'f1_8': (495, 566),  # D Association's total expenditures
-    'f1_9': (495, 530),  # 1 Dividends
-    'f1_10': (495, 518), # 2 Taxable interest
-    'f1_11': (495, 506), # 3 Gross rents
-    'f1_15': (495, 458), # 7 Other income
-    'f1_16': (495, 446), # 8 Gross income
-    'f1_23': (495, 350), # 15 Other deductions
-    'f1_24': (495, 338), # 16 Total deductions
-    'f1_25': (495, 326),  # 17 Taxable income before specific deduction
-    'f1_27': (495, 290),  # 19 Taxable income
-    'f1_28': (495, 278),   # 20 Tax (30% of line 19)
-    'f1_30': (495, 254), # 22 Total tax
-    'f1_31': (395, 230), # 23b Current year's estimated tax payments
-    'f1_32': (395, 218), # 23c Tax deposited with Form 7004
-    'f1_35': (495, 170), # 23g Total payments and credits
-    'f1_36': (495, 158), # 24 Amount owed
-    'f1_37': (495, 146), # 25 Overpayment
-    'f1_38': (495, 134), # 26 Refunded
-    'f1_39': (100, 62),  # Preparer's name
-    'f1_40': (520, 62), # Preparer's PTIN
-    'f1_41': (145, 50),  # Firm's name
-    'f1_42': (500, 50), # Firm's EIN
-    'f1_43': (145, 38),  # Firm's address
-    'f1_44': (500, 38), # Firm's phone number
-    'f1_45': (410, 62),  # Date
-    'f1_46': (270, 62), # Preparer's signature
+FIELD_POSITIONS_BY_YEAR = {
+    2024: {
+        'f1_1': (75, 675),   # Name
+        'f1_2': (450, 675),  # Employer identification number
+        'f1_3': (75, 650),   # Number, street, and room or suite no.
+        'f1_4': (75, 627),   # City or town, state or province, country, and ZIP
+        'f1_5': (450, 627),  # Date association formed
+        'name_change': (227, 615),      # Name change checkbox
+        'address_change': (357, 615),  # Address change checkbox
+        'condo': (213, 602),            # Condominium management association checkbox
+        'homeowners': (357, 602),      # Residential real estate association checkbox
+        'f1_6': (495, 590),  # B Total exempt function income
+        'f1_7': (495, 578),  # C Total expenditures (90% test)
+        'f1_8': (495, 566),  # D Association's total expenditures
+        'f1_9': (495, 530),  # 1 Dividends
+        'f1_10': (495, 518), # 2 Taxable interest
+        'f1_11': (495, 506), # 3 Gross rents
+        'f1_15': (495, 458), # 7 Other income
+        'f1_16': (495, 446), # 8 Gross income
+        'f1_23': (495, 350), # 15 Other deductions
+        'f1_24': (495, 338), # 16 Total deductions
+        'f1_25': (495, 326),  # 17 Taxable income before specific deduction
+        'f1_27': (495, 290),  # 19 Taxable income
+        'f1_28': (495, 278),   # 20 Tax (30% of line 19)
+        'f1_30': (495, 254), # 22 Total tax
+        'f1_31': (395, 230), # 23b Current year's estimated tax payments
+        'f1_32': (395, 218), # 23c Tax deposited with Form 7004
+        'f1_35': (495, 170), # 23g Total payments and credits
+        'f1_36': (495, 158), # 24 Amount owed
+        'f1_37': (495, 146), # 25 Overpayment
+        'f1_38': (495, 134), # 26 Refunded
+        'f1_39': (100, 62),  # Preparer's name
+        'f1_40': (520, 62), # Preparer's PTIN
+        'f1_41': (145, 50),  # Firm's name
+        'f1_42': (500, 50), # Firm's EIN
+        'f1_43': (145, 38),  # Firm's address
+        'f1_44': (500, 38), # Firm's phone number
+        'f1_45': (410, 62),  # Date
+        'f1_46': (270, 62), # Preparer's signature
+    },
+    2025: {
+        # Header fields - 2025 form separates City, State, Country, ZIP
+        'f1_1': (126, 686),   # Name [rect 124,684,459,698]
+        'f1_2': (464, 686),   # EIN [rect 462,684,576,698]
+        'f1_3': (126, 662),   # Street address [rect 124,660,365,674]
+        'f1_3_suite': (371, 662),  # Room/suite [rect 369,660,459,674]
+        'f1_4_city': (126, 639),   # City [rect 124,637,236,650]
+        'f1_4_state': (242, 639),  # State [rect 240,637,300,650]
+        'f1_4_zip': (371, 639),    # ZIP [rect 369,637,459,650]
+        'f1_5': (464, 638),   # Date formed [rect 462,636,576,648]
+        # Checkboxes - 2025 stacks (1)-(4) vertically on left
+        'name_change': (55, 676),       # (2) Name change [rect 53,674,61,682]
+        'address_change': (55, 664),    # (3) Address change [rect 53,662,61,670]
+        'amended_return': (55, 652),    # (4) Amended return
+        'condo': (214, 628),            # Condominium [rect 212,626,220,634]
+        'homeowners': (358, 628),       # Residential real estate [rect 356,626,364,634]
+        # Right column numeric (right-justified, x=496 so right edge=576)
+        'f1_6': (496, 614),   # B Total exempt function income [rect 504,612,576,624]
+        'f1_7': (496, 602),   # C Total expenditures 90% test [rect 504,600,576,612]
+        'f1_8': (496, 590),   # D Total expenditures [rect 504,588,576,600]
+        'f1_9': (496, 566),   # 1 Dividends [rect 504,564,576,576]
+        'f1_10': (496, 554),  # 2 Taxable interest [rect 504,552,576,564]
+        'f1_11': (496, 542),  # 3 Gross rents [rect 504,540,576,552]
+        'f1_15': (496, 494),  # 7 Other income [rect 504,492,576,504]
+        'f1_16': (496, 482),  # 8 Gross income [rect 504,480,576,492]
+        'f1_23': (496, 398),  # 15 Other deductions [rect 504,396,576,408]
+        'f1_24': (496, 386),  # 16 Total deductions [rect 504,384,576,396]
+        'f1_25': (496, 374),  # 17 Taxable income before $100 [rect 504,372,576,384]
+        'f1_27': (496, 350),  # 19 Taxable income [rect 504,348,576,360]
+        'f1_28': (496, 338),  # 20 Tax 30% [rect 504,336,576,348]
+        'f1_30': (496, 314),  # 22 Total tax [rect 504,312,576,324]
+        # Sub-column 23b-23c (right-justified, x=402 so right edge=482)
+        'f1_31': (402, 290),  # 23b Estimated payments [rect 410,288,482,300]
+        'f1_32': (402, 278),  # 23c Form 7004 [rect 410,276,482,288]
+        # Main column again
+        'f1_35': (496, 230),  # 23g Total payments [rect 504,228,576,240]
+        'f1_36': (496, 218),  # 24 Amount owed [rect 504,216,576,228]
+        'f1_37': (496, 206),  # 25 Overpayment [rect 504,204,576,216]
+        'f1_38': (496, 194),  # 26b Refunded [rect 504,192,576,204]
+        # Preparer section (left-justified strings)
+        'f1_39': (97, 86),    # Preparer name [rect 95,84,244,98]
+        'f1_40': (520, 86),   # PTIN [rect 518,84,576,98]
+        'f1_41': (143, 74),   # Firm name [rect 141,72,460,84]
+        'f1_42': (506, 74),   # Firm EIN [rect 504,72,576,84]
+        'f1_43': (151, 62),   # Firm address [rect 149,60,460,72]
+        'f1_44': (506, 62),   # Phone [rect 504,60,576,72]
+        'f1_45': (412, 86),   # Date
+        'f1_46': (270, 86),   # Preparer signature
+    },
 }
+
+# Default to 2024 for backward compatibility
+FIELD_POSITIONS = FIELD_POSITIONS_BY_YEAR[2024]
 
 NUMERIC_COLUMN_WIDTH = 80  # width in points
 
@@ -162,12 +216,12 @@ def right_justify_text(can, text, x, y, width):
     adjusted_x = x + width - text_width
     can.drawString(adjusted_x, y, text)
 
-def generate_1120h_pdf(financial_info, association, preparer, template_path, output_path):
+def generate_1120h_pdf(financial_info, association, preparer, template_path, output_path, tax_year=None):
     """Generate PDF and return HTTP response."""
     try:
         reader = PdfReader(template_path)
         writer = PdfWriter()
-        
+
         # Generate and add instructions page
         instructions_generator = InstructionsGenerator()
         instructions_page = instructions_generator.generate_page(
@@ -177,7 +231,12 @@ def generate_1120h_pdf(financial_info, association, preparer, template_path, out
             refund_amount=financial_info.get('refunded', 0)
         )
         writer.add_page(instructions_page)
-        
+
+        # Select field positions based on tax year (explicit param takes priority)
+        if tax_year is None:
+            tax_year = financial_info.get('tax_year', 2024)
+        positions = FIELD_POSITIONS_BY_YEAR.get(tax_year, FIELD_POSITIONS_BY_YEAR[2024])
+
         # Add the form page
         page = reader.pages[0]
         packet = BytesIO()
@@ -185,8 +244,8 @@ def generate_1120h_pdf(financial_info, association, preparer, template_path, out
 
         data = prepare_pdf_data(financial_info, association, preparer)
         for key, value in data.items():
-            if key in FIELD_POSITIONS:
-                x, y = FIELD_POSITIONS[key]
+            if key in positions:
+                x, y = positions[key]
                 if isinstance(value, bool):
                     # Handle checkboxes
                     if value:

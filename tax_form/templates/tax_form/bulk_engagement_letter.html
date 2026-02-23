@@ -17,12 +17,12 @@
                 <div class="row g-3 align-items-end mb-3">
                     <div class="col-md-3">
                         <label for="source_year" class="form-label">Source Year</label>
-                        <select name="source_year" id="source_year" class="form-select">
+                        <select name="source_year" id="source_year" class="form-select" {% if show_all_associations %}disabled{% endif %}>
                             {% for year in available_years %}
                                 <option value="{{ year }}" {% if year == source_year %}selected{% endif %}>{{ year }}</option>
                             {% endfor %}
                         </select>
-                        <small class="text-muted">Associations with financial data</small>
+                        <small class="text-muted" id="source-year-help">Associations with financial data</small>
                     </div>
                     <div class="col-md-3">
                         <label for="target_year" class="form-label">Target Year (new letters)</label>
@@ -46,13 +46,20 @@
                     </div>
                     <div class="col-md-3">
                         <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" name="show_all" id="show_all" {% if show_all_associations %}checked{% endif %}>
+                            <label class="form-check-label fw-bold" for="show_all">
+                                Show all associations
+                            </label>
+                            <small class="text-muted d-block">Ignore prior year filing status</small>
+                        </div>
+                        <div class="form-check mb-2">
                             <input class="form-check-input" type="checkbox" name="self_managed" id="self_managed" {% if show_self_managed %}checked{% endif %}>
                             <label class="form-check-label" for="self_managed">
                                 Self-managed only
                             </label>
                         </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="include_unfiled" id="include_unfiled" {% if include_unfiled %}checked{% endif %}>
+                        <div class="form-check" id="include-unfiled-wrapper">
+                            <input class="form-check-input" type="checkbox" name="include_unfiled" id="include_unfiled" {% if include_unfiled %}checked{% endif %} {% if show_all_associations %}disabled{% endif %}>
                             <label class="form-check-label" for="include_unfiled">
                                 Include unfiled returns
                             </label>
@@ -73,19 +80,21 @@
     <div class="card mb-4">
         <div class="card-body">
             <div class="row text-center">
-                <div class="col-md-3">
+                <div class="col-md-{% if show_all_associations %}4{% else %}3{% endif %}">
                     <h4 class="text-primary">{{ total_associations }}</h4>
                     <p class="mb-0">Total Associations</p>
                 </div>
+                {% if not show_all_associations %}
                 <div class="col-md-3">
                     <h4 class="text-info">{{ total_filed }}</h4>
                     <p class="mb-0">Filed in {{ source_year }}</p>
                 </div>
-                <div class="col-md-3">
+                {% endif %}
+                <div class="col-md-{% if show_all_associations %}4{% else %}3{% endif %}">
                     <h4 class="text-success">{{ can_create_count }}</h4>
                     <p class="mb-0">Ready to create for {{ target_year }}</p>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-{% if show_all_associations %}4{% else %}3{% endif %}">
                     <h4 class="text-secondary">{{ already_exists_count }}</h4>
                     <p class="mb-0">Already have {{ target_year }} letters</p>
                 </div>
@@ -97,7 +106,7 @@
     {% if preview_data %}
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
-            <h3 class="card-title h5 mb-0">Associations with {{ source_year }} Financial Data</h3>
+            <h3 class="card-title h5 mb-0">{% if show_all_associations %}All Associations{% else %}Associations with {{ source_year }} Financial Data{% endif %}</h3>
             <div>
                 <button type="button" class="btn btn-sm btn-outline-primary" id="select-all">Select All Available</button>
                 <button type="button" class="btn btn-sm btn-outline-secondary" id="deselect-all">Deselect All</button>
@@ -108,6 +117,7 @@
                 {% csrf_token %}
                 <input type="hidden" name="source_year" value="{{ source_year }}">
                 <input type="hidden" name="target_year" value="{{ target_year }}">
+                {% if show_all_associations %}<input type="hidden" name="show_all" value="on">{% endif %}
 
                 <div class="table-responsive">
                     <table class="table table-hover mb-0" id="associationTable">
@@ -117,8 +127,11 @@
                                 <th>Association Name</th>
                                 <th>Management Co.</th>
                                 <th>Filing State</th>
+                                {% if not show_all_associations %}
                                 <th>{{ source_year }} Filed</th>
-                                <th>{{ source_year }} Price</th>
+                                {% endif %}
+                                <th>Price</th>
+                                {% if show_all_associations %}<th>State Fee</th>{% endif %}
                                 <th>{{ target_year }} Status</th>
                             </tr>
                         </thead>
@@ -153,6 +166,7 @@
                                         <span class="text-muted">{{ item.association.state }}</span>
                                     {% endif %}
                                 </td>
+                                {% if not show_all_associations %}
                                 <td>
                                     {% if item.return_filed %}
                                         <span class="badge bg-success">Yes</span>
@@ -160,6 +174,7 @@
                                         <span class="badge bg-warning text-dark">No</span>
                                     {% endif %}
                                 </td>
+                                {% endif %}
                                 <td>
                                     {% if item.source_letter %}
                                         ${{ item.price }}
@@ -167,6 +182,15 @@
                                         <span class="text-muted">${{ item.price }} (default)</span>
                                     {% endif %}
                                 </td>
+                                {% if show_all_associations %}
+                                <td>
+                                    {% if item.state_fee %}
+                                        ${{ item.state_fee }}
+                                    {% else %}
+                                        <span class="text-muted">$0</span>
+                                    {% endif %}
+                                </td>
+                                {% endif %}
                                 <td>
                                     {% if item.existing_letter %}
                                         <span class="badge bg-success">Already Exists</span>
@@ -194,7 +218,11 @@
     </div>
     {% else %}
     <div class="alert alert-info">
-        No associations found with filed returns for {{ source_year }}.
+        {% if show_all_associations %}
+            No associations found. Try adjusting the management company filter.
+        {% else %}
+            No associations found with filed returns for {{ source_year }}. Try checking "Show all associations" to include associations without prior year data.
+        {% endif %}
     </div>
     {% endif %}
 </div>
@@ -286,6 +314,26 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!confirm(`Create ${checked} engagement letter(s) for {{ target_year }}?`)) {
             e.preventDefault();
         }
+    });
+
+    // Toggle source_year and include_unfiled when "show all" is checked
+    const showAllCheckbox = document.getElementById('show_all');
+    const sourceYearSelect = document.getElementById('source_year');
+    const includeUnfiledCheckbox = document.getElementById('include_unfiled');
+
+    if (showAllCheckbox) {
+        showAllCheckbox.addEventListener('change', function() {
+            sourceYearSelect.disabled = this.checked;
+            includeUnfiledCheckbox.disabled = this.checked;
+            if (this.checked) {
+                includeUnfiledCheckbox.checked = false;
+            }
+        });
+    }
+
+    // Re-enable disabled selects on form submit so their values are sent
+    document.querySelector('.card-body form[method="get"]')?.addEventListener('submit', function() {
+        sourceYearSelect.disabled = false;
     });
 });
 </script>

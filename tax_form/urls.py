@@ -33,6 +33,7 @@ urlpatterns = [
     path('engagement-letter/upload-signed/<int:letter_id>/', engagement_letter.UploadSignedEngagementLetterView.as_view(), name='upload_signed_engagement_letter'),
     path('engagement-letter/mark-sent/<int:letter_id>/', engagement_letter.MarkEngagementLetterSentView.as_view(), name='mark_sent_engagement_letter'),
     path('engagement-letter/download-combined/', engagement_letter.DownloadCombinedEngagementLettersView.as_view(), name='download_combined_engagement_letters'),
+    path('engagement-letter/download-company/', engagement_letter.DownloadCompanyEngagementLettersView.as_view(), name='download_company_engagement_letters'),
     path('filing-status/<int:association_id>/<int:tax_year>/', filing_status.EditFilingStatusView.as_view(), name='edit_filing_status'),
     path('delete-financial-pdf/<int:financial_id>/', DeleteFinancialPDFView.as_view(), name='delete_financial_pdf'),
     

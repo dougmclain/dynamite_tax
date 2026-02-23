@@ -50,6 +50,41 @@
                 </div>
             </div>
             
+            <!-- Download All for Management Company -->
+            {% if management_companies %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3 class="card-title h5 mb-0">Download All for Management Company</h3>
+                </div>
+                <div class="card-body">
+                    <form method="get" action="{% url 'download_company_engagement_letters' %}" class="row align-items-end">
+                        <div class="col-md-4">
+                            <label for="company-select" class="form-label">Management Company</label>
+                            <select name="management_company" id="company-select" class="form-select" required>
+                                <option value="">-- Select Company --</option>
+                                {% for company in management_companies %}
+                                    <option value="{{ company.id }}">{{ company.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="company-tax-year" class="form-label">Tax Year</label>
+                            <select name="tax_year" id="company-tax-year" class="form-select" required>
+                                {% for year in tax_years %}
+                                    <option value="{{ year }}">{{ year }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-download"></i> Download All for Company
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+
             <!-- Existing Engagement Letters -->
             {% if engagement_letters %}
             <div class="card">
@@ -60,6 +95,13 @@
                             <option value="">All Years</option>
                             {% for year in tax_years %}
                                 <option value="{{ year }}">{{ year }}</option>
+                            {% endfor %}
+                        </select>
+                        <select id="filter-management-company" class="form-select form-select-sm" style="width: auto;">
+                            <option value="">All Companies</option>
+                            <option value="self-managed">Self-Managed</option>
+                            {% for company in management_companies %}
+                                <option value="{{ company.id }}">{{ company.name }}</option>
                             {% endfor %}
                         </select>
                         <button type="button" class="btn btn-sm btn-outline-primary" id="select-all-letters">Select All</button>
@@ -90,7 +132,7 @@
                             </thead>
                             <tbody>
                                 {% for letter in engagement_letters %}
-                                <tr data-tax-year="{{ letter.tax_year }}" data-letter-id="{{ letter.id }}">
+                                <tr data-tax-year="{{ letter.tax_year }}" data-letter-id="{{ letter.id }}" data-management-company="{{ letter.association.management_company.id|default:'self-managed' }}">
                                     <td>
                                         <input type="checkbox" class="form-check-input letter-checkbox" value="{{ letter.id }}">
                                     </td>
@@ -146,6 +188,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const downloadCombinedBtn = document.getElementById('download-combined-pdf');
     const selectedCountSpan = document.getElementById('selected-letters-count');
     const filterYearSelect = document.getElementById('filter-tax-year');
+    const filterCompanySelect = document.getElementById('filter-management-company');
     const tableRows = document.querySelectorAll('#engagement-letters-table tbody tr');
 
     function updateSelectedCount() {
@@ -158,13 +201,16 @@ document.addEventListener('DOMContentLoaded', function() {
         downloadCombinedBtn.disabled = count === 0;
     }
 
-    function filterByYear(year) {
+    function applyFilters() {
+        const year = filterYearSelect ? filterYearSelect.value : '';
+        const company = filterCompanySelect ? filterCompanySelect.value : '';
         tableRows.forEach(row => {
-            if (!year || row.dataset.taxYear === year) {
+            const yearMatch = !year || row.dataset.taxYear === year;
+            const companyMatch = !company || row.dataset.managementCompany === company;
+            if (yearMatch && companyMatch) {
                 row.style.display = '';
             } else {
                 row.style.display = 'none';
-                // Uncheck hidden rows
                 const checkbox = row.querySelector('.letter-checkbox');
                 if (checkbox) checkbox.checked = false;
             }
@@ -213,11 +259,12 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Filter by year
+    // Filter by year and/or company
     if (filterYearSelect) {
-        filterYearSelect.addEventListener('change', function() {
-            filterByYear(this.value);
-        });
+        filterYearSelect.addEventListener('change', applyFilters);
+    }
+    if (filterCompanySelect) {
+        filterCompanySelect.addEventListener('change', applyFilters);
     }
 
     // Download combined PDF

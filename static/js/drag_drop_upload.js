@@ -45,6 +45,8 @@ function initializeDropZones() {
                 // Only use the first file even if multiple were dropped
                 fileInput.files = e.dataTransfer.files;
                 updateThumbnail(dropZone, e.dataTransfer.files[0]);
+                // Trigger change event so other listeners (e.g. extract_financial.js) are notified
+                fileInput.dispatchEvent(new Event('change', { bubbles: true }));
             }
             
             dropZone.classList.remove("drop-zone--over");

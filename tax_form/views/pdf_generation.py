@@ -235,6 +235,7 @@ def generate_1120h_pdf(financial_info, association, preparer, template_path, out
         # Select field positions based on tax year (explicit param takes priority)
         if tax_year is None:
             tax_year = financial_info.get('tax_year', 2024)
+        tax_year = int(tax_year)
         positions = FIELD_POSITIONS_BY_YEAR.get(tax_year, FIELD_POSITIONS_BY_YEAR[2024])
 
         # Add the form page

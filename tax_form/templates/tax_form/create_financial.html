@@ -60,6 +60,42 @@
         </div>
     </div>
 
+    <!-- AI PDF Extraction -->
+    <div class="card mt-4" id="ai-extract-card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h3>Extract from PDF</h3>
+            <span class="badge bg-info">AI-Powered</span>
+        </div>
+        <div class="card-body">
+            <p class="text-muted mb-3">
+                Upload a financial statement PDF (P&L, income statement, etc.) and let AI extract the data into the form below.
+            </p>
+            <div class="drop-zone mb-3" id="aiPdfDropZone">
+                <span class="drop-zone__prompt">Drop financial PDF here or click to browse</span>
+                <input type="file" class="drop-zone__input" id="ai_pdf_file" accept=".pdf">
+            </div>
+            <div id="ai-extract-status" class="d-none mb-3">
+                <div id="ai-extract-loading" class="d-none">
+                    <div class="d-flex align-items-center">
+                        <div class="spinner-border spinner-border-sm text-primary me-2" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <span>Analyzing PDF with AI... This may take 10-30 seconds.</span>
+                    </div>
+                </div>
+                <div id="ai-extract-success" class="alert alert-success d-none mb-0">
+                    <strong>Extraction complete!</strong> <span id="ai-fields-filled"></span> fields were populated. Please review the values below before saving.
+                </div>
+                <div id="ai-extract-error" class="alert alert-danger d-none mb-0">
+                    <strong>Extraction failed:</strong> <span id="ai-error-message"></span>
+                </div>
+            </div>
+            <button type="button" class="btn btn-primary" id="ai-extract-btn" disabled>
+                Extract Financial Data
+            </button>
+        </div>
+    </div>
+
     <div class="card mt-4">
         <div class="card-header">
             <h3>Exempt Income</h3>
@@ -225,6 +261,8 @@
 
 {% block extra_js %}
 <script src="{% static 'js/financial_form.js' %}"></script>
+<script src="{% static 'js/drag_drop_upload.js' %}"></script>
+<script src="{% static 'js/extract_financial.js' %}"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const dollarInputFields = [

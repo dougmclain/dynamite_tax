@@ -21,6 +21,9 @@ SECRET_KEY = env('SECRET_KEY')
 DEBUG = env.bool('DJANGO_DEBUG', False)
 IS_PRODUCTION = not DEBUG
 
+# Anthropic API key for AI-powered PDF financial data extraction
+ANTHROPIC_API_KEY = env('ANTHROPIC_API_KEY', default='')
+
 ALLOWED_HOSTS = ['dynamite-tax.onrender.com', 'localhost', '127.0.0.1']
 if IS_PRODUCTION and 'RENDER_EXTERNAL_HOSTNAME' in os.environ:
     ALLOWED_HOSTS.append(os.environ['RENDER_EXTERNAL_HOSTNAME'])

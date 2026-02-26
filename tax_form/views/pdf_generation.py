@@ -19,6 +19,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 from ..models import Financial, Association, Preparer
 from .helpers import format_number, get_statement_details, prepare_pdf_data
 from .instructions_generationg import InstructionsGenerator
+from .il_pdf_generation import generate_il1120_pages
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +58,9 @@ def generate_pdf(financial_info, association, preparer, tax_year):
     
     # Create a standardized filename with first 10 letters of association name, 1120H, and tax year
     assoc_name_safe = ''.join(c for c in association.association_name[:10] if c.isalnum())
-    output_filename = f'{assoc_name_safe}_1120H_{tax_year}.pdf'
+    filing_state = association.get_filing_state()
+    state_suffix = f'_IL1120' if filing_state == 'IL' else ''
+    output_filename = f'{assoc_name_safe}_1120H{state_suffix}_{tax_year}.pdf'
     
     # Generate output path
     output_dir = settings.PDF_TEMP_DIR
@@ -296,6 +299,18 @@ def generate_1120h_pdf(financial_info, association, preparer, template_path, out
                     logger.warning(f"Could not add extension PDF from Azure Storage: {str(e)}")
             else:
                 logger.warning(f"Extension PDF file not found at {extension_path}")
+
+        # Append IL-1120 pages if filing state is IL
+        try:
+            filing_state = association.get_filing_state()
+            if filing_state == 'IL':
+                il_pages = generate_il1120_pages(financial_info, association, preparer, tax_year=tax_year)
+                for il_page in il_pages:
+                    writer.add_page(il_page)
+                logger.info(f"IL-1120 pages ({len(il_pages)}) appended for {association.association_name}")
+        except Exception as e:
+            logger.error(f"Error generating IL-1120 pages: {str(e)}", exc_info=True)
+            # Continue without IL pages - don't fail the federal return
 
         with open(output_path, "wb") as output_file:
             writer.write(output_file)

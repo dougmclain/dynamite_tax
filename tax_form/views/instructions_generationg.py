@@ -219,8 +219,13 @@ class InstructionsGenerator:
             can.drawString(50, y, "State Filing Information:")
             can.setFont("Helvetica", 10)
             y -= 15
-            state_text = ("Your Association may be required to file a state tax return. "
-                         "Please contact your state authority to determine the requirements.")
+            if association.get_filing_state() == 'IL':
+                state_text = ("An Illinois Form IL-1120 has been prepared and is included in this packet. "
+                             "Mail to: Illinois Department of Revenue, PO BOX 19038, "
+                             "Springfield IL 62794-9038.")
+            else:
+                state_text = ("Your Association may be required to file a state tax return. "
+                             "Please contact your state authority to determine the requirements.")
             y = self.draw_wrapped_text(can, state_text, 70, y, 480)
             y -= 25
 

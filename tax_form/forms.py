@@ -51,7 +51,7 @@ class AssociationForm(forms.ModelForm):
         model = Association
         fields = [
             'association_name', 'mailing_address', 'room_suite', 'city', 'state', 'zipcode',
-            'filing_state', 'zoned', 'ein', 'formation_date', 'association_type',
+            'filing_state', 'state_tax_id', 'zoned', 'ein', 'formation_date', 'association_type',
             'fiscal_year_end_month',
             'contact_first_name', 'contact_last_name', 'contact_email',
             'is_self_managed', 'management_company'

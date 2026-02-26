@@ -131,6 +131,12 @@ class Association(models.Model):
         default='',
         help_text="State where the association files state tax returns (if different from mailing address)"
     )
+    state_tax_id = models.CharField(
+        max_length=50,
+        blank=True,
+        default='',
+        help_text="State tax ID or corporate file/charter number (e.g., IL Secretary of State number)"
+    )
 
     zoned = models.BooleanField(default=True)
     ein = models.CharField(max_length=11, unique=True, validators=[

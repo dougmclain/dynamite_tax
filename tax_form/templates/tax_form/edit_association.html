@@ -89,6 +89,10 @@
                                 {{ form.filing_state|as_crispy_field }}
                                 <small class="text-muted">If the property is located in a different state than the mailing address, select the state where the association needs to file state tax returns.</small>
                             </div>
+                            <div class="col-md-6 mb-3" id="state-tax-id-field" style="{% if not form.filing_state.value %}display:none{% endif %}">
+                                {{ form.state_tax_id|as_crispy_field }}
+                                <small class="text-muted">State tax ID or corporate file/charter number assigned by the state.</small>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -193,4 +197,9 @@
 
 {% block extra_js %}
 <script src="{% static 'js/management_company.js' %}"></script>
+<script>
+    document.getElementById('id_filing_state').addEventListener('change', function() {
+        document.getElementById('state-tax-id-field').style.display = this.value ? '' : 'none';
+    });
+</script>
 {% endblock %}

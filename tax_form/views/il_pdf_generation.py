@@ -33,6 +33,7 @@ IL_FIELD_POSITIONS_BY_YEAR = {
         'p0_fein_prefix': (388, 611),        # rect [385.9, 609.1, 425.6, 622.6]
         'p0_fein_suffix': (433, 611),        # rect [431.2, 609.5, 570.5, 623.0]
         'p0_naics': (388, 529),              # rect [386.5, 527.9, 551.3, 541.4] (Line P)
+        'p0_state_tax_id': (388, 488),       # rect [385.9, 485.9, 587.6, 499.4] (Line Q)
         'p0_accrual': (434, 341),            # rect [432.7, 339.8, 444.5, 351.4]
 
         # === Page 1: Steps 2-4 ===

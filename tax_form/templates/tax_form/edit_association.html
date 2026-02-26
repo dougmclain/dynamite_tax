@@ -94,6 +94,26 @@
                                 <small class="text-muted">State tax ID or corporate file/charter number assigned by the state.</small>
                             </div>
                         </div>
+                        <div id="state-filing-details" style="{% if not form.filing_state.value %}display:none{% endif %}">
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    {{ form.naics_code|as_crispy_field }}
+                                    <small class="text-muted">e.g., 813990 for HOA/condo associations</small>
+                                </div>
+                            </div>
+                            <label class="form-label fw-bold">Where are accounting records kept?</label>
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    {{ form.records_city|as_crispy_field }}
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    {{ form.records_state|as_crispy_field }}
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    {{ form.records_zip|as_crispy_field }}
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -199,7 +219,9 @@
 <script src="{% static 'js/management_company.js' %}"></script>
 <script>
     document.getElementById('id_filing_state').addEventListener('change', function() {
-        document.getElementById('state-tax-id-field').style.display = this.value ? '' : 'none';
+        var show = this.value ? '' : 'none';
+        document.getElementById('state-tax-id-field').style.display = show;
+        document.getElementById('state-filing-details').style.display = show;
     });
 </script>
 {% endblock %}

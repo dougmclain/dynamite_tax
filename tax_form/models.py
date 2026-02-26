@@ -137,6 +137,30 @@ class Association(models.Model):
         default='',
         help_text="State tax ID or corporate file/charter number (e.g., IL Secretary of State number)"
     )
+    naics_code = models.CharField(
+        max_length=6,
+        blank=True,
+        default='',
+        help_text="North American Industry Classification System (NAICS) code (e.g., 813990)"
+    )
+    records_city = models.CharField(
+        max_length=100,
+        blank=True,
+        default='',
+        help_text="City where accounting records are kept"
+    )
+    records_state = models.CharField(
+        max_length=2,
+        blank=True,
+        default='',
+        help_text="State where accounting records are kept"
+    )
+    records_zip = models.CharField(
+        max_length=10,
+        blank=True,
+        default='',
+        help_text="ZIP code where accounting records are kept"
+    )
 
     zoned = models.BooleanField(default=True)
     ein = models.CharField(max_length=11, unique=True, validators=[

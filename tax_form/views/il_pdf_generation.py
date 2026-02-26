@@ -34,6 +34,9 @@ IL_FIELD_POSITIONS_BY_YEAR = {
         'p0_fein_suffix': (433, 611),        # rect [431.2, 609.5, 570.5, 623.0]
         'p0_naics': (388, 529),              # rect [386.5, 527.9, 551.3, 541.4] (Line P)
         'p0_state_tax_id': (388, 488),       # rect [385.9, 485.9, 587.6, 499.4] (Line Q)
+        'p0_records_city': (388, 425),       # rect [386.2, 422.9, 498.9, 436.4] (Line R city)
+        'p0_records_state': (502, 425),      # rect [500.2, 422.7, 521.2, 436.2] (Line R state)
+        'p0_records_zip': (525, 425),        # rect [522.9, 422.9, 588.5, 436.4] (Line R zip)
         'p0_accrual': (434, 341),            # rect [432.7, 339.8, 444.5, 351.4]
 
         # === Page 1: Steps 2-4 ===

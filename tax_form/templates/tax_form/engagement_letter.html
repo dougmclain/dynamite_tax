@@ -154,6 +154,10 @@
                                             <a href="{% url 'preview_engagement_letter' letter.id %}" class="btn btn-sm btn-outline-secondary" target="_blank" title="Preview">Preview</a>
                                             <a href="{% url 'edit_engagement_letter' letter.id %}" class="btn btn-sm btn-outline-primary" title="Edit">Edit</a>
                                             <a href="{% url 'download_engagement_letter' letter.id %}" class="btn btn-sm btn-primary" title="Download">Download</a>
+                                            <a href="{% url 'upload_signed_engagement_letter' letter.id %}" class="btn btn-sm btn-outline-success" title="Upload Signed">Upload Signed</a>
+                                            {% if letter.signed_pdf %}
+                                            <a href="{% url 'download_signed_engagement_letter' letter.id %}" class="btn btn-sm btn-success" title="Download Signed PDF">Signed PDF</a>
+                                            {% endif %}
                                         </div>
                                     </td>
                                 </tr>

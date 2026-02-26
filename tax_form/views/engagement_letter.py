@@ -143,6 +143,37 @@ class DownloadEngagementLetterView(LoginRequiredMixin, View):
         
         return response
 
+class DownloadSignedEngagementLetterView(LoginRequiredMixin, View):
+    """View to download a signed engagement letter PDF from Azure storage"""
+
+    def get(self, request, letter_id):
+        engagement_letter = get_object_or_404(EngagementLetter, id=letter_id)
+
+        if not engagement_letter.signed_pdf:
+            messages.error(request, 'No signed PDF available for this engagement letter.')
+            return redirect('engagement_letter')
+
+        try:
+            blob_path = str(engagement_letter.signed_pdf)
+            connection_string = f"DefaultEndpointsProtocol=https;AccountName={settings.AZURE_ACCOUNT_NAME};AccountKey={settings.AZURE_ACCOUNT_KEY};EndpointSuffix=core.windows.net"
+            blob_service_client = BlobServiceClient.from_connection_string(connection_string)
+            container_client = blob_service_client.get_container_client(settings.AZURE_CONTAINER)
+            blob_client = container_client.get_blob_client(blob_path)
+
+            blob_data = blob_client.download_blob().readall()
+
+            pdf_filename = create_engagement_letter_filename(
+                engagement_letter.association, engagement_letter.tax_year, signed=True
+            )
+            response = HttpResponse(blob_data, content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="{pdf_filename}"'
+            return response
+        except Exception as e:
+            logger.error(f"Error downloading signed PDF: {str(e)}", exc_info=True)
+            messages.error(request, f'Error downloading signed PDF: {str(e)}')
+            return redirect('engagement_letter')
+
+
 class DeleteEngagementLetterView(LoginRequiredMixin, View):
     """View to delete an engagement letter"""
     

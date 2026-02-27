@@ -30,9 +30,9 @@ IL_FIELD_POSITIONS_BY_YEAR = {
         'p0_city': (86, 525),               # rect [84.6, 523.7, 214.1, 537.2]
         'p0_state': (253, 526),              # rect [251.4, 524.0, 282.3, 537.5]
         'p0_zip': (312, 526),               # rect [310.5, 524.4, 355.7, 537.9]
-        'p0_fein_prefix': (388, 611),        # rect [385.9, 609.1, 425.6, 622.6]
-        'p0_fein_suffix': (433, 611),        # rect [431.2, 609.5, 570.5, 623.0]
-        'p0_naics': (388, 529),              # rect [386.5, 527.9, 551.3, 541.4] (Line P)
+        'p0_fein_prefix': (386, 611),        # rect [385.9, 609.1, 425.6, 622.6]
+        'p0_fein_suffix': (431, 611),        # rect [431.2, 609.5, 570.5, 623.0]
+        'p0_naics': (386, 529),              # rect [386.5, 527.9, 551.3, 541.4] (Line P)
         'p0_state_tax_id': (388, 488),       # rect [385.9, 485.9, 587.6, 499.4] (Line Q)
         'p0_records_city': (388, 425),       # rect [386.2, 422.9, 498.9, 436.4] (Line R city)
         'p0_records_state': (502, 425),      # rect [500.2, 422.7, 521.2, 436.2] (Line R state)
@@ -113,6 +113,7 @@ IL_FIELD_POSITIONS_BY_YEAR = {
         # Step 9: Preparer section
         'p2_discuss_with_preparer': (479, 122),  # rect [477.3, 120.6, 488.3, 131.9]
         'p2_preparer_name': (75, 89),            # rect [73.6, 87.1, 236.5, 99.1]
+        'p2_preparer_signature': (240, 89),      # Between name (ends ~236) and date (starts ~387)
         'p2_preparer_date_month': (389, 88),     # rect [386.9, 86.8, 404.9, 100.0]
         'p2_preparer_date_day': (408, 88),       # rect [406.5, 86.8, 424.2, 100.0]
         'p2_preparer_date_year': (428, 88),      # rect [426.1, 86.8, 459.2, 100.0]
@@ -211,10 +212,13 @@ def _right_justify_text(can, text, x, y, width):
 
 
 def _draw_spaced_chars(can, text, x, y, spacing):
-    """Draw each character individually with fixed spacing between start positions."""
+    """Draw each character centered in evenly spaced slots."""
     can.setFont('Courier', 10)
+    char_width = pdfmetrics.stringWidth('0', 'Courier', 10)
     for i, ch in enumerate(text):
-        can.drawString(x + i * spacing, y, ch)
+        # Center each character within its slot
+        slot_x = x + i * spacing + (spacing - char_width) / 2
+        can.drawString(slot_x, y, ch)
 
 
 def _find_il_template(tax_year):

@@ -124,6 +124,7 @@ def prepare_il1120_data(financial_info, association, preparer):
     # Step 9: Preparer information
     data['p2_discuss_with_preparer'] = True
     data['p2_preparer_name'] = preparer.name if preparer else ''
+    data['p2_preparer_signature'] = preparer.signature if preparer else ''
     data['p2_preparer_date_month'] = f'{today.month:02d}'
     data['p2_preparer_date_day'] = f'{today.day:02d}'
     data['p2_preparer_date_year'] = str(today.year)

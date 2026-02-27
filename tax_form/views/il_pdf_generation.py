@@ -152,18 +152,25 @@ IL_CHECKBOX_FIELDS = {
     'p2_discuss_with_preparer',
 }
 
-# Column widths for right-justification
+# Fields where each character is drawn individually with fixed spacing (e.g., digit boxes)
+IL_SPACED_CHAR_FIELDS = {
+    'p0_fein_prefix': 20,   # 2 digits in ~40pt: 40/2 = 20pt per slot
+    'p0_fein_suffix': 20,   # 7 digits in ~139pt: 139/7 ≈ 20pt per slot
+    'p0_naics': 25,         # 6 digits in ~165pt field
+}
+
+# Column widths for right-justification (slightly inside rect right edge)
 IL_NUMERIC_COLUMN_WIDTHS = {
-    # Page 1 right column (Lines 1-9, 22-23): rect width = 550 - 473.7 ≈ 76
-    'p1_right': 75,
-    # Page 1 left sub-column (Lines 10-21): rect width = 451 - 374.7 ≈ 76
-    'p1_left': 75,
-    # Page 2 right column: rect width = 562 - 485 ≈ 77
-    'p2_right': 77,
-    # Page 2 left sub-column (Lines 61a-61e): rect width = 449 - 372 ≈ 77
-    'p2_left': 77,
-    # Page 0 amount paying: rect width = 579 - 462 ≈ 117
-    'p0_amount': 117,
+    # Page 1 right column (Lines 1-9, 22-23): rect [473.7 .. 550.0]
+    'p1_right': 73,
+    # Page 1 left sub-column (Lines 10-21): rect [374.7 .. 451.0]
+    'p1_left': 73,
+    # Page 2 right column: rect [484.8 .. 561.9]
+    'p2_right': 75,
+    # Page 2 left sub-column (Lines 61a-61e): rect [371.6 .. 448.7]
+    'p2_left': 75,
+    # Page 0 amount paying: rect [462.0 .. 578.8]
+    'p0_amount': 115,
 }
 
 # Map field to its column width
@@ -201,6 +208,13 @@ def _right_justify_text(can, text, x, y, width):
     text_width = pdfmetrics.stringWidth(text, 'Courier', 10)
     adjusted_x = x + width - text_width
     can.drawString(adjusted_x, y, text)
+
+
+def _draw_spaced_chars(can, text, x, y, spacing):
+    """Draw each character individually with fixed spacing between start positions."""
+    can.setFont('Courier', 10)
+    for i, ch in enumerate(text):
+        can.drawString(x + i * spacing, y, ch)
 
 
 def _find_il_template(tax_year):
@@ -257,6 +271,10 @@ def generate_il1120_pages(financial_info, association, preparer, tax_year):
                 if value:
                     can.setFont('Helvetica', 10)
                     can.drawString(x, y, 'X')
+            elif key in IL_SPACED_CHAR_FIELDS:
+                text = str(value) if value else ''
+                if text:
+                    _draw_spaced_chars(can, text, x, y, IL_SPACED_CHAR_FIELDS[key])
             elif key in IL_NUMERIC_FIELDS:
                 can.setFont('Courier', 10)
                 formatted = _format_number(value)

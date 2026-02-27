@@ -28,8 +28,8 @@ IL_FIELD_POSITIONS_BY_YEAR = {
         'p0_name': (87, 590),               # rect [85.1, 588.3, 335.9, 601.8]
         'p0_address': (126, 543),            # rect [124.5, 541.6, 352.6, 555.1]
         'p0_city': (86, 525),               # rect [84.6, 523.7, 214.1, 537.2]
-        'p0_state': (253, 526),              # rect [251.4, 524.0, 282.3, 537.5]
-        'p0_zip': (312, 526),               # rect [310.5, 524.4, 355.7, 537.9]
+        'p0_state': (258, 526),              # rect [251.4, 524.0, 282.3, 537.5] - shifted right from label
+        'p0_zip': (318, 526),               # rect [310.5, 524.4, 355.7, 537.9] - shifted right from label
         'p0_fein_prefix': (386, 611),        # rect [385.9, 609.1, 425.6, 622.6]
         'p0_fein_suffix': (431, 611),        # rect [431.2, 609.5, 570.5, 623.0]
         'p0_naics': (386, 529),              # rect [386.5, 527.9, 551.3, 541.4] (Line P)
@@ -157,7 +157,7 @@ IL_CHECKBOX_FIELDS = {
 IL_SPACED_CHAR_FIELDS = {
     'p0_fein_prefix': 20,   # 2 digits in ~40pt: 40/2 = 20pt per slot
     'p0_fein_suffix': 20,   # 7 digits in ~139pt: 139/7 ≈ 20pt per slot
-    'p0_naics': 25,         # 6 digits in ~165pt field
+    'p0_naics': 20,         # 6 digits, same spacing as FEIN digit boxes
 }
 
 # Column widths for right-justification (slightly inside rect right edge)

@@ -36,12 +36,25 @@ def prepare_il1120_data(financial_info, association, preparer):
     data = {}
 
     # === Page 0: Step 1 - Identification ===
-    data['p0_tax_year_begin_month'] = '01'
-    data['p0_tax_year_begin_day'] = '01'
-    data['p0_tax_year_begin_year'] = str(tax_year)
-    data['p0_tax_year_end_month'] = '12'
-    data['p0_tax_year_end_day'] = '31'
-    data['p0_tax_year_end_year'] = str(tax_year)
+    # Only fill in tax year dates for fiscal year filers (non-December year-end)
+    is_fiscal_year = association.fiscal_year_end_month != 12
+    if is_fiscal_year:
+        data['p0_tax_year_begin_month'] = f'{association.fiscal_year_end_month + 1:02d}' if association.fiscal_year_end_month < 12 else '01'
+        data['p0_tax_year_begin_day'] = '01'
+        data['p0_tax_year_begin_year'] = str(tax_year)
+        end_month = association.fiscal_year_end_month
+        import calendar as cal_mod
+        _, last_day = cal_mod.monthrange(tax_year, end_month)
+        data['p0_tax_year_end_month'] = f'{end_month:02d}'
+        data['p0_tax_year_end_day'] = str(last_day)
+        data['p0_tax_year_end_year'] = str(tax_year)
+    else:
+        data['p0_tax_year_begin_month'] = ''
+        data['p0_tax_year_begin_day'] = ''
+        data['p0_tax_year_begin_year'] = ''
+        data['p0_tax_year_end_month'] = ''
+        data['p0_tax_year_end_day'] = ''
+        data['p0_tax_year_end_year'] = ''
     data['p0_amount_paying'] = il['line_67']  # Amount paying with return
     data['p0_name'] = association.association_name
     data['p0_address'] = association.mailing_address

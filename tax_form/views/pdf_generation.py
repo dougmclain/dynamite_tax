@@ -19,7 +19,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 from ..models import Financial, Association, Preparer
 from .helpers import format_number, get_statement_details, prepare_pdf_data
 from .instructions_generationg import InstructionsGenerator
-from .il_pdf_generation import generate_il1120_pages
+from .il_pdf_generation import generate_il1120_pages, generate_il1120v_page
 
 logger = logging.getLogger(__name__)
 
@@ -225,13 +225,27 @@ def generate_1120h_pdf(financial_info, association, preparer, template_path, out
         reader = PdfReader(template_path)
         writer = PdfWriter()
 
+        # Pre-compute IL amounts for instructions page (if applicable)
+        il_amount_owed = 0
+        il_refund = 0
+        try:
+            if association.get_filing_state() == 'IL':
+                from ..il_calculations import calculate_il1120
+                il_calc = calculate_il1120(financial_info)
+                il_amount_owed = il_calc.get('line_67', 0) or 0
+                il_refund = il_calc.get('line_65', 0) or 0
+        except Exception as e:
+            logger.warning(f"Could not pre-compute IL amounts: {e}")
+
         # Generate and add instructions page
         instructions_generator = InstructionsGenerator()
         instructions_page = instructions_generator.generate_page(
             financial_info,
             association,
             amount_owed=financial_info.get('amount_owed', 0),
-            refund_amount=financial_info.get('refunded', 0)
+            refund_amount=financial_info.get('refunded', 0),
+            il_amount_owed=il_amount_owed,
+            il_refund=il_refund,
         )
         writer.add_page(instructions_page)
 
@@ -308,6 +322,15 @@ def generate_1120h_pdf(financial_info, association, preparer, template_path, out
                 for il_page in il_pages:
                     writer.add_page(il_page)
                 logger.info(f"IL-1120 pages ({len(il_pages)}) appended for {association.association_name}")
+
+                # Append IL-1120-V payment voucher if amount owed > 0
+                if il_amount_owed > 0:
+                    try:
+                        voucher_page = generate_il1120v_page(financial_info, association, tax_year=tax_year)
+                        writer.add_page(voucher_page)
+                        logger.info(f"IL-1120-V voucher appended (amount: ${il_amount_owed})")
+                    except Exception as e:
+                        logger.error(f"Error generating IL-1120-V voucher: {str(e)}", exc_info=True)
         except Exception as e:
             logger.error(f"Error generating IL-1120 pages: {str(e)}", exc_info=True)
             # Continue without IL pages - don't fail the federal return

@@ -298,3 +298,140 @@ def generate_il1120_pages(financial_info, association, preparer, tax_year):
         pages.append(template_page)
 
     return pages
+
+
+# === IL-1120-V Payment Voucher ===
+
+# Field positions derived from annotation rectangles on the voucher page
+# Convention: x = rect_left + 2, y = rect_bottom + 2
+IL_VOUCHER_FIELD_POSITIONS = {
+    'fein_prefix': (88, 172),       # rect [86.3, 170.0, 122.0, 188.5]
+    'fein_suffix': (130, 172),      # rect [128.3, 170.0, 251.4, 188.5]
+    'name': (89, 144),              # rect [86.7, 142.1, 342.7, 160.6]
+    'care_of': (89, 120),           # rect [86.7, 118.2, 342.7, 136.7]
+    'address': (89, 95),            # rect [86.7, 92.9, 342.7, 111.4]
+    'city': (88, 72),               # rect [86.3, 69.9, 201.3, 88.4]
+    'state': (239, 72),             # rect [237.1, 69.9, 268.5, 88.4]
+    'zip': (293, 72),               # rect [291.4, 69.9, 342.7, 88.4]
+    'area_code': (88, 48),          # rect [86.0, 46.3, 123.6, 64.8]
+    'phone': (133, 48),             # rect [130.6, 46.3, 221.8, 64.8]
+    'tax_year_end_month': (441, 159),  # rect [439.1, 156.6, 471.8, 175.1]
+    'tax_year_end_year': (512, 159),   # rect [509.8, 156.6, 542.6, 175.1]
+    'payment_amount': (413, 121),      # rect [411.0, 119.2, 527.2, 137.7]
+}
+
+IL_VOUCHER_SPACED_CHAR_FIELDS = {
+    'fein_prefix': 18,   # 2 digits in ~36pt
+    'fein_suffix': 18,   # 7 digits in ~123pt
+}
+
+IL_VOUCHER_NUMERIC_FIELDS = {'payment_amount'}
+IL_VOUCHER_NUMERIC_WIDTH = 114  # rect width: 527.2 - 411.0 = 116.2
+
+
+def _find_il_voucher_template(tax_year):
+    """Find the IL-1120-V template PDF."""
+    template_name = f'template_il1120v_{tax_year}.pdf'
+    possible_paths = [
+        settings.PDF_TEMPLATE_DIR / template_name,
+        Path('/var/lib/render/disk/pdf_templates') / template_name,
+        Path('/media/pdf_templates') / template_name,
+        Path('/data/pdf_templates') / template_name,
+        Path(settings.BASE_DIR) / 'pdf_templates' / template_name,
+        Path(settings.BASE_DIR) / 'tax_form' / 'pdf_templates' / template_name,
+    ]
+    for path in possible_paths:
+        if path.exists():
+            logger.info(f"Found IL-1120-V template at: {path}")
+            return path
+    logger.error(f"IL-1120-V template not found. Searched: {possible_paths}")
+    raise FileNotFoundError(f"IL-1120-V template not found for year {tax_year}")
+
+
+def generate_il1120v_page(financial_info, association, tax_year):
+    """Generate a filled IL-1120-V payment voucher page.
+
+    Returns a single PyPDF2 page object ready to append to a PdfWriter.
+    Only call this when the IL-1120 line 67 (amount owed) > 0.
+    """
+    template_path = _find_il_voucher_template(tax_year)
+    reader = PdfReader(str(template_path))
+    template_page = reader.pages[0]
+
+    # Prepare voucher data
+    ein = (association.ein or '').replace('-', '')
+    fein_prefix = ein[:2] if len(ein) >= 2 else ein
+    fein_suffix = ein[2:] if len(ein) > 2 else ''
+
+    # C/O: management company name if not self-managed
+    care_of = ''
+    if not association.is_self_managed and association.management_company:
+        care_of = association.management_company.name
+
+    # Phone: management company phone if available
+    phone_raw = ''
+    if not association.is_self_managed and association.management_company:
+        phone_raw = association.management_company.phone or ''
+    phone_digits = ''.join(c for c in phone_raw if c.isdigit())
+    if len(phone_digits) == 10:
+        area_code = phone_digits[:3]
+        phone_num = f'{phone_digits[3:6]}-{phone_digits[6:]}'
+    elif len(phone_digits) == 7:
+        area_code = ''
+        phone_num = f'{phone_digits[:3]}-{phone_digits[3:]}'
+    else:
+        area_code = ''
+        phone_num = phone_raw
+
+    # Tax year ending: fiscal year end month / year
+    end_month = association.fiscal_year_end_month or 12
+    tax_year_end_month = f'{end_month:02d}'
+    tax_year_end_year = str(tax_year)
+
+    # Payment amount from IL calculations
+    from ..il_calculations import calculate_il1120
+    il = calculate_il1120(financial_info)
+    payment_amount = il.get('line_67', 0)
+
+    data = {
+        'fein_prefix': fein_prefix,
+        'fein_suffix': fein_suffix,
+        'name': association.association_name or '',
+        'care_of': care_of,
+        'address': association.mailing_address or '',
+        'city': association.city or '',
+        'state': (association.state or '')[:2].upper(),
+        'zip': association.zipcode or '',
+        'area_code': area_code,
+        'phone': phone_num,
+        'tax_year_end_month': tax_year_end_month,
+        'tax_year_end_year': tax_year_end_year,
+        'payment_amount': payment_amount,
+    }
+
+    # Create overlay
+    packet = BytesIO()
+    can = canvas.Canvas(packet, pagesize=letter)
+
+    for key, value in data.items():
+        if key not in IL_VOUCHER_FIELD_POSITIONS:
+            continue
+        x, y = IL_VOUCHER_FIELD_POSITIONS[key]
+
+        if key in IL_VOUCHER_SPACED_CHAR_FIELDS:
+            text = str(value) if value else ''
+            if text:
+                _draw_spaced_chars(can, text, x, y, IL_VOUCHER_SPACED_CHAR_FIELDS[key])
+        elif key in IL_VOUCHER_NUMERIC_FIELDS:
+            can.setFont('Courier', 10)
+            formatted = _format_number(value)
+            _right_justify_text(can, formatted, x, y, IL_VOUCHER_NUMERIC_WIDTH)
+        else:
+            can.setFont('Helvetica', 9)
+            can.drawString(x, y, str(value) if value else '')
+
+    can.save()
+    packet.seek(0)
+    overlay = PdfReader(packet)
+    template_page.merge_page(overlay.pages[0])
+    return template_page

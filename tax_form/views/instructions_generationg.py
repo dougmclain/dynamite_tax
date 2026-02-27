@@ -145,7 +145,7 @@ class InstructionsGenerator:
             y -= 15
         return y
 
-    def generate_page(self, financial_info, association, amount_owed=0, refund_amount=0):
+    def generate_page(self, financial_info, association, amount_owed=0, refund_amount=0, il_amount_owed=0, il_refund=0):
         """Generate instructions page for the tax return."""
         try:
             packet = BytesIO()
@@ -223,10 +223,24 @@ class InstructionsGenerator:
                 state_text = ("An Illinois Form IL-1120 has been prepared and is included in this packet. "
                              "Mail to: Illinois Department of Revenue, PO BOX 19038, "
                              "Springfield IL 62794-9038.")
+                y = self.draw_wrapped_text(can, state_text, 70, y, 480)
+                y -= 10
+                if il_amount_owed > 0:
+                    il_due_text = (f"Illinois State Balance Due: ${format_number(il_amount_owed)}. "
+                                  "An IL-1120-V payment voucher is included. Mail the voucher with your "
+                                  "check or money order payable to \"Illinois Department of Revenue\" to: "
+                                  "Illinois Department of Revenue, PO BOX 19027, Springfield IL 62794-9027.")
+                    y = self.draw_wrapped_text(can, il_due_text, 70, y, 480)
+                elif il_refund > 0:
+                    il_refund_text = f"Illinois State Refund: ${format_number(il_refund)}."
+                    y = self.draw_wrapped_text(can, il_refund_text, 70, y, 480)
+                else:
+                    can.drawString(70, y, "No Illinois state tax is due with this return.")
+                    y -= 15
             else:
                 state_text = ("Your Association may be required to file a state tax return. "
                              "Please contact your state authority to determine the requirements.")
-            y = self.draw_wrapped_text(can, state_text, 70, y, 480)
+                y = self.draw_wrapped_text(can, state_text, 70, y, 480)
             y -= 25
 
             # Payment or refund information

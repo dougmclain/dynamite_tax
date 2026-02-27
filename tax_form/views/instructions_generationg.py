@@ -220,23 +220,35 @@ class InstructionsGenerator:
             can.setFont("Helvetica", 10)
             y -= 15
             if association.get_filing_state() == 'IL':
-                state_text = ("An Illinois Form IL-1120 has been prepared and is included in this packet. "
-                             "Mail to: Illinois Department of Revenue, PO BOX 19038, "
-                             "Springfield IL 62794-9038.")
+                state_text = "An Illinois Form IL-1120 has been prepared and is included in this packet."
                 y = self.draw_wrapped_text(can, state_text, 70, y, 480)
-                y -= 10
+                y -= 5
                 if il_amount_owed > 0:
                     il_due_text = (f"Illinois State Balance Due: ${format_number(il_amount_owed)}. "
-                                  "An IL-1120-V payment voucher is included. Mail the voucher with your "
-                                  "check or money order payable to \"Illinois Department of Revenue\" to: "
-                                  "Illinois Department of Revenue, PO BOX 19027, Springfield IL 62794-9027.")
+                                  "An IL-1120-V payment voucher is included. Mail the return with the "
+                                  "voucher and your check or money order payable to "
+                                  "\"Illinois Department of Revenue\" to: "
+                                  "Illinois Department of Revenue, PO BOX 19038, Springfield IL 62794-9038. "
+                                  "You may also pay electronically at mytax.illinois.gov.")
                     y = self.draw_wrapped_text(can, il_due_text, 70, y, 480)
                 elif il_refund > 0:
-                    il_refund_text = f"Illinois State Refund: ${format_number(il_refund)}."
+                    il_refund_text = (f"Illinois State Refund: ${format_number(il_refund)}. "
+                                     "Mail your return to: Illinois Department of Revenue, "
+                                     "PO BOX 19048, Springfield IL 62794-9048.")
                     y = self.draw_wrapped_text(can, il_refund_text, 70, y, 480)
                 else:
-                    can.drawString(70, y, "No Illinois state tax is due with this return.")
-                    y -= 15
+                    il_no_due_text = ("No Illinois state tax is due with this return. "
+                                     "Mail your return to: Illinois Department of Revenue, "
+                                     "PO BOX 19048, Springfield IL 62794-9048.")
+                    y = self.draw_wrapped_text(can, il_no_due_text, 70, y, 480)
+                # IL due date (7-month automatic extension vs April 15 original)
+                y -= 5
+                il_due_year = str(int(financial_info['tax_year']) + 1)
+                if financial_info.get('extension_info'):
+                    il_due_text = f"The Illinois return is due on or before November 15, {il_due_year} (automatic 7-month extension)."
+                else:
+                    il_due_text = f"The Illinois return is due on or before April 15, {il_due_year}."
+                y = self.draw_wrapped_text(can, il_due_text, 70, y, 480)
             else:
                 state_text = ("Your Association may be required to file a state tax return. "
                              "Please contact your state authority to determine the requirements.")

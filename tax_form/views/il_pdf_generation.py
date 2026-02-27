@@ -157,7 +157,7 @@ IL_CHECKBOX_FIELDS = {
 IL_SPACED_CHAR_FIELDS = {
     'p0_fein_prefix': 20,   # 2 digits in ~40pt: 40/2 = 20pt per slot
     'p0_fein_suffix': 20,   # 7 digits in ~139pt: 139/7 ≈ 20pt per slot
-    'p0_naics': 20,         # 6 digits, same spacing as FEIN digit boxes
+    'p0_naics': 27,         # 6 digits in ~165pt: 165/6 ≈ 27pt per slot
 }
 
 # Column widths for right-justification (slightly inside rect right edge)

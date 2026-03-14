@@ -298,8 +298,10 @@ class InstructionsGenerator:
                 can.drawString(50, y, "Signature Required:")
                 can.setFont("Helvetica", 10)
                 y -= 15
-                can.drawString(70, y, "The IL-1120 must also be signed and dated by the paid preparer.")
-                y -= 20
+                il_sig_text = ("The IL-1120 must be signed and dated by an officer of the Association. "
+                              "The officer must also provide their title and phone number in the signature section.")
+                y = self.draw_wrapped_text(can, il_sig_text, 70, y, 480)
+                y -= 5
 
                 # IL balance due or refund
                 if il_amount_owed > 0:

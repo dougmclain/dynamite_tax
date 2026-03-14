@@ -189,6 +189,9 @@
             </div>
             <div class="row mt-3">
                 <div class="col-md-4">
+                    {{ form.state_local_taxes|as_crispy_field }}
+                </div>
+                <div class="col-md-4">
                     {{ form.management_fees|as_crispy_field }}
                 </div>
                 <div class="col-md-4">

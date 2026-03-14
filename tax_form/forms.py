@@ -139,6 +139,7 @@ class FinancialForm(forms.ModelForm):
             'non_exempt_income_amount1': TextInput(attrs={'class': 'dollar-input'}),
             'non_exempt_income_amount2': TextInput(attrs={'class': 'dollar-input'}),
             'non_exempt_income_amount3': TextInput(attrs={'class': 'dollar-input'}),
+            'state_local_taxes': TextInput(attrs={'class': 'dollar-input'}),
             'tax_preparation': TextInput(attrs={'class': 'dollar-input'}),
             'management_fees': TextInput(attrs={'class': 'dollar-input'}),
             'administration_fees': TextInput(attrs={'class': 'dollar-input'}),

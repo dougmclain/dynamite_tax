@@ -66,11 +66,24 @@ def calculate_tax_prep_expenses(financial):
         return 0
     return int(min(financial.tax_preparation, total_non_exempt))
 
-def calculate_management_fees(financial, tax_prep_expenses):
+def calculate_state_local_taxes(financial, tax_prep_expenses):
+    """Calculate state and local tax deduction.
+
+    Deductible against ALL non-exempt income, same logic as tax prep.
+    Capped at remaining non-exempt income after tax prep.
+    """
+    total_non_exempt = _total_non_exempt_income(financial)
+    remaining = total_non_exempt - tax_prep_expenses
+
+    if remaining <= 100:
+        return 0
+    return int(min(financial.state_local_taxes, remaining))
+
+def calculate_management_fees(financial, tax_prep_expenses, state_local_taxes):
     """Calculate management fees.
 
     Allocated based on ratio of interest/dividends to total revenue (min 5%).
-    Capped at remaining non-exempt income after tax prep.
+    Capped at remaining non-exempt income after tax prep and state/local taxes.
     """
     bank_interest_dividends = financial.interest + financial.dividends
     total_non_exempt = _total_non_exempt_income(financial)
@@ -84,18 +97,19 @@ def calculate_management_fees(financial, tax_prep_expenses):
     limit_ratio = max(interest_income_ratio, 0.05)
     limited_management_fees = limit_ratio * financial.management_fees
 
-    remaining = total_non_exempt - tax_prep_expenses
+    remaining = total_non_exempt - tax_prep_expenses - state_local_taxes
     if remaining <= 100:
         return 0
     return int(min(limited_management_fees, remaining))
 
-def calculate_audit_fees(financial, tax_prep_expenses, management_fees):
+def calculate_audit_fees(financial, tax_prep_expenses, state_local_taxes, management_fees):
     """Calculate audit fees.
 
-    Capped at remaining non-exempt income after tax prep and management fees.
+    Capped at remaining non-exempt income after tax prep, state/local taxes,
+    and management fees.
     """
     total_non_exempt = _total_non_exempt_income(financial)
-    remaining = total_non_exempt - tax_prep_expenses - management_fees
+    remaining = total_non_exempt - tax_prep_expenses - state_local_taxes - management_fees
 
     if remaining <= 100:
         return 0
@@ -166,11 +180,13 @@ def calculate_other_nonexempt_expense3(financial):
 def calculate_other_deductions(financial):
     """Calculate other deductions."""
     tax_prep_expenses = calculate_tax_prep_expenses(financial)
-    management_fees = calculate_management_fees(financial, tax_prep_expenses)
+    state_local_taxes = calculate_state_local_taxes(financial, tax_prep_expenses)
+    management_fees = calculate_management_fees(financial, tax_prep_expenses, state_local_taxes)
     return int(
         tax_prep_expenses +
+        state_local_taxes +
         management_fees +
-        calculate_audit_fees(financial, tax_prep_expenses, management_fees) +
+        calculate_audit_fees(financial, tax_prep_expenses, state_local_taxes, management_fees) +
         calculate_rental_expenses(financial) +
         calculate_other_nonexempt_expense1(financial) +
         calculate_other_nonexempt_expense2(financial) +

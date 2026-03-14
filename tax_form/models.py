@@ -298,6 +298,7 @@ class Financial(models.Model):
     non_exempt_income_amount3 = models.PositiveIntegerField(default=0)
 
     # Non-exempt expenses
+    state_local_taxes = models.PositiveIntegerField(default=0, help_text="State and local income taxes paid (prior year)")
     tax_preparation = models.PositiveIntegerField(default=0)
     management_fees = models.PositiveIntegerField(default=0)
     administration_fees = models.PositiveIntegerField(default=0)

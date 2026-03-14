@@ -62,8 +62,9 @@ def calculate_financial_info(financial, association):
 
     # Add detailed breakdown of other deductions
     tax_prep_expenses = calculate_tax_prep_expenses(financial)
-    management_fees = calculate_management_fees(financial, tax_prep_expenses)
-    audit_fees = calculate_audit_fees(financial, tax_prep_expenses, management_fees)
+    state_local_taxes = calculate_state_local_taxes(financial, tax_prep_expenses)
+    management_fees = calculate_management_fees(financial, tax_prep_expenses, state_local_taxes)
+    audit_fees = calculate_audit_fees(financial, tax_prep_expenses, state_local_taxes, management_fees)
     rental_expenses = calculate_rental_expenses(financial)
     other_nonexempt_expense1 = calculate_other_nonexempt_expense1(financial)
     other_nonexempt_expense2 = calculate_other_nonexempt_expense2(financial)
@@ -71,6 +72,7 @@ def calculate_financial_info(financial, association):
 
     info['other_deductions_detail'] = [
         {'description': 'Tax Preparation Expenses', 'amount': tax_prep_expenses},
+        {'description': 'State and Local Taxes', 'amount': state_local_taxes},
         {'description': 'Management Fees', 'amount': management_fees},
         {'description': 'Audit Fees', 'amount': audit_fees},
         {'description': 'Rental Expenses', 'amount': rental_expenses},
@@ -125,14 +127,21 @@ def get_statement_details(financial):
             'amount': tax_prep_expenses
         })
 
-    management_fees = calculate_management_fees(financial, tax_prep_expenses)
+    state_local_taxes = calculate_state_local_taxes(financial, tax_prep_expenses)
+    if state_local_taxes > 0:
+        statement_details['additional_expenses'].append({
+            'description': 'State and Local Taxes',
+            'amount': state_local_taxes
+        })
+
+    management_fees = calculate_management_fees(financial, tax_prep_expenses, state_local_taxes)
     if management_fees > 0:
         statement_details['additional_expenses'].append({
             'description': 'Management Fees',
             'amount': management_fees
         })
 
-    audit_fees = calculate_audit_fees(financial, tax_prep_expenses, management_fees)
+    audit_fees = calculate_audit_fees(financial, tax_prep_expenses, state_local_taxes, management_fees)
     if audit_fees > 0:
         statement_details['additional_expenses'].append({
             'description': 'Audit Fees',

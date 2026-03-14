@@ -208,13 +208,7 @@ class Association(models.Model):
         Uses filing_state if set, otherwise falls back to the mailing address state."""
         if self.filing_state:
             return self.filing_state
-        # Convert mailing address state to 2-letter code if needed
-        state_map = {
-            'Washington': 'WA', 'Oregon': 'OR', 'Illinois': 'IL',
-            'California': 'CA', 'Texas': 'TX', 'Florida': 'FL',
-            'Arizona': 'AZ', 'Nevada': 'NV', 'Colorado': 'CO',
-        }
-        return state_map.get(self.state, self.state[:2].upper() if len(self.state) >= 2 else self.state)
+        return self.state.upper() if self.state else ''
 
     def get_filing_state_display(self):
         """Returns the full name of the filing state."""

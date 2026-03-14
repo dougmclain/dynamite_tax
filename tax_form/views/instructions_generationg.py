@@ -46,14 +46,10 @@ class InstructionsGenerator:
             return ("Department of the Treasury\n"
                    "Internal Revenue Service Center\n"
                    "Kansas City, MO 64999-0012")
-        elif state.upper() in cls.OGDEN_STATES:
+        else:
             return ("Department of the Treasury\n"
                    "Internal Revenue Service Center\n"
                    "Ogden, UT 84201-0012")
-        else:
-            return ("Internal Revenue Service Center\n"
-                   "P.O. Box 409101\n"
-                   "Ogden, UT 84409")
 
     def draw_logos(self, canvas_obj):
         """Draw logos on the canvas if they exist."""

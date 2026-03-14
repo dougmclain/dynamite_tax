@@ -4,6 +4,10 @@
 
 {% block title %}Edit Association - {{ association.association_name }}{% endblock %}
 
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+{% endblock %}
+
 {% block content %}
 <div class="container mt-5">
     <div class="row justify-content-center">
@@ -223,11 +227,23 @@
 
 {% block extra_js %}
 <script src="{% static 'js/management_company.js' %}"></script>
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
 <script>
-    document.getElementById('id_filing_state').addEventListener('change', function() {
-        var show = this.value ? '' : 'none';
-        document.getElementById('state-tax-id-field').style.display = show;
-        document.getElementById('state-filing-details').style.display = show;
+    // Initialize Tom Select on all .tom-select elements
+    document.querySelectorAll('.tom-select').forEach(function(el) {
+        var ts = new TomSelect(el, {
+            create: false,
+            sortField: { field: 'text', direction: 'asc' },
+            allowEmptyOption: true,
+        });
+        // Re-attach filing_state change handler via Tom Select
+        if (el.id === 'id_filing_state') {
+            ts.on('change', function(value) {
+                var show = value ? '' : 'none';
+                document.getElementById('state-tax-id-field').style.display = show;
+                document.getElementById('state-filing-details').style.display = show;
+            });
+        }
     });
 </script>
 {% endblock %}

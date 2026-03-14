@@ -106,6 +106,17 @@ class AssociationForm(forms.ModelForm):
         self.fields['is_self_managed'].help_text = "Uncheck if the association is managed by a management company"
         self.fields['management_company'].help_text = "Select the management company if the association is not self-managed"
 
+        # Default state filing fields from mailing address and standard NAICS
+        if self.instance and self.instance.pk:
+            if not self.instance.records_city:
+                self.initial['records_city'] = self.instance.city
+            if not self.instance.records_state:
+                self.initial['records_state'] = self.instance.state
+            if not self.instance.records_zip:
+                self.initial['records_zip'] = self.instance.zipcode
+            if not self.instance.naics_code:
+                self.initial['naics_code'] = '813990'
+
 class DollarNumberInput(NumberInput):
     template_name = 'tax_form/dollar_number_input.html'
 

@@ -73,11 +73,11 @@ def prepare_il1120_data(financial_info, association, preparer):
     data['p0_zip'] = association.zipcode
     data['p0_fein_prefix'] = fein_prefix
     data['p0_fein_suffix'] = fein_suffix
-    data['p0_naics'] = association.naics_code or ''
+    data['p0_naics'] = association.naics_code or '813990'
     data['p0_state_tax_id'] = association.state_tax_id or ''
-    data['p0_records_city'] = association.records_city or ''
-    data['p0_records_state'] = association.records_state or ''
-    data['p0_records_zip'] = association.records_zip or ''
+    data['p0_records_city'] = association.records_city or association.city or ''
+    data['p0_records_state'] = association.records_state or (association.state[:2].upper() if association.state else '')
+    data['p0_records_zip'] = association.records_zip or association.zipcode or ''
     data['p0_accrual'] = True  # Always accrual for HOAs
 
     # === Page 1: Steps 2-4 ===

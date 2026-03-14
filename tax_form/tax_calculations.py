@@ -47,30 +47,35 @@ def calculate_gross_income(financial):
     total_other_income = calculate_total_other_income(financial)
     return int(total_other_income + financial.rentals + financial.dividends + financial.interest)
 
-def calculate_tax_prep_expenses(financial):
-    """Calculate tax preparation expenses."""
-    bank_interest_dividends = financial.interest + financial.dividends
-    total_non_exempt_income = bank_interest_dividends + financial.rentals + financial.non_exempt_income_amount1 + financial.non_exempt_income_amount2 + financial.non_exempt_income_amount3
+def _total_non_exempt_income(financial):
+    """Helper: total non-exempt income from all sources."""
+    return (financial.interest + financial.dividends + financial.rentals +
+            financial.non_exempt_income_amount1 + financial.non_exempt_income_amount2 +
+            financial.non_exempt_income_amount3)
 
-    if total_non_exempt_income <= 100 or bank_interest_dividends <= 100:
+def calculate_tax_prep_expenses(financial):
+    """Calculate tax preparation expenses.
+
+    Tax prep is deductible against ALL non-exempt income (interest, dividends,
+    rentals, laundry, etc.) — not just interest/dividends. Capped so total
+    deductible expenses never exceed total non-exempt income.
+    """
+    total_non_exempt = _total_non_exempt_income(financial)
+
+    if total_non_exempt <= 100:
         return 0
-    elif bank_interest_dividends > 100 and financial.tax_preparation >= bank_interest_dividends:
-        return int(bank_interest_dividends)
-    else:
-        return int(financial.tax_preparation)
+    return int(min(financial.tax_preparation, total_non_exempt))
 
 def calculate_management_fees(financial, tax_prep_expenses):
-    """Calculate management fees."""
+    """Calculate management fees.
+
+    Allocated based on ratio of interest/dividends to total revenue (min 5%).
+    Capped at remaining non-exempt income after tax prep.
+    """
     bank_interest_dividends = financial.interest + financial.dividends
-    total_non_exempt_income = (
-        bank_interest_dividends +
-        financial.rentals +
-        financial.non_exempt_income_amount1 +
-        financial.non_exempt_income_amount2 +
-        financial.non_exempt_income_amount3
-    )
+    total_non_exempt = _total_non_exempt_income(financial)
     total_exempt_income = calculate_total_exempt_income(financial)
-    total_revenue = total_exempt_income + total_non_exempt_income
+    total_revenue = total_exempt_income + total_non_exempt
 
     if total_revenue == 0:
         return 0
@@ -79,32 +84,22 @@ def calculate_management_fees(financial, tax_prep_expenses):
     limit_ratio = max(interest_income_ratio, 0.05)
     limited_management_fees = limit_ratio * financial.management_fees
 
-    if total_non_exempt_income - tax_prep_expenses <= 100 or bank_interest_dividends <= 100:
+    remaining = total_non_exempt - tax_prep_expenses
+    if remaining <= 100:
         return 0
-    elif 0 < bank_interest_dividends - tax_prep_expenses <= limited_management_fees:
-        return int(bank_interest_dividends - tax_prep_expenses)
-    else:
-        return int(limited_management_fees)
+    return int(min(limited_management_fees, remaining))
 
 def calculate_audit_fees(financial, tax_prep_expenses, management_fees):
-    """Calculate audit fees."""
-    bank_interest_dividends = financial.interest + financial.dividends
-    total_non_exempt_income = (
-        bank_interest_dividends +
-        financial.rentals +
-        financial.non_exempt_income_amount1 +
-        financial.non_exempt_income_amount2 +
-        financial.non_exempt_income_amount3
-    )
+    """Calculate audit fees.
 
-    if total_non_exempt_income - tax_prep_expenses - management_fees <= 100:
+    Capped at remaining non-exempt income after tax prep and management fees.
+    """
+    total_non_exempt = _total_non_exempt_income(financial)
+    remaining = total_non_exempt - tax_prep_expenses - management_fees
+
+    if remaining <= 100:
         return 0
-    elif bank_interest_dividends - tax_prep_expenses - management_fees == 0:
-        return 0
-    elif 0 < bank_interest_dividends - tax_prep_expenses - management_fees <= financial.audit_fees:
-        return int(bank_interest_dividends - tax_prep_expenses - management_fees)
-    else:
-        return int(financial.audit_fees) if bank_interest_dividends - tax_prep_expenses - management_fees > 0 else 0
+    return int(min(financial.audit_fees, remaining))
 
 def calculate_rental_expenses(financial):
     """Calculate rental expenses."""

@@ -57,6 +57,12 @@
                     </div>
                     <div class="card-body">
                         <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.care_of|as_crispy_field }}
+                                <small class="text-muted">e.g., management company name. Leave blank if mail goes directly to the association.</small>
+                            </div>
+                        </div>
+                        <div class="row">
                             <div class="col-md-8 mb-3">
                                 {{ form.mailing_address|as_crispy_field }}
                             </div>
@@ -64,7 +70,7 @@
                                 {{ form.room_suite|as_crispy_field }}
                             </div>
                         </div>
-                        
+
                         <div class="row">
                             <div class="col-md-5 mb-3">
                                 {{ form.city|as_crispy_field }}
@@ -95,12 +101,6 @@
                             </div>
                         </div>
                         <div id="state-filing-details" style="{% if not form.filing_state.value %}display:none{% endif %}">
-                            <div class="row">
-                                <div class="col-md-8 mb-3">
-                                    {{ form.state_care_of|as_crispy_field }}
-                                    <small class="text-muted">C/O line on state form (e.g., management company name). Leave blank to auto-fill from management company.</small>
-                                </div>
-                            </div>
                             <div class="row">
                                 <div class="col-md-4 mb-3">
                                     {{ form.naics_code|as_crispy_field }}

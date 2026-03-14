@@ -379,10 +379,10 @@ def generate_il1120v_page(financial_info, association, tax_year):
     fein_prefix = ein[:2] if len(ein) >= 2 else ein
     fein_suffix = ein[2:] if len(ein) > 2 else ''
 
-    # C/O: use state_care_of override, else management company name
+    # C/O: use care_of field, else fall back to management company name
     care_of = ''
-    if hasattr(association, 'state_care_of') and association.state_care_of:
-        care_of = association.state_care_of
+    if association.care_of:
+        care_of = association.care_of
     elif not association.is_self_managed and association.management_company:
         care_of = association.management_company.name
 

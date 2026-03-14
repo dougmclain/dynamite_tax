@@ -155,7 +155,7 @@ def prepare_pdf_data(financial_info, association, preparer):
     return {
         "f1_1": association.association_name,
         "f1_2": association.ein,
-        "f1_3": association.mailing_address,
+        "f1_3": f"C/O {association.care_of}, {association.mailing_address}" if association.care_of else association.mailing_address,
         "f1_3_suite": association.room_suite,
         "f1_4": f"{association.city}, {association.state} {association.zipcode}",
         # Split address fields for 2025 form (city/state/zip are separate boxes)

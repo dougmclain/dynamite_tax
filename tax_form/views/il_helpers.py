@@ -57,10 +57,10 @@ def prepare_il1120_data(financial_info, association, preparer):
         data['p0_tax_year_end_year'] = ''
     data['p0_amount_paying'] = il['line_67']  # Amount paying with return
     data['p0_name'] = association.association_name
-    # C/O: use state_care_of override, else management company name
+    # C/O: use care_of field, else fall back to management company name
     care_of = ''
-    if hasattr(association, 'state_care_of') and association.state_care_of:
-        care_of = association.state_care_of
+    if association.care_of:
+        care_of = association.care_of
     elif not association.is_self_managed and association.management_company:
         care_of = association.management_company.name
     data['p0_care_of'] = care_of

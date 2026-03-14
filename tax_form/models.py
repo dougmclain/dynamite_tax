@@ -161,11 +161,12 @@ class Association(models.Model):
         default='',
         help_text="ZIP code where accounting records are kept"
     )
-    state_care_of = models.CharField(
+    care_of = models.CharField(
         max_length=255,
         blank=True,
         default='',
-        help_text="C/O line for state tax form mailing address (leave blank to use management company name)"
+        verbose_name="C/O",
+        help_text="Care of name (e.g., management company). Prepended to address on 1120-H, separate line on state forms."
     )
 
     zoned = models.BooleanField(default=True)

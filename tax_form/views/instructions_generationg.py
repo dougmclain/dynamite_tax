@@ -145,6 +145,36 @@ class InstructionsGenerator:
             y -= 15
         return y
 
+    @staticmethod
+    def draw_address_block(canvas_obj, label, address_lines, x, y):
+        """Draw a prominent boxed address block with a label and address lines."""
+        line_height = 16
+        padding = 8
+        box_height = padding * 2 + line_height * (len(address_lines) + 1)  # +1 for label
+        box_width = 300
+
+        # Draw light gray background box
+        canvas_obj.setFillColorRGB(0.94, 0.94, 0.94)
+        canvas_obj.setStrokeColorRGB(0.5, 0.5, 0.5)
+        canvas_obj.roundRect(x, y - box_height + padding, box_width, box_height, 4, fill=1, stroke=1)
+        canvas_obj.setFillColorRGB(0, 0, 0)
+
+        # Draw label
+        inner_y = y
+        canvas_obj.setFont("Helvetica-Bold", 11)
+        canvas_obj.drawString(x + padding, inner_y, label)
+        inner_y -= line_height
+
+        # Draw address lines
+        canvas_obj.setFont("Helvetica-Bold", 12)
+        for line in address_lines:
+            canvas_obj.drawString(x + padding + 10, inner_y, line)
+            inner_y -= line_height
+
+        # Reset font
+        canvas_obj.setFont("Helvetica", 10)
+        return y - box_height - 10
+
     def generate_page(self, financial_info, association, amount_owed=0, refund_amount=0, il_amount_owed=0, il_refund=0):
         """Generate instructions page for the tax return."""
         try:
@@ -187,16 +217,11 @@ class InstructionsGenerator:
             can.drawString(70, y, "The return must be signed and dated by an officer of the Association.")
             y -= 25
 
-            # Filing address
-            can.setFont("Helvetica-Bold", 10)
-            can.drawString(50, y, "Filing Address:")
-            can.setFont("Helvetica", 10)
-            y -= 15
+            # Filing address - prominent boxed block
             address = self.get_filing_address(association.state)
-            for line in address.split('\n'):
-                can.drawString(70, y, line)
-                y -= 15
-            y -= 10
+            address_lines = address.split('\n')
+            y = self.draw_address_block(can, "Mail Federal Return To:", address_lines, 70, y)
+            y -= 5
 
             # Due date
             can.setFont("Helvetica-Bold", 10)
@@ -220,27 +245,44 @@ class InstructionsGenerator:
             can.setFont("Helvetica", 10)
             y -= 15
             if association.get_filing_state() == 'IL':
-                state_text = "An Illinois Form IL-1120 has been prepared and is included in this packet."
+                state_text = ("An Illinois Form IL-1120 has been prepared and is included in this packet. "
+                              "A copy of the federal Form 1120-H is attached to the IL-1120 as required by Illinois.")
                 y = self.draw_wrapped_text(can, state_text, 70, y, 480)
                 y -= 5
                 if il_amount_owed > 0:
                     il_due_text = (f"Illinois State Balance Due: ${format_number(il_amount_owed)}. "
-                                  "An IL-1120-V payment voucher is included. Mail the return with the "
-                                  "voucher and your check or money order payable to "
-                                  "\"Illinois Department of Revenue\" to: "
-                                  "Illinois Department of Revenue, PO BOX 19038, Springfield IL 62794-9038. "
+                                  "An IL-1120-V payment voucher is included. Mail the IL-1120, the attached "
+                                  "1120-H, and the voucher with your check or money order payable to "
+                                  "\"Illinois Department of Revenue\". "
                                   "You may also pay electronically at mytax.illinois.gov.")
                     y = self.draw_wrapped_text(can, il_due_text, 70, y, 480)
+                    y -= 5
+                    il_address_lines = [
+                        "Illinois Department of Revenue",
+                        "PO BOX 19038",
+                        "Springfield, IL 62794-9038",
+                    ]
+                    y = self.draw_address_block(can, "Mail Illinois Return To:", il_address_lines, 70, y)
                 elif il_refund > 0:
-                    il_refund_text = (f"Illinois State Refund: ${format_number(il_refund)}. "
-                                     "Mail your return to: Illinois Department of Revenue, "
-                                     "PO BOX 19048, Springfield IL 62794-9048.")
+                    il_refund_text = f"Illinois State Refund: ${format_number(il_refund)}."
                     y = self.draw_wrapped_text(can, il_refund_text, 70, y, 480)
+                    y -= 5
+                    il_address_lines = [
+                        "Illinois Department of Revenue",
+                        "PO BOX 19048",
+                        "Springfield, IL 62794-9048",
+                    ]
+                    y = self.draw_address_block(can, "Mail Illinois Return To:", il_address_lines, 70, y)
                 else:
-                    il_no_due_text = ("No Illinois state tax is due with this return. "
-                                     "Mail your return to: Illinois Department of Revenue, "
-                                     "PO BOX 19048, Springfield IL 62794-9048.")
+                    il_no_due_text = "No Illinois state tax is due with this return."
                     y = self.draw_wrapped_text(can, il_no_due_text, 70, y, 480)
+                    y -= 5
+                    il_address_lines = [
+                        "Illinois Department of Revenue",
+                        "PO BOX 19048",
+                        "Springfield, IL 62794-9048",
+                    ]
+                    y = self.draw_address_block(can, "Mail Illinois Return To:", il_address_lines, 70, y)
                 # IL due date (7-month automatic extension vs April 15 original)
                 y -= 5
                 il_due_year = str(int(financial_info['tax_year']) + 1)

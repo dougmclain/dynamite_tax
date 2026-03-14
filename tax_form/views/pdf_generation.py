@@ -284,7 +284,8 @@ def generate_1120h_pdf(financial_info, association, preparer, template_path, out
 
         can.save()
         packet.seek(0)
-        new_pdf = PdfReader(packet)
+        overlay_bytes = packet.read()  # Save overlay for potential IL attachment copy
+        new_pdf = PdfReader(BytesIO(overlay_bytes))
         page.merge_page(new_pdf.pages[0])
         writer.add_page(page)
 
@@ -322,6 +323,17 @@ def generate_1120h_pdf(financial_info, association, preparer, template_path, out
                 for il_page in il_pages:
                     writer.add_page(il_page)
                 logger.info(f"IL-1120 pages ({len(il_pages)}) appended for {association.association_name}")
+
+                # Attach a copy of the federal 1120-H (required by IL instructions)
+                try:
+                    reader_copy = PdfReader(template_path)
+                    page_copy = reader_copy.pages[0]
+                    overlay_copy = PdfReader(BytesIO(overlay_bytes))
+                    page_copy.merge_page(overlay_copy.pages[0])
+                    writer.add_page(page_copy)
+                    logger.info("1120-H copy attached for IL-1120 filing requirement")
+                except Exception as e:
+                    logger.error(f"Error attaching 1120-H copy for IL: {str(e)}", exc_info=True)
 
                 # Append IL-1120-V payment voucher if amount owed > 0
                 if il_amount_owed > 0:

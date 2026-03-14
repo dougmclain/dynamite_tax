@@ -416,7 +416,7 @@ def generate_il1120v_page(financial_info, association, tax_year):
         'fein_suffix': fein_suffix,
         'name': association.association_name or '',
         'care_of': care_of,
-        'address': association.mailing_address or '',
+        'address': f"{association.mailing_address}, {association.room_suite}" if association.room_suite else (association.mailing_address or ''),
         'city': association.city or '',
         'state': (association.state or '')[:2].upper(),
         'zip': association.zipcode or '',

@@ -64,7 +64,10 @@ def prepare_il1120_data(financial_info, association, preparer):
     elif not association.is_self_managed and association.management_company:
         care_of = association.management_company.name
     data['p0_care_of'] = care_of
-    data['p0_address'] = association.mailing_address
+    address = association.mailing_address
+    if association.room_suite:
+        address = f"{address}, {association.room_suite}"
+    data['p0_address'] = address
     data['p0_city'] = association.city
     data['p0_state'] = association.state[:2].upper() if association.state else ''
     data['p0_zip'] = association.zipcode

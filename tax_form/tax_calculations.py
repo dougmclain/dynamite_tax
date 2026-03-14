@@ -178,11 +178,11 @@ def calculate_other_nonexempt_expense3(financial):
         return int(financial.non_exempt_expense_amount3)
 
 def calculate_other_deductions(financial):
-    """Calculate other deductions."""
+    """Calculate other deductions. Capped at gross income so taxable income never goes negative."""
     tax_prep_expenses = calculate_tax_prep_expenses(financial)
     state_local_taxes = calculate_state_local_taxes(financial, tax_prep_expenses)
     management_fees = calculate_management_fees(financial, tax_prep_expenses, state_local_taxes)
-    return int(
+    total = int(
         tax_prep_expenses +
         state_local_taxes +
         management_fees +
@@ -192,6 +192,8 @@ def calculate_other_deductions(financial):
         calculate_other_nonexempt_expense2(financial) +
         calculate_other_nonexempt_expense3(financial)
     )
+    gross_income = calculate_gross_income(financial)
+    return min(total, gross_income)
 
 def calculate_total_deductions(financial):
     """Calculate total deductions."""

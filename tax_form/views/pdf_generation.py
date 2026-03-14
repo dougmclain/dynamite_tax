@@ -315,10 +315,14 @@ def generate_1120h_pdf(financial_info, association, preparer, template_path, out
             else:
                 logger.warning(f"Extension PDF file not found at {extension_path}")
 
-        # Append IL-1120 pages if filing state is IL
+        # Append state return pages if applicable
         try:
             filing_state = association.get_filing_state()
             if filing_state == 'IL':
+                # Add title page to separate state return from federal
+                title_page = generate_state_title_page(association, tax_year)
+                writer.add_page(title_page)
+
                 il_pages = generate_il1120_pages(financial_info, association, preparer, tax_year=tax_year)
                 for il_page in il_pages:
                     writer.add_page(il_page)
@@ -355,6 +359,50 @@ def generate_1120h_pdf(financial_info, association, preparer, template_path, out
     except Exception as e:
         logger.error(f"Error generating PDF: {str(e)}", exc_info=True)
         raise
+
+def generate_state_title_page(association, tax_year):
+    """Generate a title/separator page before the state return section."""
+    packet = BytesIO()
+    can = canvas.Canvas(packet, pagesize=letter)
+    page_width = letter[0]
+
+    # Draw a horizontal rule
+    y = 500
+    can.setStrokeColorRGB(0.3, 0.3, 0.3)
+    can.setLineWidth(2)
+    can.line(100, y + 60, page_width - 100, y + 60)
+
+    # State return title
+    can.setFont("Helvetica-Bold", 24)
+    state_name = dict(Association.STATE_CHOICES).get(association.get_filing_state(), association.get_filing_state())
+    can.drawCentredString(page_width / 2, y, f"State of {state_name}")
+
+    y -= 35
+    can.setFont("Helvetica-Bold", 20)
+    can.drawCentredString(page_width / 2, y, f"Tax Year {tax_year}")
+
+    y -= 50
+    can.setFont("Helvetica", 14)
+    can.drawCentredString(page_width / 2, y, association.association_name)
+
+    y -= 30
+    can.drawCentredString(page_width / 2, y, f"EIN: {association.ein}")
+
+    # Bottom rule
+    y -= 40
+    can.line(100, y, page_width - 100, y)
+
+    # Note
+    y -= 40
+    can.setFont("Helvetica", 11)
+    can.drawCentredString(page_width / 2, y, "The following pages contain the state tax return and supporting documents.")
+    y -= 18
+    can.drawCentredString(page_width / 2, y, "Mail the state return separately from the federal return.")
+
+    can.save()
+    packet.seek(0)
+    return PdfReader(packet).pages[0]
+
 
 def generate_statement_page(financial_info, association):
     """Generate a statement page for additional income and deductions."""

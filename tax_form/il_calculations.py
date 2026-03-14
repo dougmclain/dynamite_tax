@@ -18,14 +18,14 @@ def calculate_il1120(financial_info):
 
     # Step 2: Federal taxable income and additions
     line_1 = federal_taxable_income
-    line_2 = line_1  # Same for HOAs (no separate Schedule M adjustments)
+    line_2 = 0  # Net operating loss deduction (Form 1120 Line 29a) - not applicable for 1120-H filers
     line_3 = 0  # State/municipal interest excluded from Line 1
     line_4 = 0  # IL income/replacement tax deducted in arriving at Line 1
     line_5 = 0  # IL special depreciation (Form IL-4562)
     line_6 = 0  # Related party expenses (Schedule 80/20)
     line_7 = 0  # Distributive share additions (K-1-P or K-1-T)
     line_8 = 0  # Other additions (Schedule M)
-    line_9 = line_2 + line_3 + line_4 + line_5 + line_6 + line_7 + line_8
+    line_9 = line_1 + line_2 + line_3 + line_4 + line_5 + line_6 + line_7 + line_8
 
     # Step 3: Subtractions (all zero for HOAs)
     line_10 = 0  # US Treasury/exempt federal obligations

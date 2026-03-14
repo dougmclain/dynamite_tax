@@ -271,7 +271,7 @@ class InstructionsGenerator:
                 y -= 20
 
             # Federal filing address
-            address = self.get_filing_address(association.state)
+            address = self.get_filing_address(association.get_filing_state())
             address_lines = address.split('\n')
             y = self.draw_address_block(can, "Mail Federal Return To:", address_lines, 70, y)
 

@@ -57,6 +57,13 @@ def prepare_il1120_data(financial_info, association, preparer):
         data['p0_tax_year_end_year'] = ''
     data['p0_amount_paying'] = il['line_67']  # Amount paying with return
     data['p0_name'] = association.association_name
+    # C/O: use state_care_of override, else management company name
+    care_of = ''
+    if hasattr(association, 'state_care_of') and association.state_care_of:
+        care_of = association.state_care_of
+    elif not association.is_self_managed and association.management_company:
+        care_of = association.management_company.name
+    data['p0_care_of'] = care_of
     data['p0_address'] = association.mailing_address
     data['p0_city'] = association.city
     data['p0_state'] = association.state[:2].upper() if association.state else ''
@@ -138,9 +145,7 @@ def prepare_il1120_data(financial_info, association, preparer):
     data['p2_discuss_with_preparer'] = True
     data['p2_preparer_name'] = preparer.name if preparer else ''
     data['p2_preparer_signature'] = preparer.signature if preparer else ''
-    data['p2_preparer_date_month'] = f'{today.month:02d}'
-    data['p2_preparer_date_day'] = f'{today.day:02d}'
-    data['p2_preparer_date_year'] = str(today.year)
+    data['p2_preparer_date'] = f'{today.month:02d}/{today.day:02d}/{today.year}'
     data['p2_preparer_ptin'] = preparer.ptin if preparer else ''
     data['p2_firm_name'] = preparer.firm_name if preparer else ''
     data['p2_firm_fein'] = preparer.firm_ein if preparer else ''

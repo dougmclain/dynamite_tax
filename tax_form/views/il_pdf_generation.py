@@ -26,6 +26,7 @@ IL_FIELD_POSITIONS_BY_YEAR = {
         'p0_tax_year_end_year': (309, 678),
         'p0_amount_paying': (464, 655),     # rect [462.0, 653.0, 578.8, 666.5]
         'p0_name': (87, 590),               # rect [85.1, 588.3, 335.9, 601.8]
+        'p0_care_of': (86, 563),            # C/O line between name and mailing address
         'p0_address': (126, 543),            # rect [124.5, 541.6, 352.6, 555.1]
         'p0_city': (86, 525),               # rect [84.6, 523.7, 214.1, 537.2]
         'p0_state': (258, 526),              # rect [251.4, 524.0, 282.3, 537.5] - shifted right from label
@@ -114,9 +115,7 @@ IL_FIELD_POSITIONS_BY_YEAR = {
         'p2_discuss_with_preparer': (479, 122),  # rect [477.3, 120.6, 488.3, 131.9]
         'p2_preparer_name': (75, 89),            # rect [73.6, 87.1, 236.5, 99.1]
         'p2_preparer_signature': (240, 89),      # Between name (ends ~236) and date (starts ~387)
-        'p2_preparer_date_month': (389, 88),     # rect [386.9, 86.8, 404.9, 100.0]
-        'p2_preparer_date_day': (408, 88),       # rect [406.5, 86.8, 424.2, 100.0]
-        'p2_preparer_date_year': (428, 88),      # rect [426.1, 86.8, 459.2, 100.0]
+        'p2_preparer_date': (389, 88),             # Single date field with slashes (MM/DD/YYYY)
         'p2_preparer_ptin': (515, 88),           # rect [513.5, 86.3, 589.1, 99.6]
         'p2_firm_name': (150, 62),               # rect [147.9, 59.9, 438.4, 73.4]
         'p2_firm_fein': (498, 62),               # rect [496.0, 60.6, 590.9, 73.8]
@@ -204,6 +203,20 @@ def _format_number(value):
         return str(value)
 
 
+def _format_number_with_cents(value):
+    """Format a number with commas and two decimal places."""
+    if value is None or value == '':
+        return ''
+    try:
+        return f"{float(value):,.2f}"
+    except (ValueError, TypeError):
+        return str(value)
+
+
+# Fields that should display with cents (e.g., 0.00)
+IL_CENTS_FIELDS = {'p0_amount_paying'}
+
+
 def _right_justify_text(can, text, x, y, width):
     """Draw text right-justified within a box starting at x with given width."""
     text_width = pdfmetrics.stringWidth(text, 'Courier', 10)
@@ -281,12 +294,15 @@ def generate_il1120_pages(financial_info, association, preparer, tax_year):
                     _draw_spaced_chars(can, text, x, y, IL_SPACED_CHAR_FIELDS[key])
             elif key in IL_NUMERIC_FIELDS:
                 can.setFont('Courier', 10)
-                formatted = _format_number(value)
+                if key in IL_CENTS_FIELDS:
+                    formatted = _format_number_with_cents(value)
+                else:
+                    formatted = _format_number(value)
                 col_width = _get_column_width(key)
                 _right_justify_text(can, formatted, x, y, col_width)
             else:
                 # Text fields (left-justified)
-                can.setFont('Helvetica', 9)
+                can.setFont('Helvetica', 10)
                 can.drawString(x, y, str(value) if value else '')
 
             logger.debug(f"IL-1120 page {page_idx}: {key}={value} at ({x},{y})")
@@ -363,9 +379,11 @@ def generate_il1120v_page(financial_info, association, tax_year):
     fein_prefix = ein[:2] if len(ein) >= 2 else ein
     fein_suffix = ein[2:] if len(ein) > 2 else ''
 
-    # C/O: management company name if not self-managed
+    # C/O: use state_care_of override, else management company name
     care_of = ''
-    if not association.is_self_managed and association.management_company:
+    if hasattr(association, 'state_care_of') and association.state_care_of:
+        care_of = association.state_care_of
+    elif not association.is_self_managed and association.management_company:
         care_of = association.management_company.name
 
     # Phone: management company phone if available
@@ -424,10 +442,10 @@ def generate_il1120v_page(financial_info, association, tax_year):
                 _draw_spaced_chars(can, text, x, y, IL_VOUCHER_SPACED_CHAR_FIELDS[key])
         elif key in IL_VOUCHER_NUMERIC_FIELDS:
             can.setFont('Courier', 10)
-            formatted = _format_number(value)
+            formatted = _format_number_with_cents(value)
             _right_justify_text(can, formatted, x, y, IL_VOUCHER_NUMERIC_WIDTH)
         else:
-            can.setFont('Helvetica', 9)
+            can.setFont('Helvetica', 10)
             can.drawString(x, y, str(value) if value else '')
 
     can.save()

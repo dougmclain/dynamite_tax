@@ -161,6 +161,12 @@ class Association(models.Model):
         default='',
         help_text="ZIP code where accounting records are kept"
     )
+    state_care_of = models.CharField(
+        max_length=255,
+        blank=True,
+        default='',
+        help_text="C/O line for state tax form mailing address (leave blank to use management company name)"
+    )
 
     zoned = models.BooleanField(default=True)
     ein = models.CharField(max_length=11, unique=True, validators=[

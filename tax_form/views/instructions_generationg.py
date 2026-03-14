@@ -149,26 +149,28 @@ class InstructionsGenerator:
     def draw_address_block(canvas_obj, label, address_lines, x, y):
         """Draw a prominent boxed address block with a label and address lines."""
         line_height = 16
-        padding = 8
-        box_height = padding * 2 + line_height * (len(address_lines) + 1)  # +1 for label
+        padding_top = 14
+        padding_bottom = 10
+        padding_side = 10
+        box_height = padding_top + padding_bottom + line_height * (len(address_lines) + 1)
         box_width = 300
 
         # Draw light gray background box
         canvas_obj.setFillColorRGB(0.94, 0.94, 0.94)
         canvas_obj.setStrokeColorRGB(0.5, 0.5, 0.5)
-        canvas_obj.roundRect(x, y - box_height + padding, box_width, box_height, 4, fill=1, stroke=1)
+        canvas_obj.roundRect(x, y - box_height + padding_top, box_width, box_height, 4, fill=1, stroke=1)
         canvas_obj.setFillColorRGB(0, 0, 0)
 
-        # Draw label
-        inner_y = y
+        # Draw label (with top padding inside box)
+        inner_y = y - 2
         canvas_obj.setFont("Helvetica-Bold", 11)
-        canvas_obj.drawString(x + padding, inner_y, label)
+        canvas_obj.drawString(x + padding_side, inner_y, label)
         inner_y -= line_height
 
         # Draw address lines
         canvas_obj.setFont("Helvetica-Bold", 12)
         for line in address_lines:
-            canvas_obj.drawString(x + padding + 10, inner_y, line)
+            canvas_obj.drawString(x + padding_side + 10, inner_y, line)
             inner_y -= line_height
 
         # Reset font
@@ -208,49 +210,104 @@ class InstructionsGenerator:
             y = self.draw_wrapped_text(can, review_text, 50, y, 500)
             y -= 15
 
-            # [Rest of your generate_page method implementation...]
+            due_year = str(int(financial_info['tax_year']) + 1)
+
+            # ========================================
+            # FEDERAL RETURN SECTION
+            # ========================================
+            can.setFont("Helvetica-Bold", 12)
+            can.drawString(50, y, "Federal Form 1120-H:")
+            y -= 3
+            can.setStrokeColorRGB(0, 0, 0)
+            can.line(50, y, 550, y)
+            y -= 15
+
             # Signature requirement
             can.setFont("Helvetica-Bold", 10)
             can.drawString(50, y, "Signature Required:")
             can.setFont("Helvetica", 10)
             y -= 15
             can.drawString(70, y, "The return must be signed and dated by an officer of the Association.")
-            y -= 25
+            y -= 20
 
-            # Filing address - prominent boxed block
-            address = self.get_filing_address(association.state)
-            address_lines = address.split('\n')
-            y = self.draw_address_block(can, "Mail Federal Return To:", address_lines, 70, y)
+            # Federal balance due or refund
+            can.setFont("Helvetica-Bold", 10)
+            can.drawString(50, y, "Balance Due or Refund:")
+            can.setFont("Helvetica", 10)
+            y -= 15
+            if amount_owed > 0:
+                payment_text = (f"The Association has a federal balance due of ${format_number(amount_owed)}. "
+                            "DO NOT SEND A CHECK WITH THIS RETURN. To pay your balance due, "
+                            "login to the Electronic Federal Tax Payment System (EFTPS) at "
+                            "www.eftps.gov or call 1-800-555-4477.")
+                y = self.draw_wrapped_text(can, payment_text, 70, y, 480)
+            elif refund_amount > 0:
+                can.drawString(70, y, f"You should receive a federal refund of ${format_number(refund_amount)}.")
+                y -= 15
+            else:
+                can.drawString(70, y, "There is $0 due with this federal return.")
+                y -= 15
             y -= 5
 
-            # Due date
+            # Federal due date
             can.setFont("Helvetica-Bold", 10)
             can.drawString(50, y, "Date Due:")
             can.setFont("Helvetica", 10)
             y -= 15
-            
-            due_year = str(int(financial_info['tax_year']) + 1)
-
             if financial_info.get('extension_info'):
                 due_date = f"October 15, {due_year}"
             else:
-                due_date = f"April 15, {due_year}"   
-                      
-            can.drawString(70, y, f"File your return on or before {due_date}.")
-            y -= 25
+                due_date = f"April 15, {due_year}"
+            can.drawString(70, y, f"File your federal return on or before {due_date}.")
+            y -= 20
 
-            # State filing information
-            can.setFont("Helvetica-Bold", 10)
-            can.drawString(50, y, "State Filing Information:")
-            can.setFont("Helvetica", 10)
-            y -= 15
+            # Extension information if applicable
+            if financial_info.get('extension_info'):
+                can.setFont("Helvetica-Bold", 10)
+                can.drawString(50, y, "Extension:")
+                can.setFont("Helvetica", 10)
+                y -= 15
+                can.drawString(70, y, "Attach a copy of your extension before mailing the return.")
+                y -= 20
+
+            # Federal filing address
+            address = self.get_filing_address(association.state)
+            address_lines = address.split('\n')
+            y = self.draw_address_block(can, "Mail Federal Return To:", address_lines, 70, y)
+
+            # ========================================
+            # STATE RETURN SECTION (if applicable)
+            # ========================================
             if association.get_filing_state() == 'IL':
+                y -= 10
+                can.setFont("Helvetica-Bold", 12)
+                can.drawString(50, y, "Illinois Form IL-1120:")
+                y -= 3
+                can.setStrokeColorRGB(0, 0, 0)
+                can.line(50, y, 550, y)
+                y -= 15
+
                 state_text = ("An Illinois Form IL-1120 has been prepared and is included in this packet. "
                               "A copy of the federal Form 1120-H is attached to the IL-1120 as required by Illinois.")
+                can.setFont("Helvetica", 10)
                 y = self.draw_wrapped_text(can, state_text, 70, y, 480)
                 y -= 5
+
+                # IL signature requirement
+                can.setFont("Helvetica-Bold", 10)
+                can.drawString(50, y, "Signature Required:")
+                can.setFont("Helvetica", 10)
+                y -= 15
+                can.drawString(70, y, "The IL-1120 must also be signed and dated by the paid preparer.")
+                y -= 20
+
+                # IL balance due or refund
                 if il_amount_owed > 0:
-                    il_due_text = (f"Illinois State Balance Due: ${format_number(il_amount_owed)}. "
+                    can.setFont("Helvetica-Bold", 10)
+                    can.drawString(50, y, "Illinois Balance Due:")
+                    can.setFont("Helvetica", 10)
+                    y -= 15
+                    il_due_text = (f"Illinois balance due: ${format_number(il_amount_owed)}. "
                                   "An IL-1120-V payment voucher is included. Mail the IL-1120, the attached "
                                   "1120-H, and the voucher with your check or money order payable to "
                                   "\"Illinois Department of Revenue\". "
@@ -264,8 +321,12 @@ class InstructionsGenerator:
                     ]
                     y = self.draw_address_block(can, "Mail Illinois Return To:", il_address_lines, 70, y)
                 elif il_refund > 0:
-                    il_refund_text = f"Illinois State Refund: ${format_number(il_refund)}."
-                    y = self.draw_wrapped_text(can, il_refund_text, 70, y, 480)
+                    can.setFont("Helvetica-Bold", 10)
+                    can.drawString(50, y, "Illinois Refund:")
+                    can.setFont("Helvetica", 10)
+                    y -= 15
+                    can.drawString(70, y, f"Illinois state refund: ${format_number(il_refund)}.")
+                    y -= 15
                     y -= 5
                     il_address_lines = [
                         "Illinois Department of Revenue",
@@ -274,8 +335,9 @@ class InstructionsGenerator:
                     ]
                     y = self.draw_address_block(can, "Mail Illinois Return To:", il_address_lines, 70, y)
                 else:
-                    il_no_due_text = "No Illinois state tax is due with this return."
-                    y = self.draw_wrapped_text(can, il_no_due_text, 70, y, 480)
+                    can.setFont("Helvetica", 10)
+                    can.drawString(70, y, "No Illinois state tax is due with this return.")
+                    y -= 15
                     y -= 5
                     il_address_lines = [
                         "Illinois Department of Revenue",
@@ -283,46 +345,29 @@ class InstructionsGenerator:
                         "Springfield, IL 62794-9048",
                     ]
                     y = self.draw_address_block(can, "Mail Illinois Return To:", il_address_lines, 70, y)
-                # IL due date (7-month automatic extension vs April 15 original)
+
+                # IL due date
                 y -= 5
+                can.setFont("Helvetica-Bold", 10)
+                can.drawString(50, y, "Illinois Date Due:")
+                can.setFont("Helvetica", 10)
+                y -= 15
                 il_due_year = str(int(financial_info['tax_year']) + 1)
                 if financial_info.get('extension_info'):
-                    il_due_text = f"The Illinois return is due on or before November 15, {il_due_year} (automatic 7-month extension)."
+                    il_due_text = f"File your Illinois return on or before November 15, {il_due_year} (automatic 7-month extension)."
                 else:
-                    il_due_text = f"The Illinois return is due on or before April 15, {il_due_year}."
+                    il_due_text = f"File your Illinois return on or before April 15, {il_due_year}."
                 y = self.draw_wrapped_text(can, il_due_text, 70, y, 480)
             else:
+                y -= 10
+                can.setFont("Helvetica-Bold", 10)
+                can.drawString(50, y, "State Filing:")
+                can.setFont("Helvetica", 10)
+                y -= 15
                 state_text = ("Your Association may be required to file a state tax return. "
                              "Please contact your state authority to determine the requirements.")
                 y = self.draw_wrapped_text(can, state_text, 70, y, 480)
             y -= 25
-
-            # Payment or refund information
-            can.setFont("Helvetica-Bold", 10)
-            can.drawString(50, y, "Balance Due or Refund:")
-            can.setFont("Helvetica", 10)
-            y -= 15
-            
-            if amount_owed > 0:
-                payment_text = (f"The Association has a balance due of ${format_number(amount_owed)}. "
-                            "DO NOT SEND A CHECK WITH THIS RETURN. To pay your balance due, "
-                            "login to the Electronic Federal Tax Payment System (EFTPS) at "
-                            "www.eftps.gov or call 1-800-555-4477.")
-                y = self.draw_wrapped_text(can, payment_text, 70, y, 480)
-            elif refund_amount > 0:
-                can.drawString(70, y, f"You should receive a refund of ${format_number(refund_amount)}.")
-            else:
-                can.drawString(70, y, "There is $0 due with this return.")
-            y -= 25
-
-            # Extension information if applicable
-            if financial_info.get('extension_info'):
-                can.setFont("Helvetica-Bold", 10)
-                can.drawString(50, y, "Extension:")
-                can.setFont("Helvetica", 10)
-                y -= 15
-                can.drawString(70, y, "Attach a copy of your extension before mailing the return.")
-                y -= 25
 
             # Contact information
             contact_text = ("Thank you for using Dynamite Management to prepare your return. If you have "

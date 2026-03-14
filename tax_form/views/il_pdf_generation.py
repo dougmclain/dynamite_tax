@@ -24,20 +24,20 @@ IL_FIELD_POSITIONS_BY_YEAR = {
         'p0_tax_year_end_month': (238, 678),
         'p0_tax_year_end_day': (267, 678),
         'p0_tax_year_end_year': (309, 678),
-        'p0_amount_paying': (464, 655),     # rect [462.0, 653.0, 578.8, 666.5]
-        'p0_name': (87, 590),               # rect [85.1, 588.3, 335.9, 601.8]
-        'p0_care_of': (86, 563),            # C/O line between name and mailing address
-        'p0_address': (126, 543),            # rect [124.5, 541.6, 352.6, 555.1]
-        'p0_city': (86, 525),               # rect [84.6, 523.7, 214.1, 537.2]
-        'p0_state': (258, 526),              # rect [251.4, 524.0, 282.3, 537.5] - shifted right from label
-        'p0_zip': (318, 526),               # rect [310.5, 524.4, 355.7, 537.9] - shifted right from label
-        'p0_fein_prefix': (386, 611),        # rect [385.9, 609.1, 425.6, 622.6]
-        'p0_fein_suffix': (431, 611),        # rect [431.2, 609.5, 570.5, 623.0]
-        'p0_naics': (386, 529),              # rect [386.5, 527.9, 551.3, 541.4] (Line P)
-        'p0_state_tax_id': (388, 488),       # rect [385.9, 485.9, 587.6, 499.4] (Line Q)
-        'p0_records_city': (388, 425),       # rect [386.2, 422.9, 498.9, 436.4] (Line R city)
-        'p0_records_state': (502, 425),      # rect [500.2, 422.7, 521.2, 436.2] (Line R state)
-        'p0_records_zip': (525, 425),        # rect [522.9, 422.9, 588.5, 436.4] (Line R zip)
+        'p0_amount_paying': (464, 657),     # rect [462.0, 653.0, 578.8, 666.5] — raised 2pt
+        'p0_name': (87, 592),               # rect [85.1, 588.3, 335.9, 601.8] — raised 2pt off line
+        'p0_care_of': (86, 561),            # C/O line — lowered 2pt (was too high)
+        'p0_address': (126, 545),            # rect [124.5, 541.6, 352.6, 555.1] — raised 2pt off line
+        'p0_city': (86, 528),               # rect [84.6, 523.7, 214.1, 537.2] — raised 3pt off line
+        'p0_state': (258, 529),              # rect [251.4, 524.0, 282.3, 537.5] — raised 3pt off line
+        'p0_zip': (318, 529),               # rect [310.5, 524.4, 355.7, 537.9] — raised 3pt off line
+        'p0_fein_prefix': (386, 613),        # rect [385.9, 609.1, 425.6, 622.6] — raised 2pt
+        'p0_fein_suffix': (431, 613),        # rect [431.2, 609.5, 570.5, 623.0] — raised 2pt
+        'p0_naics': (386, 531),              # rect [386.5, 527.9, 551.3, 541.4] (Line P) — raised 2pt
+        'p0_state_tax_id': (388, 490),       # rect [385.9, 485.9, 587.6, 499.4] (Line Q) — raised 2pt
+        'p0_records_city': (388, 427),       # rect [386.2, 422.9, 498.9, 436.4] (Line R city) — raised 2pt
+        'p0_records_state': (502, 427),      # rect [500.2, 422.7, 521.2, 436.2] (Line R state) — raised 2pt
+        'p0_records_zip': (525, 427),        # rect [522.9, 422.9, 588.5, 436.4] (Line R zip) — raised 2pt
         'p0_accrual': (434, 341),            # rect [432.7, 339.8, 444.5, 351.4]
 
         # === Page 1: Steps 2-4 ===

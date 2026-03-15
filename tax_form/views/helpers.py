@@ -60,25 +60,18 @@ def calculate_financial_info(financial, association):
                 'amount': income_amount
             })
 
-    # Add detailed breakdown of other deductions
-    tax_prep_expenses = calculate_tax_prep_expenses(financial)
-    state_local_taxes = calculate_state_local_taxes(financial, tax_prep_expenses)
-    management_fees = calculate_management_fees(financial, tax_prep_expenses, state_local_taxes)
-    audit_fees = calculate_audit_fees(financial, tax_prep_expenses, state_local_taxes, management_fees)
-    rental_expenses = calculate_rental_expenses(financial)
-    other_nonexempt_expense1 = calculate_other_nonexempt_expense1(financial)
-    other_nonexempt_expense2 = calculate_other_nonexempt_expense2(financial)
-    other_nonexempt_expense3 = calculate_other_nonexempt_expense3(financial)
+    # Add detailed breakdown of other deductions (uses correct ordering)
+    details = calculate_all_deduction_details(financial)
 
     info['other_deductions_detail'] = [
-        {'description': 'Tax Preparation Expenses', 'amount': tax_prep_expenses},
-        {'description': 'State and Local Taxes', 'amount': state_local_taxes},
-        {'description': 'Management Fees', 'amount': management_fees},
-        {'description': 'Audit Fees', 'amount': audit_fees},
-        {'description': 'Rental Expenses', 'amount': rental_expenses},
-        {'description': financial.non_exempt_expense_description1 or 'Other Non-Exempt Expense 1', 'amount': other_nonexempt_expense1},
-        {'description': financial.non_exempt_expense_description2 or 'Other Non-Exempt Expense 2', 'amount': other_nonexempt_expense2},
-        {'description': financial.non_exempt_expense_description3 or 'Other Non-Exempt Expense 3', 'amount': other_nonexempt_expense3},
+        {'description': 'Tax Preparation Expenses', 'amount': details['tax_prep_expenses']},
+        {'description': 'State and Local Taxes', 'amount': details['state_local_taxes']},
+        {'description': 'Management Fees', 'amount': details['management_fees']},
+        {'description': 'Audit Fees', 'amount': details['audit_fees']},
+        {'description': 'Rental Expenses', 'amount': details['rental_expenses']},
+        {'description': financial.non_exempt_expense_description1 or 'Other Non-Exempt Expense 1', 'amount': details['other_nonexempt_expense1']},
+        {'description': financial.non_exempt_expense_description2 or 'Other Non-Exempt Expense 2', 'amount': details['other_nonexempt_expense2']},
+        {'description': financial.non_exempt_expense_description3 or 'Other Non-Exempt Expense 3', 'amount': details['other_nonexempt_expense3']},
     ]
 
     return info
@@ -113,43 +106,40 @@ def get_statement_details(financial):
             })
 
     # Include additional expenses details
-    rental_expenses = calculate_rental_expenses(financial)
-    if rental_expenses > 0:
+    details = calculate_all_deduction_details(financial)
+
+    if details['rental_expenses'] > 0:
         statement_details['additional_expenses'].append({
             'description': 'Allocated Rental Expenses',
-            'amount': rental_expenses
+            'amount': details['rental_expenses']
         })
 
-    tax_prep_expenses = calculate_tax_prep_expenses(financial)
-    if tax_prep_expenses > 0:
+    if details['tax_prep_expenses'] > 0:
         statement_details['additional_expenses'].append({
             'description': 'Tax Preparation Expenses',
-            'amount': tax_prep_expenses
+            'amount': details['tax_prep_expenses']
         })
 
-    state_local_taxes = calculate_state_local_taxes(financial, tax_prep_expenses)
-    if state_local_taxes > 0:
+    if details['state_local_taxes'] > 0:
         statement_details['additional_expenses'].append({
             'description': 'State and Local Taxes',
-            'amount': state_local_taxes
+            'amount': details['state_local_taxes']
         })
 
-    management_fees = calculate_management_fees(financial, tax_prep_expenses, state_local_taxes)
-    if management_fees > 0:
+    if details['management_fees'] > 0:
         statement_details['additional_expenses'].append({
             'description': 'Management Fees',
-            'amount': management_fees
+            'amount': details['management_fees']
         })
 
-    audit_fees = calculate_audit_fees(financial, tax_prep_expenses, state_local_taxes, management_fees)
-    if audit_fees > 0:
+    if details['audit_fees'] > 0:
         statement_details['additional_expenses'].append({
             'description': 'Audit Fees',
-            'amount': audit_fees
+            'amount': details['audit_fees']
         })
 
     for i in range(1, 4):
-        expense_amount = getattr(financial, f'non_exempt_expense_amount{i}')
+        expense_amount = details[f'other_nonexempt_expense{i}']
         if expense_amount > 0:
             description = getattr(financial, f'non_exempt_expense_description{i}', f'Other Non-Exempt Expense {i}')
             statement_details['additional_expenses'].append({

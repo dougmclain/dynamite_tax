@@ -53,38 +53,29 @@ def _total_non_exempt_income(financial):
             financial.non_exempt_income_amount1 + financial.non_exempt_income_amount2 +
             financial.non_exempt_income_amount3)
 
-def calculate_tax_prep_expenses(financial):
-    """Calculate tax preparation expenses.
-
-    Tax prep is deductible against ALL non-exempt income (interest, dividends,
-    rentals, laundry, etc.) — not just interest/dividends. Capped so total
-    deductible expenses never exceed total non-exempt income.
-    """
-    total_non_exempt = _total_non_exempt_income(financial)
-
-    if total_non_exempt <= 100:
+def calculate_tax_prep_expenses(financial, remaining=None):
+    """Calculate tax preparation expenses. Capped at remaining income."""
+    if remaining is None:
+        remaining = _total_non_exempt_income(financial)
+    if remaining <= 0:
         return 0
-    return int(min(financial.tax_preparation, total_non_exempt))
+    return int(min(financial.tax_preparation, remaining))
 
-def calculate_state_local_taxes(financial, tax_prep_expenses):
-    """Calculate state and local tax deduction.
-
-    Deductible against ALL non-exempt income, same logic as tax prep.
-    Capped at remaining non-exempt income after tax prep.
-    """
-    total_non_exempt = _total_non_exempt_income(financial)
-    remaining = total_non_exempt - tax_prep_expenses
-
-    if remaining <= 100:
+def calculate_state_local_taxes(financial, remaining=None):
+    """Calculate state and local tax deduction. Capped at remaining income."""
+    if remaining is None:
+        remaining = _total_non_exempt_income(financial)
+    if remaining <= 0:
         return 0
     return int(min(financial.state_local_taxes, remaining))
 
-def calculate_management_fees(financial, tax_prep_expenses, state_local_taxes):
-    """Calculate management fees.
+def calculate_management_fees(financial, remaining=None):
+    """Calculate management fees. Allocated by ratio, capped at remaining income."""
+    if remaining is None:
+        remaining = _total_non_exempt_income(financial)
+    if remaining <= 0:
+        return 0
 
-    Allocated based on ratio of interest/dividends to total revenue (min 5%).
-    Capped at remaining non-exempt income after tax prep and state/local taxes.
-    """
     bank_interest_dividends = financial.interest + financial.dividends
     total_non_exempt = _total_non_exempt_income(financial)
     total_exempt_income = calculate_total_exempt_income(financial)
@@ -97,21 +88,13 @@ def calculate_management_fees(financial, tax_prep_expenses, state_local_taxes):
     limit_ratio = max(interest_income_ratio, 0.05)
     limited_management_fees = limit_ratio * financial.management_fees
 
-    remaining = total_non_exempt - tax_prep_expenses - state_local_taxes
-    if remaining <= 100:
-        return 0
     return int(min(limited_management_fees, remaining))
 
-def calculate_audit_fees(financial, tax_prep_expenses, state_local_taxes, management_fees):
-    """Calculate audit fees.
-
-    Capped at remaining non-exempt income after tax prep, state/local taxes,
-    and management fees.
-    """
-    total_non_exempt = _total_non_exempt_income(financial)
-    remaining = total_non_exempt - tax_prep_expenses - state_local_taxes - management_fees
-
-    if remaining <= 100:
+def calculate_audit_fees(financial, remaining=None):
+    """Calculate audit fees. Capped at remaining income."""
+    if remaining is None:
+        remaining = _total_non_exempt_income(financial)
+    if remaining <= 0:
         return 0
     return int(min(financial.audit_fees, remaining))
 
@@ -177,23 +160,53 @@ def calculate_other_nonexempt_expense3(financial):
     else:
         return int(financial.non_exempt_expense_amount3)
 
+def calculate_all_deduction_details(financial):
+    """Calculate all deduction line items with correct ordering.
+
+    Directly-matched expenses (rental, other non-exempt) are taken FIRST
+    since they are directly attributable to specific income sources.
+    General expenses (tax prep, state taxes, management, audit) are then
+    deducted from REMAINING income so total deductions never exceed gross income.
+    """
+    # Step 1: Directly-matched expenses (capped at their own income source)
+    rental_expenses = calculate_rental_expenses(financial)
+    other_nonexempt_expense1 = calculate_other_nonexempt_expense1(financial)
+    other_nonexempt_expense2 = calculate_other_nonexempt_expense2(financial)
+    other_nonexempt_expense3 = calculate_other_nonexempt_expense3(financial)
+
+    total_direct = (rental_expenses + other_nonexempt_expense1 +
+                    other_nonexempt_expense2 + other_nonexempt_expense3)
+
+    # Step 2: Remaining income after directly-matched expenses
+    remaining = _total_non_exempt_income(financial) - total_direct
+
+    # Step 3: General expenses against remaining, sequentially
+    tax_prep_expenses = calculate_tax_prep_expenses(financial, remaining=remaining)
+    remaining -= tax_prep_expenses
+
+    state_local_taxes = calculate_state_local_taxes(financial, remaining=remaining)
+    remaining -= state_local_taxes
+
+    management_fees = calculate_management_fees(financial, remaining=remaining)
+    remaining -= management_fees
+
+    audit_fees = calculate_audit_fees(financial, remaining=remaining)
+
+    return {
+        'tax_prep_expenses': tax_prep_expenses,
+        'state_local_taxes': state_local_taxes,
+        'management_fees': management_fees,
+        'audit_fees': audit_fees,
+        'rental_expenses': rental_expenses,
+        'other_nonexempt_expense1': other_nonexempt_expense1,
+        'other_nonexempt_expense2': other_nonexempt_expense2,
+        'other_nonexempt_expense3': other_nonexempt_expense3,
+    }
+
+
 def calculate_other_deductions(financial):
-    """Calculate other deductions. Capped at gross income so taxable income never goes negative."""
-    tax_prep_expenses = calculate_tax_prep_expenses(financial)
-    state_local_taxes = calculate_state_local_taxes(financial, tax_prep_expenses)
-    management_fees = calculate_management_fees(financial, tax_prep_expenses, state_local_taxes)
-    total = int(
-        tax_prep_expenses +
-        state_local_taxes +
-        management_fees +
-        calculate_audit_fees(financial, tax_prep_expenses, state_local_taxes, management_fees) +
-        calculate_rental_expenses(financial) +
-        calculate_other_nonexempt_expense1(financial) +
-        calculate_other_nonexempt_expense2(financial) +
-        calculate_other_nonexempt_expense3(financial)
-    )
-    gross_income = calculate_gross_income(financial)
-    return min(total, gross_income)
+    """Calculate total other deductions. Guaranteed to never exceed gross income."""
+    return sum(calculate_all_deduction_details(financial).values())
 
 def calculate_total_deductions(financial):
     """Calculate total deductions."""

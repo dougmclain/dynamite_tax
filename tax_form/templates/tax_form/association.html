@@ -143,6 +143,22 @@
                                     Not available
                                 {% endif %}
                             </p>
+                            <!-- Invoice & Payment Tracking -->
+                            <p><strong>Invoice Sent:</strong>
+                                {% if filing_status.invoice_sent_date %}
+                                    Yes ({{ filing_status.invoice_sent_date|date:"F d, Y" }})
+                                {% else %}
+                                    No
+                                {% endif %}
+                            </p>
+                            <p><strong>Payment Received:</strong>
+                                {% if filing_status.payment_received_date %}
+                                    Yes ({{ filing_status.payment_received_date|date:"F d, Y" }})
+                                {% else %}
+                                    No
+                                {% endif %}
+                            </p>
+
                             <p><strong>Financial Info PDF:</strong>
                                 {% if financial_data and financial_data.financial_info_pdf %}
                                     <div class="file-actions">

@@ -94,9 +94,13 @@ class DashboardView(LoginRequiredMixin, View):
         unfiled_returns = associations_to_file - filed_returns
         
         # Count invoiced associations - filtered by current selection
-        invoiced_count = sum(1 for status in filing_statuses.values() 
-                          if status.prepare_return and status.invoiced)
-        
+        invoiced_count = sum(1 for status in filing_statuses.values()
+                          if status.prepare_return and (status.invoiced or status.invoice_sent_date))
+
+        # Count paid associations
+        paid_count = sum(1 for status in filing_statuses.values()
+                       if status.prepare_return and status.payment_received_date)
+
         # Count uninvoiced associations that we'll prepare returns for
         uninvoiced_associations = associations_to_file - invoiced_count
 
@@ -161,6 +165,8 @@ class DashboardView(LoginRequiredMixin, View):
                 'engagement_letter': engagement_letter,
                 'prepare_return': filing_status.prepare_return if filing_status else True,
                 'invoiced': filing_status.invoiced if filing_status else False,
+                'invoice_sent_date': filing_status.invoice_sent_date if filing_status else None,
+                'payment_received_date': filing_status.payment_received_date if filing_status else None,
                 'not_filing_reason': filing_status.not_filing_reason if filing_status and not filing_status.prepare_return else "",
                 'management_info': management_info,
             })
@@ -177,6 +183,7 @@ class DashboardView(LoginRequiredMixin, View):
             'signed_engagement_letters': signed_engagement_letters,
             'engagement_letters_needed': engagement_letters_needed,
             'invoiced_associations': invoiced_count,
+            'paid_associations': paid_count,
             'uninvoiced_associations': uninvoiced_associations,
             'management_companies': management_companies,
             'selected_management_company': management_company_id,

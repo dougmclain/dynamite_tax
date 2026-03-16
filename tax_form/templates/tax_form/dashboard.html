@@ -123,6 +123,7 @@
                             <div class="card bg-light mb-2">
                                 <div class="card-body py-2">
                                     <h5 class="mb-0">Invoicing</h5>
+                                    <p class="mb-1">Paid: {{ paid_associations }}</p>
                                     <p class="mb-1">Invoiced: {{ invoiced_associations }}</p>
                                     <p class="mb-0">To Invoice: {{ uninvoiced_associations }}</p>
                                 </div>
@@ -208,8 +209,12 @@
                                         {% endwith %}
                                     </td>
                                     <td>
-                                        {% if data.invoiced %}
-                                            <span class="badge bg-success">Invoiced</span>
+                                        {% if data.payment_received_date %}
+                                            <span class="badge bg-success">Paid {{ data.payment_received_date|date:"n/j" }}</span>
+                                        {% elif data.invoice_sent_date %}
+                                            <span class="badge bg-info">Invoiced {{ data.invoice_sent_date|date:"n/j" }}</span>
+                                        {% elif data.invoiced %}
+                                            <span class="badge bg-info">Invoiced</span>
                                         {% else %}
                                             {% if data.prepare_return %}
                                                 <span class="badge bg-secondary">Not Invoiced</span>

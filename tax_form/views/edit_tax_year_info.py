@@ -7,7 +7,7 @@ from django.conf import settings
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 from azure.storage.blob import BlobServiceClient, ContentSettings
-from ..models import Association, Financial, Extension, CompletedTaxReturn
+from ..models import Association, Financial, Extension, CompletedTaxReturn, AssociationFilingStatus
 import logging
 import os
 import time
@@ -26,6 +26,11 @@ class EditTaxYearInfoView(LoginRequiredMixin, View):
         )
         extension, _ = Extension.objects.get_or_create(financial=financial)
         completed_tax_return, _ = CompletedTaxReturn.objects.get_or_create(financial=financial)
+        filing_status, _ = AssociationFilingStatus.objects.get_or_create(
+            association=association,
+            tax_year=tax_year,
+            defaults={'prepare_return': True, 'invoiced': False}
+        )
 
         # Store in session
         request.session['selected_association_id'] = str(association_id)
@@ -37,6 +42,7 @@ class EditTaxYearInfoView(LoginRequiredMixin, View):
             'extension': extension,
             'completed_tax_return': completed_tax_return,
             'financial': financial,
+            'filing_status': filing_status,
         }
         return render(request, self.template_name, context)
 
@@ -50,6 +56,11 @@ class EditTaxYearInfoView(LoginRequiredMixin, View):
             )
             extension, _ = Extension.objects.get_or_create(financial=financial)
             completed_tax_return, _ = CompletedTaxReturn.objects.get_or_create(financial=financial)
+            filing_status, _ = AssociationFilingStatus.objects.get_or_create(
+                association=association,
+                tax_year=tax_year,
+                defaults={'prepare_return': True, 'invoiced': False}
+            )
 
             # Store in session
             request.session['selected_association_id'] = str(association_id)
@@ -67,6 +78,12 @@ class EditTaxYearInfoView(LoginRequiredMixin, View):
             completed_tax_return.return_filed = 'tax_return_filed' in request.POST
             completed_tax_return.date_prepared = request.POST.get('tax_return_filed_date') or None
             completed_tax_return.filing_status = request.POST.get('filing_status', 'not_filed')
+
+            # Update invoice/payment tracking
+            filing_status.invoice_sent_date = request.POST.get('invoice_sent_date') or None
+            filing_status.payment_received_date = request.POST.get('payment_received_date') or None
+            # Keep the invoiced boolean in sync
+            filing_status.invoiced = filing_status.invoice_sent_date is not None
 
             # Azure Storage connection
             connection_string = f"DefaultEndpointsProtocol=https;AccountName={settings.AZURE_ACCOUNT_NAME};AccountKey={settings.AZURE_ACCOUNT_KEY};EndpointSuffix=core.windows.net"
@@ -261,6 +278,7 @@ class EditTaxYearInfoView(LoginRequiredMixin, View):
             extension.save()
             completed_tax_return.save()
             financial.save()
+            filing_status.save()
 
             messages.success(request, f'Tax year {tax_year} information updated successfully.')
             return redirect(f"{reverse('association')}?association_id={association_id}&tax_year={tax_year}")

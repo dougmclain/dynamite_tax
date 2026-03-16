@@ -663,8 +663,10 @@ class AssociationFilingStatus(models.Model):
     not_filing_reason = models.CharField(max_length=255, blank=True, 
                         help_text="Reason for not preparing a tax return")
     
-    # Invoice tracking - simplified
+    # Invoice tracking
     invoiced = models.BooleanField(default=False, help_text="Has this association been invoiced?")
+    invoice_sent_date = models.DateField(null=True, blank=True, help_text="Date the invoice was sent")
+    payment_received_date = models.DateField(null=True, blank=True, help_text="Date payment was received")
     
     class Meta:
         unique_together = ('association', 'tax_year')

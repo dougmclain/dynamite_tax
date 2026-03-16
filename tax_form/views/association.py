@@ -3,7 +3,7 @@ from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.conf import settings
 from azure.storage.blob import BlobServiceClient
-from ..models import Association, Financial, Extension, CompletedTaxReturn
+from ..models import Association, Financial, Extension, CompletedTaxReturn, AssociationFilingStatus
 from ..tax_calculations import (
     calculate_total_exempt_income, calculate_total_other_income, calculate_gross_income,
     calculate_other_deductions, calculate_total_tax, calculate_expenses_lineC,
@@ -174,6 +174,14 @@ class AssociationView(LoginRequiredMixin, View):
                     'non_exempt_income2': financial_data.non_exempt_income_amount2,
                     'non_exempt_income3': financial_data.non_exempt_income_amount3,
                 }
+
+            # Get filing status for invoice/payment tracking
+            filing_status, _ = AssociationFilingStatus.objects.get_or_create(
+                association=selected_association,
+                tax_year=selected_tax_year,
+                defaults={'prepare_return': True, 'invoiced': False}
+            )
+            context['filing_status'] = filing_status
 
             # Calculate due dates
             context['tax_return_due_date'] = selected_association.get_tax_return_due_date(selected_tax_year)

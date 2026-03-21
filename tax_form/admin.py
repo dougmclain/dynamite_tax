@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.db import models
 from django.utils.html import format_html
 from django.contrib.humanize.templatetags.humanize import intcomma
-from .models import Association, Financial, Preparer, Extension, CompletedTaxReturn, ManagementCompany
+from .models import Association, Financial, Preparer, Extension, CompletedTaxReturn, ManagementCompany, ExtractionCorrection
 
 # Inline for Financial records in Association admin (optional)
 class FinancialInline(admin.TabularInline):
@@ -199,10 +199,17 @@ admin.site.site_header = "Dynamite Tax Services"
 admin.site.site_title = "Dynamite Tax Services"
 admin.site.index_title = "Dynamite Tax Services Admin Portal"
 
+class ExtractionCorrectionInline(admin.TabularInline):
+    model = ExtractionCorrection
+    extra = 0
+    readonly_fields = ('field_name', 'ai_value', 'corrected_value', 'source_label', 'tax_year', 'created_at')
+    fields = ('field_name', 'ai_value', 'corrected_value', 'source_label', 'tax_year', 'notes', 'created_at')
+
 @admin.register(ManagementCompany)
 class ManagementCompanyAdmin(admin.ModelAdmin):
-    list_display = ('name', 'contact_person', 'email', 'phone', 'get_associations_count')
+    list_display = ('name', 'contact_person', 'email', 'phone', 'get_associations_count', 'get_corrections_count')
     search_fields = ('name', 'contact_person', 'email', 'phone')
+    inlines = [ExtractionCorrectionInline]
     fieldsets = (
         ('Company Information', {
             'fields': ('name', 'contact_person', 'email', 'phone')
@@ -210,11 +217,26 @@ class ManagementCompanyAdmin(admin.ModelAdmin):
         ('Address', {
             'fields': ('address', 'city', 'state', 'zipcode')
         }),
+        ('AI Extraction Settings', {
+            'fields': ('extraction_hints',),
+            'description': 'Configure how the AI extracts financial data from this company\'s reports.'
+        }),
         ('Additional Information', {
             'fields': ('notes',)
         }),
     )
-    
+
     def get_associations_count(self, obj):
         return obj.associations.count()
     get_associations_count.short_description = 'Associations'
+
+    def get_corrections_count(self, obj):
+        return obj.extraction_corrections.count()
+    get_corrections_count.short_description = 'Corrections'
+
+@admin.register(ExtractionCorrection)
+class ExtractionCorrectionAdmin(admin.ModelAdmin):
+    list_display = ('management_company', 'field_name', 'ai_value', 'corrected_value', 'tax_year', 'created_at')
+    list_filter = ('management_company', 'field_name', 'tax_year')
+    search_fields = ('management_company__name', 'field_name', 'notes')
+    readonly_fields = ('created_at',)

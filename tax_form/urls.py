@@ -38,6 +38,7 @@ urlpatterns = [
     path('filing-status/<int:association_id>/<int:tax_year>/', filing_status.EditFilingStatusView.as_view(), name='edit_filing_status'),
     path('delete-financial-pdf/<int:financial_id>/', DeleteFinancialPDFView.as_view(), name='delete_financial_pdf'),
     path('extract-financial/', extract_financial.extract_financial_from_pdf, name='extract_financial'),
+    path('save-extraction-corrections/', extract_financial.save_extraction_corrections, name='save_extraction_corrections'),
     
     # Management Company URLs
     path('management-companies/', management_company.ManagementCompanyListView.as_view(), name='management_company_list'),

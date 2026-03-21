@@ -83,6 +83,40 @@ IMPORTANT GUIDANCE:
 Return ONLY the JSON object, no other text."""
 
 
+def build_management_company_context(management_company):
+    """Build additional prompt context from management company hints and past corrections."""
+    sections = []
+
+    if management_company.extraction_hints:
+        sections.append(
+            f"MANAGEMENT COMPANY: {management_company.name}\n"
+            f"EXTRACTION HINTS FROM USER:\n{management_company.extraction_hints}"
+        )
+    else:
+        sections.append(f"MANAGEMENT COMPANY: {management_company.name}")
+
+    # Get recent corrections as few-shot training examples (limit to most recent 20)
+    corrections = management_company.extraction_corrections.order_by('-created_at')[:20]
+    if corrections.exists():
+        correction_lines = []
+        for c in corrections:
+            line = f'- Field "{c.field_name}": AI extracted "{c.ai_value}" but correct value was "{c.corrected_value}"'
+            if c.source_label:
+                line += f' (PDF label: "{c.source_label}")'
+            if c.notes:
+                line += f' — Note: {c.notes}'
+            correction_lines.append(line)
+
+        sections.append(
+            "PAST CORRECTIONS FOR THIS MANAGEMENT COMPANY (learn from these):\n"
+            "The following are past mistakes the AI made on this company's reports. "
+            "Use these to avoid repeating the same errors:\n"
+            + "\n".join(correction_lines)
+        )
+
+    return "\n\n".join(sections)
+
+
 def sanitize_extracted_data(data):
     sanitized = {}
     for field in AMOUNT_FIELDS:
@@ -125,6 +159,16 @@ def extract_financial_from_pdf(request):
     association_id = request.POST.get('association_id')
     tax_year = request.POST.get('tax_year')
 
+    management_company = None
+    if association_id:
+        from ..models import Association
+        try:
+            association = Association.objects.select_related('management_company').get(id=association_id)
+            if not association.is_self_managed and association.management_company:
+                management_company = association.management_company
+        except Association.DoesNotExist:
+            pass
+
     if association_id and tax_year:
         from ..models import Financial
         try:
@@ -135,6 +179,12 @@ def extract_financial_from_pdf(request):
             financial.financial_info_pdf.save(pdf_file.name, pdf_file, save=True)
         except Financial.DoesNotExist:
             pass
+
+    # Build the prompt — base + management company context if available
+    prompt = EXTRACTION_PROMPT
+    if management_company:
+        company_context = build_management_company_context(management_company)
+        prompt = prompt + "\n\n" + company_context
 
     # Call Claude API
     try:
@@ -161,7 +211,7 @@ def extract_financial_from_pdf(request):
                         },
                         {
                             "type": "text",
-                            "text": EXTRACTION_PROMPT,
+                            "text": prompt,
                         },
                     ],
                 }
@@ -183,6 +233,7 @@ def extract_financial_from_pdf(request):
         return JsonResponse({
             'success': True,
             'data': sanitized,
+            'management_company_id': management_company.id if management_company else None,
         })
 
     except anthropic.APIError as e:
@@ -200,3 +251,47 @@ def extract_financial_from_pdf(request):
         return JsonResponse({
             'error': f'An error occurred: {str(e)}'
         }, status=500)
+
+
+@login_required
+@require_POST
+def save_extraction_corrections(request):
+    """Save corrections when user modifies AI-extracted values before saving."""
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+
+    management_company_id = data.get('management_company_id')
+    corrections = data.get('corrections', [])
+    tax_year = data.get('tax_year')
+
+    if not management_company_id or not corrections or not tax_year:
+        return JsonResponse({'error': 'Missing required fields'}, status=400)
+
+    from ..models import ManagementCompany, ExtractionCorrection
+
+    try:
+        management_company = ManagementCompany.objects.get(id=management_company_id)
+    except ManagementCompany.DoesNotExist:
+        return JsonResponse({'error': 'Management company not found'}, status=404)
+
+    created_count = 0
+    for correction in corrections:
+        field_name = correction.get('field_name', '')
+        ai_value = str(correction.get('ai_value', ''))
+        corrected_value = str(correction.get('corrected_value', ''))
+
+        if not field_name or ai_value == corrected_value:
+            continue
+
+        ExtractionCorrection.objects.create(
+            management_company=management_company,
+            field_name=field_name,
+            ai_value=ai_value,
+            corrected_value=corrected_value,
+            tax_year=tax_year,
+        )
+        created_count += 1
+
+    return JsonResponse({'success': True, 'corrections_saved': created_count})

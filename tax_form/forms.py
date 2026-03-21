@@ -240,10 +240,15 @@ class ManagementCompanyForm(forms.ModelForm):
         fields = [
             'name', 'contact_person', 'email', 'phone',
             'address', 'city', 'state', 'zipcode',
-            'notes'
+            'extraction_hints', 'notes'
         ]
         widgets = {
             'notes': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
+            'extraction_hints': forms.Textarea(attrs={
+                'rows': 4,
+                'class': 'form-control',
+                'placeholder': 'e.g., Assessments labeled "Maintenance Fee Income". Reports use Budget/Actual columns — use Actual. Laundry income is under "Other Revenue".'
+            }),
         }
     
     def __init__(self, *args, **kwargs):

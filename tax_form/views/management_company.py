@@ -29,6 +29,7 @@ class ManagementCompanyDetailView(LoginRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         # Add associations to context
         context['associations'] = self.object.associations.all().order_by('association_name')
+        context['corrections_count'] = self.object.extraction_corrections.count()
         return context
 
 class ManagementCompanyCreateView(LoginRequiredMixin, CreateView):

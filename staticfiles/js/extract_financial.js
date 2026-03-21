@@ -10,6 +10,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (!pdfInput || !extractBtn) return;
 
+    // Store AI-extracted values for correction tracking
+    var aiExtractedValues = {};
+    var managementCompanyId = null;
+
     // Enable button when a file is selected
     pdfInput.addEventListener('change', function() {
         extractBtn.disabled = !this.files.length;
@@ -20,24 +24,24 @@ document.addEventListener('DOMContentLoaded', function() {
     extractBtn.addEventListener('click', function() {
         if (!pdfInput.files.length) return;
 
-        const file = pdfInput.files[0];
+        var file = pdfInput.files[0];
         if (!file.name.toLowerCase().endsWith('.pdf')) {
             showError('Please select a PDF file.');
             return;
         }
 
         // Build FormData
-        const formData = new FormData();
+        var formData = new FormData();
         formData.append('pdf_file', file);
 
         // Get association_id and tax_year from the form
-        const associationSelect = document.getElementById('id_association');
-        const taxYearInput = document.getElementById('id_tax_year');
-        if (associationSelect) formData.append('association_id', associationSelect.value);
+        var associationInput = document.querySelector('input[name="association"]');
+        var taxYearInput = document.querySelector('input[name="tax_year"]');
+        if (associationInput) formData.append('association_id', associationInput.value);
         if (taxYearInput) formData.append('tax_year', taxYearInput.value);
 
         // CSRF token from existing form
-        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        var csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
         // Show loading state
         showLoading();
@@ -58,7 +62,13 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(function(result) {
             if (result.status === 200 && result.data.success) {
-                const count = populateFormFields(result.data.data);
+                // Store management company ID for correction tracking
+                managementCompanyId = result.data.management_company_id;
+
+                // Store the AI-extracted values before populating the form
+                aiExtractedValues = JSON.parse(JSON.stringify(result.data.data));
+
+                var count = populateFormFields(result.data.data);
                 showSuccess(count);
             } else {
                 showError(result.data.error || 'Unknown error occurred.');
@@ -73,15 +83,77 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    // Intercept form submission to save corrections
+    var financialForm = document.querySelector('form[method="post"]');
+    if (financialForm) {
+        financialForm.addEventListener('submit', function() {
+            if (!managementCompanyId || Object.keys(aiExtractedValues).length === 0) return;
+
+            var taxYearInput = document.querySelector('input[name="tax_year"]');
+            var taxYear = taxYearInput ? taxYearInput.value : '';
+            var corrections = [];
+
+            for (var fieldName in aiExtractedValues) {
+                var input = document.getElementById('id_' + fieldName);
+                if (!input) continue;
+
+                var aiVal = aiExtractedValues[fieldName];
+                var currentVal;
+
+                if (typeof aiVal === 'number') {
+                    // Parse the current value, stripping dollar formatting
+                    currentVal = parseInt(input.value.replace(/[^\d]/g, '')) || 0;
+                    if (currentVal !== aiVal) {
+                        corrections.push({
+                            field_name: fieldName,
+                            ai_value: String(aiVal),
+                            corrected_value: String(currentVal)
+                        });
+                    }
+                } else if (typeof aiVal === 'string') {
+                    currentVal = input.value;
+                    if (currentVal !== aiVal) {
+                        corrections.push({
+                            field_name: fieldName,
+                            ai_value: aiVal,
+                            corrected_value: currentVal
+                        });
+                    }
+                }
+            }
+
+            if (corrections.length === 0) return;
+
+            // Send corrections asynchronously (fire-and-forget, don't block form submission)
+            var csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            fetch('/save-extraction-corrections/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: JSON.stringify({
+                    management_company_id: managementCompanyId,
+                    tax_year: taxYear,
+                    corrections: corrections
+                }),
+            }).catch(function(err) {
+                console.error('Failed to save extraction corrections:', err);
+            });
+        });
+    }
+
     function populateFormFields(data) {
-        let count = 0;
-        for (const [fieldName, value] of Object.entries(data)) {
-            const input = document.getElementById('id_' + fieldName);
+        var count = 0;
+        for (var fieldName in data) {
+            var value = data[fieldName];
+            var input = document.getElementById('id_' + fieldName);
             if (!input) continue;
 
             if (typeof value === 'number') {
                 // Only skip if user has a meaningful non-zero value and AI returned 0
-                const currentVal = parseInt(input.value.replace(/[^\d]/g, '')) || 0;
+                var currentVal = parseInt(input.value.replace(/[^\d]/g, '')) || 0;
                 if (value === 0 && currentVal > 0) continue;
 
                 input.value = value;

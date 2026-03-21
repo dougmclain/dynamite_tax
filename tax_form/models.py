@@ -20,15 +20,25 @@ class ManagementCompany(models.Model):
     state = models.CharField(max_length=100, blank=True, null=True)
     zipcode = models.CharField(max_length=20, blank=True, null=True)
     notes = models.TextField(blank=True, null=True)
-    
+    extraction_hints = models.TextField(
+        blank=True,
+        default='',
+        help_text=(
+            "Hints for AI financial data extraction. Describe how this company formats "
+            "their financial reports, e.g.: 'Assessments are labeled Maintenance Fee Income. "
+            "Laundry income is under Other Revenue. Reports have Budget/Actual/Variance columns "
+            "— use the Actual column.'"
+        )
+    )
+
     class Meta:
         verbose_name = "Management Company"
         verbose_name_plural = "Management Companies"
         ordering = ['name']
-    
+
     def __str__(self):
         return self.name
-    
+
     def get_full_address(self):
         """Return the full address as a formatted string"""
         if self.address and self.city and self.state and self.zipcode:
@@ -678,7 +688,33 @@ class AssociationFilingStatus(models.Model):
         return f"{self.association.association_name} - {self.tax_year}: {status}, {invoice_status}"
     
     
-# Update tax_form/models.py to add the ManagementCompany model
-# and update the Association model
+class ExtractionCorrection(models.Model):
+    management_company = models.ForeignKey(
+        'ManagementCompany',
+        on_delete=models.CASCADE,
+        related_name='extraction_corrections'
+    )
+    field_name = models.CharField(max_length=100, help_text="The form field that was corrected")
+    ai_value = models.CharField(max_length=255, help_text="The value AI originally extracted")
+    corrected_value = models.CharField(max_length=255, help_text="The value the user corrected it to")
+    source_label = models.CharField(
+        max_length=255,
+        blank=True,
+        default='',
+        help_text="The label/line item name from the PDF that was misinterpreted (optional)"
+    )
+    notes = models.TextField(
+        blank=True,
+        default='',
+        help_text="Optional notes explaining the correction"
+    )
+    tax_year = models.IntegerField(help_text="Tax year of the financial data")
+    created_at = models.DateTimeField(auto_now_add=True)
 
-# Add this new model class
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Extraction Correction"
+        verbose_name_plural = "Extraction Corrections"
+
+    def __str__(self):
+        return f"{self.management_company.name}: {self.field_name} ({self.ai_value} -> {self.corrected_value})"

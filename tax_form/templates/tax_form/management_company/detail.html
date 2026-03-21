@@ -61,6 +61,26 @@
                 </div>
             </div>
             
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h2 class="h5 mb-0">AI Extraction Settings</h2>
+                </div>
+                <div class="card-body">
+                    {% if company.extraction_hints %}
+                        <p>{{ company.extraction_hints|linebreaks }}</p>
+                    {% else %}
+                        <p class="text-muted">No extraction hints configured. <a href="{% url 'management_company_update' pk=company.id %}">Add hints</a> to improve AI data extraction for this company's financial reports.</p>
+                    {% endif %}
+                    <hr>
+                    <p class="mb-0">
+                        <strong>Learned corrections:</strong> {{ corrections_count }}
+                        {% if corrections_count > 0 %}
+                            <small class="text-muted">(The AI uses these to avoid repeating past mistakes)</small>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+
             {% if company.notes %}
                 <div class="card mb-4">
                     <div class="card-header">

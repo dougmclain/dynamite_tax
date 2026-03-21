@@ -169,7 +169,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 var currentVal = parseInt(input.value.replace(/[^\d]/g, '')) || 0;
                 if (value === 0 && currentVal > 0) continue;
 
-                input.value = value;
+                input.value = String(Math.round(value));
                 // Trigger dollar formatting from financial_form.js
                 if (input.classList.contains('dollar-input')) {
                     formatCurrency(input);

@@ -120,6 +120,17 @@ class AssociationForm(forms.ModelForm):
 class DollarNumberInput(NumberInput):
     template_name = 'tax_form/dollar_number_input.html'
 
+DOLLAR_FIELDS = [
+    'member_assessments', 'capital_contribution', 'moving_fees', 'utilities',
+    'late_fees', 'fines', 'other_exempt_income', 'total_expenses',
+    'interest', 'dividends', 'rentals',
+    'non_exempt_income_amount1', 'non_exempt_income_amount2', 'non_exempt_income_amount3',
+    'state_local_taxes', 'tax_preparation', 'management_fees', 'administration_fees',
+    'audit_fees', 'allocated_rental_expenses',
+    'non_exempt_expense_amount1', 'non_exempt_expense_amount2', 'non_exempt_expense_amount3',
+    'prior_year_over_payment', 'extension_payment', 'estimated_payment',
+]
+
 class FinancialForm(forms.ModelForm):
     class Meta:
         model = Financial
@@ -159,7 +170,22 @@ class FinancialForm(forms.ModelForm):
             for field_name, field in self.fields.items():
                 if isinstance(field.widget, TextInput) and field.widget.attrs.get('class') == 'dollar-input':
                     field.widget.attrs['data-original-value'] = getattr(self.instance, field_name) or ''
-                    
+
+    def clean(self):
+        cleaned = super().clean()
+        for field_name in DOLLAR_FIELDS:
+            val = cleaned.get(field_name)
+            if val is None or val == '':
+                cleaned[field_name] = 0
+                continue
+            if isinstance(val, str):
+                val = val.replace('$', '').replace(',', '').strip()
+            try:
+                cleaned[field_name] = max(0, int(round(float(val))))
+            except (ValueError, TypeError):
+                cleaned[field_name] = 0
+        return cleaned
+
 
 class ExtensionForm(forms.ModelForm):
     class Meta:

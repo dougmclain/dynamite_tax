@@ -89,6 +89,21 @@ class AssociationView(LoginRequiredMixin, View):
                 except Exception as azure_error:
                     logger.error(f"Error connecting to Azure: {str(azure_error)}", exc_info=True)
 
+                # Check if financial_info_pdf blob exists
+                if financial_data.financial_info_pdf and financial_data.financial_info_pdf.name:
+                    file_path = financial_data.financial_info_pdf.name
+                    file_exists = False
+                    if azure_connection:
+                        try:
+                            blob_client = azure_connection.get_blob_client(container=settings.AZURE_CONTAINER, blob=file_path)
+                            blob_client.get_blob_properties()
+                            file_exists = True
+                        except Exception:
+                            logger.warning(f"Financial info PDF not found in Azure: {file_path}")
+                    if not file_exists:
+                        financial_data.financial_info_pdf = None
+                        financial_data.save()
+
                 # Process extension data
                 if extension:
                     if extension.form_7004 and extension.form_7004.name:

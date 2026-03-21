@@ -16,6 +16,8 @@ function initializeDropZones() {
         
         // Click to open file dialog
         dropZone.addEventListener("click", () => {
+            // Reset value so re-selecting the same file still triggers 'change'
+            fileInput.value = '';
             fileInput.click();
         });
 

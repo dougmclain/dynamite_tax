@@ -14,12 +14,25 @@ document.addEventListener('DOMContentLoaded', function() {
     var aiExtractedValues = {};
     var managementCompanyId = null;
 
-    // Enable button when a file is selected
-    pdfInput.addEventListener('change', function() {
-        extractBtn.disabled = !this.files.length;
+    function onFileSelected() {
+        extractBtn.disabled = !pdfInput.files.length;
         // Reset status when new file selected
-        statusDiv.classList.add('d-none');
-    });
+        if (pdfInput.files.length) {
+            statusDiv.classList.add('d-none');
+        }
+    }
+
+    // Enable button when a file is selected (native file dialog)
+    pdfInput.addEventListener('change', onFileSelected);
+
+    // Also listen on the drop zone for drop events (backup in case change doesn't fire)
+    var dropZone = document.getElementById('aiPdfDropZone');
+    if (dropZone) {
+        dropZone.addEventListener('drop', function() {
+            // Small delay to let drag_drop_upload.js set fileInput.files first
+            setTimeout(onFileSelected, 50);
+        });
+    }
 
     extractBtn.addEventListener('click', function() {
         if (!pdfInput.files.length) return;

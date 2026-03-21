@@ -5,7 +5,6 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.conf import settings
 from pathlib import Path
-from datetime import date as date_today
 from ..models import Financial, Association, Preparer, CompletedTaxReturn
 from ..forms import TaxFormSelectionForm
 from .helpers import calculate_financial_info
@@ -102,9 +101,9 @@ def form_1120h(request):
                     try:
                         storage_path, filename = generate_pdf_to_storage(financial_info, association, preparer, tax_year)
 
-                        # Delete old file from Azure if it exists
-                        if completed_tax_return.tax_return_pdf:
-                            old_path = completed_tax_return.tax_return_pdf.name
+                        # Delete old sent file from Azure if it exists
+                        if completed_tax_return.sent_tax_return_pdf:
+                            old_path = completed_tax_return.sent_tax_return_pdf.name
                             if settings.USE_AZURE_STORAGE and old_path:
                                 try:
                                     from azure.storage.blob import BlobServiceClient
@@ -114,10 +113,9 @@ def form_1120h(request):
                                     old_blob = container_client.get_blob_client(old_path)
                                     old_blob.delete_blob()
                                 except Exception as e:
-                                    logger.warning(f"Could not delete old return file: {e}")
+                                    logger.warning(f"Could not delete old sent return file: {e}")
 
-                        completed_tax_return.tax_return_pdf = storage_path
-                        completed_tax_return.date_prepared = date_today.today()
+                        completed_tax_return.sent_tax_return_pdf = storage_path
                         completed_tax_return.save()
 
                         messages.success(request, f'Tax return saved to system as {filename}.')

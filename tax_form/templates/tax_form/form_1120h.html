@@ -31,20 +31,17 @@
     </div>
 </form>
 
-{% if completed_tax_return and completed_tax_return.tax_return_pdf %}
+{% if completed_tax_return and completed_tax_return.sent_tax_return_pdf %}
 <div class="card mt-3 border-success">
     <div class="card-body d-flex align-items-center justify-content-between">
         <div>
-            <strong>Stored Return:</strong> {{ completed_tax_return.tax_return_pdf.name|slice:"-40:" }}
-            {% if completed_tax_return.date_prepared %}
-                <span class="text-muted ms-2">(prepared {{ completed_tax_return.date_prepared }})</span>
-            {% endif %}
+            <strong>Stored Return:</strong> {{ completed_tax_return.sent_tax_return_pdf.name|slice:"-40:" }}
             {% if completed_tax_return.reviewed %}
                 <span class="badge bg-success ms-2">Reviewed</span>
             {% endif %}
         </div>
         <div>
-            <a href="{{ completed_tax_return.tax_return_pdf.url }}" class="btn btn-sm btn-outline-secondary" target="_blank">View</a>
+            <a href="{{ completed_tax_return.sent_tax_return_pdf.url }}" class="btn btn-sm btn-outline-secondary" target="_blank">View</a>
             <form method="post" action="{% url 'delete_completed_return' completed_tax_return.financial.id %}" class="d-inline ms-1">
                 {% csrf_token %}
                 <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this stored return?')">Delete</button>

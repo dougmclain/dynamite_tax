@@ -163,7 +163,7 @@ class DashboardView(LoginRequiredMixin, View):
                 'tax_return_filed': completed_tax_return.return_filed if completed_tax_return else False,
                 'tax_return_reviewed': completed_tax_return.reviewed if completed_tax_return else False,
                 'tax_return_reviewed_date': completed_tax_return.reviewed_date if completed_tax_return else None,
-                'has_stored_return': bool(completed_tax_return and completed_tax_return.tax_return_pdf),
+                'has_stored_return': bool(completed_tax_return and completed_tax_return.sent_tax_return_pdf),
                 'filing_status_display': filing_status_display,
                 'engagement_letter': engagement_letter,
                 'prepare_return': filing_status.prepare_return if filing_status else True,

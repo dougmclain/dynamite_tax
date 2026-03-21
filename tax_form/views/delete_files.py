@@ -94,8 +94,8 @@ class DeleteCompletedReturnPDFView(LoginRequiredMixin, View):
             messages.warning(request, "No completed tax return record found.")
             return redirect(f"{reverse('association')}?association_id={association_id}&tax_year={tax_year}")
 
-        if completed_tax_return.tax_return_pdf:
-            file_path = completed_tax_return.tax_return_pdf.name
+        if completed_tax_return.sent_tax_return_pdf:
+            file_path = completed_tax_return.sent_tax_return_pdf.name
 
             try:
                 if settings.USE_AZURE_STORAGE:
@@ -121,7 +121,7 @@ class DeleteCompletedReturnPDFView(LoginRequiredMixin, View):
                         os.remove(full_path)
                         logger.info(f"Deleted local file: {full_path}")
 
-                completed_tax_return.tax_return_pdf = None
+                completed_tax_return.sent_tax_return_pdf = None
                 completed_tax_return.save()
 
                 request.session['pdf_timestamp'] = int(time.time())
@@ -131,7 +131,7 @@ class DeleteCompletedReturnPDFView(LoginRequiredMixin, View):
                 logger.error(f"Error deleting completed return PDF: {str(e)}", exc_info=True)
                 messages.error(request, f"Error deleting completed return PDF: {str(e)}")
         else:
-            messages.warning(request, "No completed return PDF file to delete.")
+            messages.warning(request, "No sent return PDF file to delete.")
 
         # Redirect back — check if we came from form_1120h (via referer)
         referer = request.META.get('HTTP_REFERER', '')

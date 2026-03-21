@@ -167,7 +167,25 @@ def calculate_all_deduction_details(financial):
     since they are directly attributable to specific income sources.
     General expenses (tax prep, state taxes, management, audit) are then
     deducted from REMAINING income so total deductions never exceed gross income.
+
+    If gross income <= $100, all deductions are $0 because the $100 specific
+    deduction on Line 18 already zeroes out taxable income — claiming other
+    deductions would produce the same tax result with unnecessary paperwork.
     """
+    # Short-circuit: if gross income <= $100, no deductions needed
+    gross_income = calculate_gross_income(financial)
+    if gross_income <= 100:
+        return {
+            'tax_prep_expenses': 0,
+            'state_local_taxes': 0,
+            'management_fees': 0,
+            'audit_fees': 0,
+            'rental_expenses': 0,
+            'other_nonexempt_expense1': 0,
+            'other_nonexempt_expense2': 0,
+            'other_nonexempt_expense3': 0,
+        }
+
     # Step 1: Directly-matched expenses (capped at their own income source)
     rental_expenses = calculate_rental_expenses(financial)
     other_nonexempt_expense1 = calculate_other_nonexempt_expense1(financial)

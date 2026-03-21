@@ -79,6 +79,10 @@ class EditTaxYearInfoView(LoginRequiredMixin, View):
             completed_tax_return.date_prepared = request.POST.get('tax_return_filed_date') or None
             completed_tax_return.filing_status = request.POST.get('filing_status', 'not_filed')
 
+            # Update reviewed fields
+            completed_tax_return.reviewed = 'tax_return_reviewed' in request.POST
+            completed_tax_return.reviewed_date = request.POST.get('tax_return_reviewed_date') or None
+
             # Update invoice/payment tracking
             filing_status.invoice_sent_date = request.POST.get('invoice_sent_date') or None
             filing_status.payment_received_date = request.POST.get('payment_received_date') or None

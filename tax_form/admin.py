@@ -23,7 +23,7 @@ class ExtensionInline(admin.StackedInline):
 class CompletedTaxReturnInline(admin.StackedInline):
     model = CompletedTaxReturn
     extra = 0
-    fields = ('return_filed', 'date_prepared', 'tax_return_pdf')   
+    fields = ('return_filed', 'date_prepared', 'tax_return_pdf', 'reviewed', 'reviewed_date')
 
 @admin.register(Association)
 class AssociationAdmin(admin.ModelAdmin):
@@ -180,8 +180,8 @@ class ExtensionAdmin(admin.ModelAdmin):
     
 @admin.register(CompletedTaxReturn)
 class CompletedTaxReturnAdmin(admin.ModelAdmin):
-    list_display = ('financial', 'tax_year', 'return_filed', 'date_prepared')
-    list_filter = ('return_filed', 'date_prepared')
+    list_display = ('financial', 'tax_year', 'return_filed', 'date_prepared', 'reviewed', 'reviewed_date')
+    list_filter = ('return_filed', 'date_prepared', 'reviewed')
     search_fields = ('financial__association__association_name', 'financial__tax_year')
 
     def tax_year(self, obj):

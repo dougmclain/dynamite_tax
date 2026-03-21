@@ -3,7 +3,7 @@
 from django.urls import path
 from django.contrib.auth import views as auth_views
 from .views import main, association, financial, create_association, dashboard, edit_association, edit_tax_year_info, extension, engagement_letter, filing_status, management_company, extract_financial
-from .views.delete_files import DeleteFinancialPDFView
+from .views.delete_files import DeleteFinancialPDFView, DeleteCompletedReturnPDFView
 from .views.export import ExportAssociationsView, ExportCompletedReturnsExcelView
 
 urlpatterns = [
@@ -37,6 +37,7 @@ urlpatterns = [
     path('engagement-letter/download-company/', engagement_letter.DownloadCompanyEngagementLettersView.as_view(), name='download_company_engagement_letters'),
     path('filing-status/<int:association_id>/<int:tax_year>/', filing_status.EditFilingStatusView.as_view(), name='edit_filing_status'),
     path('delete-financial-pdf/<int:financial_id>/', DeleteFinancialPDFView.as_view(), name='delete_financial_pdf'),
+    path('delete-completed-return/<int:financial_id>/', DeleteCompletedReturnPDFView.as_view(), name='delete_completed_return'),
     path('extract-financial/', extract_financial.extract_financial_from_pdf, name='extract_financial'),
     path('save-extraction-corrections/', extract_financial.save_extraction_corrections, name='save_extraction_corrections'),
     

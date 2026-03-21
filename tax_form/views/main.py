@@ -5,10 +5,11 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.conf import settings
 from pathlib import Path
-from ..models import Financial, Association, Preparer
+from datetime import date as date_today
+from ..models import Financial, Association, Preparer, CompletedTaxReturn
 from ..forms import TaxFormSelectionForm
 from .helpers import calculate_financial_info
-from .pdf_generation import generate_pdf
+from .pdf_generation import generate_pdf, generate_pdf_to_storage
 
 logger = logging.getLogger(__name__)
 
@@ -78,12 +79,15 @@ def form_1120h(request):
                 financial_info = calculate_financial_info(financial, association)
                 financial_info['tax_year'] = tax_year
 
+                completed_tax_return, _ = CompletedTaxReturn.objects.get_or_create(financial=financial)
+
                 context.update({
                     'form': form,
                     'financial_info': financial_info,
                     'association': association,
                     'preparer': preparer,
                     'financial': financial,
+                    'completed_tax_return': completed_tax_return,
                 })
 
                 if 'download_pdf' in request.POST:
@@ -93,6 +97,35 @@ def form_1120h(request):
                     except Exception as e:
                         logger.exception("Error generating PDF")
                         messages.error(request, f"Error generating PDF: {str(e)}")
+
+                elif 'save_pdf' in request.POST:
+                    try:
+                        storage_path, filename = generate_pdf_to_storage(financial_info, association, preparer, tax_year)
+
+                        # Delete old file from Azure if it exists
+                        if completed_tax_return.tax_return_pdf:
+                            old_path = completed_tax_return.tax_return_pdf.name
+                            if settings.USE_AZURE_STORAGE and old_path:
+                                try:
+                                    from azure.storage.blob import BlobServiceClient
+                                    connection_string = f"DefaultEndpointsProtocol=https;AccountName={settings.AZURE_ACCOUNT_NAME};AccountKey={settings.AZURE_ACCOUNT_KEY};EndpointSuffix=core.windows.net"
+                                    blob_service_client = BlobServiceClient.from_connection_string(connection_string)
+                                    container_client = blob_service_client.get_container_client(settings.AZURE_CONTAINER)
+                                    old_blob = container_client.get_blob_client(old_path)
+                                    old_blob.delete_blob()
+                                except Exception as e:
+                                    logger.warning(f"Could not delete old return file: {e}")
+
+                        completed_tax_return.tax_return_pdf = storage_path
+                        completed_tax_return.date_prepared = date_today.today()
+                        completed_tax_return.save()
+
+                        messages.success(request, f'Tax return saved to system as {filename}.')
+                        # Re-fetch to update context
+                        context['completed_tax_return'] = completed_tax_return
+                    except Exception as e:
+                        logger.exception("Error saving PDF to storage")
+                        messages.error(request, f"Error saving PDF: {str(e)}")
             except Financial.DoesNotExist:
                 logger.error(f"No financial record found for association {association} and year {tax_year}")
                 messages.error(request, "No financial record found for the selected association and year.")

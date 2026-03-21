@@ -382,6 +382,10 @@ class CompletedTaxReturn(models.Model):
     # Signed return
     tax_return_pdf = models.FileField(upload_to='completed_tax_returns/', null=True, blank=True, help_text="PDF of the signed tax return")
 
+    # Review tracking
+    reviewed = models.BooleanField(default=False, help_text="Indicates whether the completed return has been reviewed")
+    reviewed_date = models.DateField(null=True, blank=True, help_text="The date the return was reviewed")
+
     def __str__(self):
         status = "Filed" if self.return_filed else "Not Filed"
         date_info = f" on {self.date_prepared}" if self.date_prepared else ""

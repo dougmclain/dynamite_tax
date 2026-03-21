@@ -154,6 +154,7 @@
                                     <th>Filing Status</th>
                                     <th class="sortable" data-sort="sent">Tax Return Sent</th>
                                     <th class="sortable" data-sort="return">Tax Return Filed</th>
+                                    <th>Reviewed</th>
                                     <th>Engagement Letter</th>
                                     <th>Invoice Status</th>
                                     <th>Actions</th>
@@ -191,6 +192,15 @@
                                             <span class="badge bg-success">{{ data.filing_status_display }}</span>
                                         {% else %}
                                             <span class="badge bg-secondary">Not Filed</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if data.tax_return_reviewed %}
+                                            <span class="badge bg-success" title="{{ data.tax_return_reviewed_date|date:'F d, Y'|default:'' }}">Reviewed</span>
+                                        {% elif data.has_stored_return %}
+                                            <span class="badge bg-warning">Pending</span>
+                                        {% else %}
+                                            <span class="badge bg-light text-muted">-</span>
                                         {% endif %}
                                     </td>
                                     <td>

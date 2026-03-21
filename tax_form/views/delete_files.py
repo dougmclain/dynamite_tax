@@ -6,7 +6,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse
 from django.conf import settings
-from ..models import Financial
+from ..models import Financial, CompletedTaxReturn
 from azure.storage.blob import BlobServiceClient
 import logging
 import time
@@ -74,4 +74,67 @@ class DeleteFinancialPDFView(LoginRequiredMixin, View):
             messages.warning(request, "No financial PDF file to delete.")
         
         # Redirect back to the association page
+        return redirect(f"{reverse('association')}?association_id={association_id}&tax_year={tax_year}")
+
+
+class DeleteCompletedReturnPDFView(LoginRequiredMixin, View):
+    """View to handle deletion of completed tax return PDF files."""
+
+    def post(self, request, financial_id):
+        financial = get_object_or_404(Financial, id=financial_id)
+        association_id = financial.association.id
+        tax_year = financial.tax_year
+
+        request.session['selected_association_id'] = str(association_id)
+        request.session['selected_tax_year'] = tax_year
+
+        try:
+            completed_tax_return = financial.completed_tax_return
+        except CompletedTaxReturn.DoesNotExist:
+            messages.warning(request, "No completed tax return record found.")
+            return redirect(f"{reverse('association')}?association_id={association_id}&tax_year={tax_year}")
+
+        if completed_tax_return.tax_return_pdf:
+            file_path = completed_tax_return.tax_return_pdf.name
+
+            try:
+                if settings.USE_AZURE_STORAGE:
+                    connection_string = f"DefaultEndpointsProtocol=https;AccountName={settings.AZURE_ACCOUNT_NAME};AccountKey={settings.AZURE_ACCOUNT_KEY};EndpointSuffix=core.windows.net"
+                    blob_service_client = BlobServiceClient.from_connection_string(connection_string)
+                    container_client = blob_service_client.get_container_client(settings.AZURE_CONTAINER)
+
+                    blob_client = container_client.get_blob_client(file_path)
+                    blob_exists = True
+                    try:
+                        blob_client.get_blob_properties()
+                    except Exception:
+                        blob_exists = False
+
+                    if blob_exists:
+                        blob_client.delete_blob()
+                        logger.info(f"Deleted blob: {file_path}")
+                        time.sleep(0.5)
+                else:
+                    import os
+                    full_path = os.path.join(settings.MEDIA_ROOT, file_path)
+                    if os.path.exists(full_path):
+                        os.remove(full_path)
+                        logger.info(f"Deleted local file: {full_path}")
+
+                completed_tax_return.tax_return_pdf = None
+                completed_tax_return.save()
+
+                request.session['pdf_timestamp'] = int(time.time())
+
+                messages.success(request, f"Completed return for {financial.association.association_name} - {financial.tax_year} deleted successfully.")
+            except Exception as e:
+                logger.error(f"Error deleting completed return PDF: {str(e)}", exc_info=True)
+                messages.error(request, f"Error deleting completed return PDF: {str(e)}")
+        else:
+            messages.warning(request, "No completed return PDF file to delete.")
+
+        # Redirect back — check if we came from form_1120h (via referer)
+        referer = request.META.get('HTTP_REFERER', '')
+        if 'form-1120h' in referer:
+            return redirect('form_1120h')
         return redirect(f"{reverse('association')}?association_id={association_id}&tax_year={tax_year}")

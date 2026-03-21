@@ -93,6 +93,15 @@
                             <label for="tax_return_filed_date" class="form-label">Tax Return Filed Date</label>
                             <input type="date" class="form-control" id="tax_return_filed_date" name="tax_return_filed_date" value="{% if completed_tax_return.date_prepared %}{{ completed_tax_return.date_prepared|date:'Y-m-d' }}{% endif %}">
                         </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="tax_return_reviewed" name="tax_return_reviewed" {% if completed_tax_return.reviewed %}checked{% endif %}>
+                            <label class="form-check-label" for="tax_return_reviewed">Return Reviewed</label>
+                        </div>
+                        <div class="mb-3">
+                            <label for="tax_return_reviewed_date" class="form-label">Reviewed Date</label>
+                            <input type="date" class="form-control" id="tax_return_reviewed_date" name="tax_return_reviewed_date" value="{% if completed_tax_return.reviewed_date %}{{ completed_tax_return.reviewed_date|date:'Y-m-d' }}{% endif %}">
+                        </div>
+
                         <div class="mb-3">
                             <label for="tax_return_file" class="form-label">Signed Tax Return File (PDF)</label>
                             <div class="drop-zone mb-2" id="taxReturnDropZone">

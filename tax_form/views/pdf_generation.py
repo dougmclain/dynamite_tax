@@ -23,7 +23,7 @@ from .il_pdf_generation import generate_il1120_pages, generate_il1120v_page
 
 logger = logging.getLogger(__name__)
 
-__all__ = ['generate_pdf']
+__all__ = ['generate_pdf', 'generate_pdf_to_storage']
 
 # Update the pdf_generation.py file to standardize tax return filenames
 
@@ -117,6 +117,87 @@ def generate_pdf(financial_info, association, preparer, tax_year):
     except Exception as e:
         logger.error(f"Error in PDF generation: {str(e)}", exc_info=True)
         raise
+
+def generate_pdf_to_storage(financial_info, association, preparer, tax_year):
+    """Generate PDF and save directly to storage (Azure or local). Returns (storage_path, filename)."""
+    template_name = f'template_1120h_{tax_year}.pdf'
+    possible_paths = [
+        settings.PDF_TEMPLATE_DIR / template_name,
+        Path('/var/lib/render/disk/pdf_templates') / template_name,
+        Path('/media/pdf_templates') / template_name,
+        Path('/data/pdf_templates') / template_name,
+        Path(settings.BASE_DIR) / 'pdf_templates' / template_name,
+        Path(settings.BASE_DIR) / 'tax_form' / 'pdf_templates' / template_name,
+    ]
+
+    template_path = None
+    for path in possible_paths:
+        if path.exists():
+            template_path = path
+            break
+
+    if template_path is None:
+        template_path = possible_paths[0]
+        raise FileNotFoundError(f"PDF template not found at {template_path} or any alternative locations")
+
+    assoc_name_safe = ''.join(c for c in association.association_name[:10] if c.isalnum())
+    filing_state = association.get_filing_state()
+    state_suffix = f'_IL1120' if filing_state == 'IL' else ''
+    output_filename = f'{assoc_name_safe}_1120H{state_suffix}_{tax_year}.pdf'
+
+    output_dir = settings.PDF_TEMP_DIR
+    output_path = output_dir / output_filename
+    os.makedirs(output_dir, exist_ok=True)
+
+    try:
+        generate_1120h_pdf(financial_info, association, preparer, str(template_path), str(output_path), tax_year=tax_year)
+
+        with open(output_path, 'rb') as f:
+            file_content = f.read()
+
+        storage_path = f'tax_returns/{output_filename}'
+
+        if settings.USE_AZURE_STORAGE:
+            from azure.storage.blob import BlobServiceClient, ContentSettings as AzureContentSettings
+            import time
+            connection_string = f"DefaultEndpointsProtocol=https;AccountName={settings.AZURE_ACCOUNT_NAME};AccountKey={settings.AZURE_ACCOUNT_KEY};EndpointSuffix=core.windows.net"
+            blob_service_client = BlobServiceClient.from_connection_string(connection_string)
+            container_client = blob_service_client.get_container_client(settings.AZURE_CONTAINER)
+
+            content_settings = AzureContentSettings(
+                content_type="application/pdf",
+                cache_control="no-cache, no-store, must-revalidate",
+                content_disposition=f"inline; filename={output_filename}"
+            )
+
+            blob_client = container_client.get_blob_client(storage_path)
+            blob_client.upload_blob(file_content, overwrite=True, content_settings=content_settings)
+            logger.info(f"PDF saved to Azure Storage at: {storage_path}")
+        else:
+            local_path = os.path.join(settings.MEDIA_ROOT, storage_path)
+            os.makedirs(os.path.dirname(local_path), exist_ok=True)
+            with open(local_path, 'wb') as f:
+                f.write(file_content)
+            logger.info(f"PDF saved locally at: {local_path}")
+
+        # Clean up temp file
+        try:
+            os.remove(output_path)
+        except Exception as e:
+            logger.warning(f"Could not remove temporary file: {str(e)}")
+
+        return storage_path, output_filename
+
+    except Exception as e:
+        # Clean up temp file on error too
+        try:
+            if output_path.exists():
+                os.remove(output_path)
+        except Exception:
+            pass
+        logger.error(f"Error in generate_pdf_to_storage: {str(e)}", exc_info=True)
+        raise
+
 
 FIELD_POSITIONS_BY_YEAR = {
     2024: {

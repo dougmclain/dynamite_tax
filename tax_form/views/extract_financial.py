@@ -76,9 +76,23 @@ IMPORTANT GUIDANCE:
 2. "total_expenses" should be the grand total of ALL operating expenses, not just a subtotal.
 3. For non-exempt income: look for interest, dividends, and any rental/non-member income.
 4. Rental income includes laundry income, vending machine income, cell tower leases, parking rentals, and similar non-member revenue.
-5. Round all amounts to whole dollars.
-6. If the document shows a P&L or Income Statement, use the annual totals (not monthly).
-7. If you see "Budget" and "Actual" columns, use the "Actual" column.
+5. If the document shows a P&L or Income Statement, use the annual totals (not monthly).
+6. If you see "Budget" and "Actual" columns, use the "Actual" column.
+
+CRITICAL - DOLLAR AMOUNTS:
+- Return whole dollar amounts ONLY. Round cents to the nearest dollar.
+- Do NOT include cents. Do NOT multiply by 100. Do NOT append "00" for cents.
+- Examples of CORRECT conversion:
+  "$12,444.00" → 12444
+  "$5.01" → 5
+  "$2,506.69" → 2507
+  "$11,759.96" → 11760
+  "$462.00" → 462
+  "$259.11" → 259
+- Examples of WRONG conversion (DO NOT do this):
+  "$12,444.00" → 1244400  (WRONG - this treats cents as dollars)
+  "$5.01" → 501  (WRONG - this removes the decimal point instead of rounding)
+- Simply take the dollar amount before the decimal point and round up if cents >= 50.
 
 Return ONLY the JSON object, no other text."""
 
@@ -122,6 +136,10 @@ def sanitize_extracted_data(data):
     for field in AMOUNT_FIELDS:
         val = data.get(field, 0)
         try:
+            # Handle string values that might have dollar signs, commas, or decimals
+            if isinstance(val, str):
+                val = val.replace('$', '').replace(',', '').strip()
+            # Convert to float first — this correctly handles "12444.00" → 12444.0
             val = int(round(float(val)))
             val = max(0, val)
         except (ValueError, TypeError):

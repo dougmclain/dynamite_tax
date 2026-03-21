@@ -30,7 +30,7 @@ DESCRIPTION_FIELDS = [
 
 EXTRACTION_PROMPT = """You are a tax accountant assistant. Analyze this HOA (Homeowners Association) financial document and extract the financial data.
 
-Return ONLY a JSON object with the following fields. Use whole dollar amounts (no cents, no dollar signs, no commas). If a value cannot be found in the document, use 0 for amounts or "" for descriptions.
+Return ONLY a JSON object with the following fields. If a value cannot be found in the document, use "0" for amounts or "" for descriptions.
 
 EXEMPT INCOME (income from members that is exempt from tax):
 - "member_assessments": Regular HOA dues/assessments collected from members
@@ -79,20 +79,21 @@ IMPORTANT GUIDANCE:
 5. If the document shows a P&L or Income Statement, use the annual totals (not monthly).
 6. If you see "Budget" and "Actual" columns, use the "Actual" column.
 
-CRITICAL - DOLLAR AMOUNTS:
-- Return whole dollar amounts ONLY. Round cents to the nearest dollar.
-- Do NOT include cents. Do NOT multiply by 100. Do NOT append "00" for cents.
-- Examples of CORRECT conversion:
-  "$12,444.00" → 12444
-  "$5.01" → 5
-  "$2,506.69" → 2507
-  "$11,759.96" → 11760
-  "$462.00" → 462
-  "$259.11" → 259
-- Examples of WRONG conversion (DO NOT do this):
-  "$12,444.00" → 1244400  (WRONG - this treats cents as dollars)
-  "$5.01" → 501  (WRONG - this removes the decimal point instead of rounding)
-- Simply take the dollar amount before the decimal point and round up if cents >= 50.
+CRITICAL - HOW TO RETURN DOLLAR AMOUNTS:
+- Return each amount as a STRING with the decimal point preserved.
+- Copy the number from the document, remove only the dollar sign and commas, keep the decimal point and cents.
+- Examples:
+  "$44,059.00" → "44059.00"
+  "$31.29" → "31.29"
+  "$2,340.00" → "2340.00"
+  "$100.00" → "100.00"
+  "$0.00" → "0"
+- NEVER concatenate dollars and cents into one number. These are WRONG:
+  "$44,059.00" → 4405900  (WRONG! Removed the decimal point)
+  "$31.29" → 3129  (WRONG! Removed the decimal point)
+  "$2,340.00" → 234000  (WRONG! Removed the decimal point)
+- The decimal point separates DOLLARS from CENTS. Keep it.
+- We will handle rounding to whole dollars — you just preserve the decimal.
 
 Return ONLY the JSON object, no other text."""
 
@@ -131,26 +132,57 @@ def build_management_company_context(management_company):
     return "\n\n".join(sections)
 
 
+def _parse_amount(val):
+    """Parse a single amount value to integer, handling strings, floats, and ints."""
+    try:
+        if isinstance(val, str):
+            val = val.replace('$', '').replace(',', '').strip()
+        return max(0, int(round(float(val))))
+    except (ValueError, TypeError):
+        return 0
+
+
+def _detect_and_fix_times100(sanitized):
+    """Detect if AI concatenated dollars+cents (×100 error) and correct it.
+
+    If most non-zero values are divisible by 100, the AI likely stripped
+    the decimal point (e.g. "$44,059.00" → 4405900 instead of 44059).
+    """
+    non_zero = [(f, v) for f, v in sanitized.items()
+                if f in AMOUNT_FIELDS and v >= 100]
+    if len(non_zero) < 2:
+        return sanitized
+
+    divisible_count = sum(1 for _, v in non_zero if v % 100 == 0)
+    ratio = divisible_count / len(non_zero)
+
+    # If 75%+ of non-zero values are divisible by 100, likely ×100 error
+    if ratio >= 0.75:
+        logger.warning(
+            "Detected likely ×100 extraction error (%.0f%% of %d values "
+            "divisible by 100). Dividing all amounts by 100.",
+            ratio * 100, len(non_zero)
+        )
+        for field in AMOUNT_FIELDS:
+            if sanitized[field] > 0:
+                sanitized[field] = int(round(sanitized[field] / 100))
+
+    return sanitized
+
+
 def sanitize_extracted_data(data):
     sanitized = {}
     for field in AMOUNT_FIELDS:
-        val = data.get(field, 0)
-        try:
-            # Handle string values that might have dollar signs, commas, or decimals
-            if isinstance(val, str):
-                val = val.replace('$', '').replace(',', '').strip()
-            # Convert to float first — this correctly handles "12444.00" → 12444.0
-            val = int(round(float(val)))
-            val = max(0, val)
-        except (ValueError, TypeError):
-            val = 0
-        sanitized[field] = val
+        sanitized[field] = _parse_amount(data.get(field, 0))
 
     for field in DESCRIPTION_FIELDS:
         val = data.get(field, '')
         if not isinstance(val, str):
             val = str(val) if val else ''
         sanitized[field] = val[:100]
+
+    # Safety net: detect and fix ×100 pattern
+    sanitized = _detect_and_fix_times100(sanitized)
 
     return sanitized
 

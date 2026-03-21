@@ -1,13 +1,17 @@
 function formatCurrency(input) {
     let value = input.value.replace(/[^\d.]/g, '');
-    value = parseFloat(value).toFixed(2);
-    if (!isNaN(value)) {
-        input.value = '$' + value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    let num = Math.round(parseFloat(value));
+    if (isNaN(num) || num <= 0) {
+        input.value = '$0';
+        return;
     }
+    input.value = '$' + num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
 function unformatCurrency(input) {
-    input.value = input.value.replace(/[^\d.]/g, '');
+    let value = input.value.replace(/[^\d.]/g, '');
+    let num = Math.round(parseFloat(value));
+    input.value = isNaN(num) ? '0' : String(num);
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -26,10 +30,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
         input.addEventListener('focus', function() {
             unformatCurrency(this);
+            this.select();
         });
     });
 
-    document.querySelector('form').addEventListener('submit', function(e) {
+    document.querySelector('form').addEventListener('submit', function() {
         dollarInputs.forEach(function(input) {
             unformatCurrency(input);
         });

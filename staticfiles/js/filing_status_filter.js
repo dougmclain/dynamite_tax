@@ -1,41 +1,72 @@
 document.addEventListener('DOMContentLoaded', function() {
-    var filterSelects = document.querySelectorAll('#filter-row select');
+    var filterMenus = document.querySelectorAll('#filter-row .dropdown-menu');
     var tableRows = document.querySelectorAll('#associationTable tbody tr');
     var clearBtn = document.getElementById('clear-filters');
 
-    function applyFilters() {
+    function getActiveFilters() {
         var filters = {};
-        filterSelects.forEach(function(select) {
-            var key = select.getAttribute('data-filter');
-            var val = select.value;
-            if (val) filters[key] = val;
+        filterMenus.forEach(function(menu) {
+            var key = menu.getAttribute('data-filter');
+            var checked = menu.querySelectorAll('input[type="checkbox"]:checked');
+            if (checked.length > 0) {
+                filters[key] = [];
+                checked.forEach(function(cb) { filters[key].push(cb.value); });
+            }
         });
+        return filters;
+    }
+
+    function applyFilters() {
+        var filters = getActiveFilters();
 
         tableRows.forEach(function(row) {
             var show = true;
             for (var key in filters) {
                 var rowVal = row.getAttribute('data-' + key);
-                if (rowVal !== filters[key]) {
+                if (filters[key].indexOf(rowVal) === -1) {
                     show = false;
                     break;
                 }
             }
             row.style.display = show ? '' : 'none';
         });
-    }
 
-    if (filterSelects.length) {
-        filterSelects.forEach(function(select) {
-            select.addEventListener('change', applyFilters);
+        // Update button labels to show active filter count
+        filterMenus.forEach(function(menu) {
+            var btn = menu.previousElementSibling;
+            var label = btn.textContent.replace(/ \(\d+\)$/, '');
+            var checked = menu.querySelectorAll('input[type="checkbox"]:checked');
+            var total = menu.querySelectorAll('input[type="checkbox"]');
+            if (checked.length > 0 && checked.length < total.length) {
+                btn.textContent = label + ' (' + checked.length + ')';
+                btn.classList.remove('btn-outline-secondary');
+                btn.classList.add('btn-primary');
+            } else {
+                btn.textContent = label;
+                btn.classList.remove('btn-primary');
+                btn.classList.add('btn-outline-secondary');
+            }
         });
     }
+
+    // Listen for checkbox changes inside filter dropdowns
+    filterMenus.forEach(function(menu) {
+        menu.addEventListener('change', applyFilters);
+    });
 
     if (clearBtn) {
         clearBtn.addEventListener('click', function() {
-            filterSelects.forEach(function(select) { select.value = ''; });
+            filterMenus.forEach(function(menu) {
+                menu.querySelectorAll('input[type="checkbox"]').forEach(function(cb) {
+                    cb.checked = false;
+                });
+            });
             applyFilters();
         });
     }
+
+    // Apply initial filters (Filing Status has "Will File" checked by default)
+    applyFilters();
 
     // Auto-submit form when tax year or management company changes
     var taxYearSelect = document.getElementById('tax_year');

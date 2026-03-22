@@ -110,37 +110,42 @@
                                     Not available
                                 {% endif %}
                             </p>
-                            <p><strong>Tax Return Sent:</strong>
+                            <p><strong>Tax Return:</strong>
+                                {% if completed_tax_return_data and completed_tax_return_data.sent_tax_return_pdf %}
+                                    <a href="{{ completed_tax_return_data.sent_tax_return_pdf.url }}?v={{ request.session.pdf_timestamp|default:'0' }}" class="btn btn-sm btn-secondary" target="_blank">View Tax Return</a>
+                                    {% if not completed_tax_return_data.sent_for_signature %}
+                                    <form method="post" action="{% url 'delete_completed_return' financial_id=financial_data.id %}"
+                                          onsubmit="return confirm('Are you sure you want to delete this tax return? This action cannot be undone.');"
+                                          style="display: inline;">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                                    </form>
+                                    {% endif %}
+                                {% else %}
+                                    Not available
+                                {% endif %}
+                            </p>
+                            <p><strong>Sent for Signature:</strong>
                                 {% if completed_tax_return_data %}
                                     {% if completed_tax_return_data.sent_for_signature %}
-                                        Yes{% if completed_tax_return_data.sent_date %} (Sent on {{ completed_tax_return_data.sent_date|date:"F d, Y" }}){% endif %}
-                                        {% if completed_tax_return_data.sent_tax_return_pdf %}
-                                            <a href="{{ completed_tax_return_data.sent_tax_return_pdf.url }}?v={{ request.session.pdf_timestamp|default:'0' }}" class="btn btn-sm btn-secondary" target="_blank">View Sent Return</a>
-                                        {% endif %}
+                                        Yes{% if completed_tax_return_data.sent_date %} ({{ completed_tax_return_data.sent_date|date:"F d, Y" }}){% endif %}
                                     {% else %}
                                         No
                                     {% endif %}
                                 {% else %}
-                                    No information available
+                                    No
                                 {% endif %}
                             </p>
                             <p><strong>Tax Return Filed:</strong>
                                 {% if completed_tax_return_data %}
                                     {% if completed_tax_return_data.return_filed %}
-                                        Yes{% if completed_tax_return_data.date_prepared %} (Prepared on {{ completed_tax_return_data.date_prepared|date:"F d, Y" }}){% endif %}
+                                        Yes{% if completed_tax_return_data.date_prepared %} ({{ completed_tax_return_data.date_prepared|date:"F d, Y" }}){% endif %}
                                         <span class="badge bg-info">{{ completed_tax_return_data.get_filing_status_display }}</span>
                                     {% else %}
                                         No
                                     {% endif %}
                                 {% else %}
-                                    No information available
-                                {% endif %}
-                            </p>
-                            <p><strong>Signed Tax Return:</strong>
-                                {% if completed_tax_return_data and completed_tax_return_data.tax_return_pdf %}
-                                    <a href="{{ completed_tax_return_data.tax_return_pdf.url }}?v={{ request.session.pdf_timestamp|default:'0' }}" class="btn btn-sm btn-secondary" target="_blank">View Signed Return</a>
-                                {% else %}
-                                    Not available
+                                    No
                                 {% endif %}
                             </p>
                             <p><strong>Reviewed:</strong>
@@ -154,16 +159,6 @@
                                     No
                                 {% endif %}
                             </p>
-                            {% if completed_tax_return_data and financial_data %}
-                                {% if completed_tax_return_data.sent_tax_return_pdf or completed_tax_return_data.tax_return_pdf %}
-                                <form method="post" action="{% url 'delete_completed_return' financial_id=financial_data.id %}"
-                                      onsubmit="return confirm('Are you sure you want to delete this completed tax return? This action cannot be undone.');"
-                                      style="display: inline;">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn-danger btn-sm">Delete Completed Return</button>
-                                </form>
-                                {% endif %}
-                            {% endif %}
                             <!-- Invoice & Payment Tracking -->
                             <p><strong>Invoice Sent:</strong>
                                 {% if filing_status.invoice_sent_date %}

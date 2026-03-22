@@ -41,9 +41,13 @@ class DashboardView(LoginRequiredMixin, View):
         # Ensure we're working with an integer
         selected_year = int(selected_year)
 
-        # Get management company filter from URL or default to all
+        # Get management company filter from URL or session
         management_company_id = request.GET.get('management_company')
-        
+        if management_company_id:
+            request.session['selected_management_company'] = management_company_id
+        else:
+            management_company_id = request.session.get('selected_management_company')
+
         # Get all management companies for the filter dropdown
         management_companies = ManagementCompany.objects.all().order_by('name')
 

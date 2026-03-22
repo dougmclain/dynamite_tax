@@ -1,47 +1,45 @@
-// static/js/filing_status_filter.js
-
 document.addEventListener('DOMContentLoaded', function() {
-    // Filter for showing/hiding associations not being filed
-    const showAllCheckbox = document.getElementById('show-all-associations');
-    const notFilingRows = document.querySelectorAll('tr.not-filing');
+    var filterSelects = document.querySelectorAll('#filter-row select');
+    var tableRows = document.querySelectorAll('#associationTable tbody tr');
+    var clearBtn = document.getElementById('clear-filters');
 
-    if (showAllCheckbox && notFilingRows.length > 0) {
-        // Set initial state based on localStorage preference
-        const showAll = localStorage.getItem('showAllAssociations') !== 'false';
-        showAllCheckbox.checked = showAll;
-        
-        // Apply initial state
-        notFilingRows.forEach(row => {
-            row.style.display = showAll ? 'table-row' : 'none';
+    function applyFilters() {
+        var filters = {};
+        filterSelects.forEach(function(select) {
+            var key = select.getAttribute('data-filter');
+            var val = select.value;
+            if (val) filters[key] = val;
         });
-        
-        // Handle checkbox changes
-        showAllCheckbox.addEventListener('change', function() {
-            const showAll = this.checked;
-            
-            // Save preference
-            localStorage.setItem('showAllAssociations', showAll);
-            
-            // Update display
-            notFilingRows.forEach(row => {
-                row.style.display = showAll ? 'table-row' : 'none';
-            });
+
+        tableRows.forEach(function(row) {
+            var show = true;
+            for (var key in filters) {
+                var rowVal = row.getAttribute('data-' + key);
+                if (rowVal !== filters[key]) {
+                    show = false;
+                    break;
+                }
+            }
+            row.style.display = show ? '' : 'none';
         });
     }
-    
-    // Auto-submit form when filter values change
-    const taxYearSelect = document.getElementById('tax_year');
-    const managementCompanySelect = document.getElementById('management_company');
-    
-    if (taxYearSelect) {
-        taxYearSelect.addEventListener('change', function() {
-            this.form.submit();
+
+    if (filterSelects.length) {
+        filterSelects.forEach(function(select) {
+            select.addEventListener('change', applyFilters);
         });
     }
-    
-    if (managementCompanySelect) {
-        managementCompanySelect.addEventListener('change', function() {
-            this.form.submit();
+
+    if (clearBtn) {
+        clearBtn.addEventListener('click', function() {
+            filterSelects.forEach(function(select) { select.value = ''; });
+            applyFilters();
         });
     }
+
+    // Auto-submit form when tax year or management company changes
+    var taxYearSelect = document.getElementById('tax_year');
+    var mgmtSelect = document.getElementById('management_company');
+    if (taxYearSelect) taxYearSelect.addEventListener('change', function() { this.form.submit(); });
+    if (mgmtSelect) mgmtSelect.addEventListener('change', function() { this.form.submit(); });
 });

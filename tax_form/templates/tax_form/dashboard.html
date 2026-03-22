@@ -134,13 +134,75 @@
             </div>
 
             <div class="card mb-4">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h3 class="card-title h5 mb-0">Association List</h3>
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="show-all-associations" checked>
-                        <label class="form-check-label" for="show-all-associations">
-                            Show all associations
-                        </label>
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h3 class="card-title h5 mb-0">Association List</h3>
+                        <button class="btn btn-sm btn-outline-secondary" id="clear-filters">Clear Filters</button>
+                    </div>
+                    <div class="row g-2" id="filter-row">
+                        <div class="col">
+                            <select class="form-select form-select-sm" id="filter-filing-status" data-filter="filing-status">
+                                <option value="">Filing Status</option>
+                                <option value="will_file">Will File</option>
+                                <option value="not_filing">Not Filing</option>
+                            </select>
+                        </div>
+                        <div class="col">
+                            <select class="form-select form-select-sm" id="filter-sent" data-filter="sent">
+                                <option value="">Return Sent</option>
+                                <option value="sent">Sent</option>
+                                <option value="not_sent">Not Sent</option>
+                            </select>
+                        </div>
+                        <div class="col">
+                            <select class="form-select form-select-sm" id="filter-filed" data-filter="filed">
+                                <option value="">Return Filed</option>
+                                <option value="filed">Filed</option>
+                                <option value="not_filed">Not Filed</option>
+                            </select>
+                        </div>
+                        <div class="col">
+                            <select class="form-select form-select-sm" id="filter-reviewed" data-filter="reviewed">
+                                <option value="">Reviewed</option>
+                                <option value="reviewed">Reviewed</option>
+                                <option value="pending">Pending</option>
+                                <option value="none">Not Started</option>
+                            </select>
+                        </div>
+                        <div class="col">
+                            <select class="form-select form-select-sm" id="filter-engagement" data-filter="engagement">
+                                <option value="">Engagement</option>
+                                <option value="signed">Signed</option>
+                                <option value="sent">Sent</option>
+                                <option value="pending">Pending</option>
+                                <option value="not_created">Not Created</option>
+                            </select>
+                        </div>
+                        <div class="col">
+                            <select class="form-select form-select-sm" id="filter-invoice" data-filter="invoice">
+                                <option value="">Invoice</option>
+                                <option value="paid">Paid</option>
+                                <option value="invoiced">Invoiced</option>
+                                <option value="not_invoiced">Not Invoiced</option>
+                            </select>
+                        </div>
+                        <div class="col">
+                            <select class="form-select form-select-sm" id="filter-fiscal-month" data-filter="fiscal-month">
+                                <option value="">Fiscal Year End</option>
+                                <option value="1">January</option>
+                                <option value="2">February</option>
+                                <option value="3">March</option>
+                                <option value="4">April</option>
+                                <option value="5">May</option>
+                                <option value="6">June</option>
+                                <option value="7">July</option>
+                                <option value="8">August</option>
+                                <option value="9">September</option>
+                                <option value="10">October</option>
+                                <option value="11">November</option>
+                                <option value="12">December</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
                 <div class="card-body p-0">
@@ -157,13 +219,19 @@
                                     <th>Reviewed</th>
                                     <th>Engagement Letter</th>
                                     <th>Invoice Status</th>
-                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for data in dashboard_data %}
-                                <tr class="clickable-row {% if not data.prepare_return %}not-filing{% endif %}" 
-                                    data-href="{% url 'association' %}?association_id={{ data.association.id }}&tax_year={{ selected_year }}">
+                                <tr class="clickable-row {% if not data.prepare_return %}not-filing{% endif %}"
+                                    data-href="{% url 'association' %}?association_id={{ data.association.id }}&tax_year={{ selected_year }}"
+                                    data-filing-status="{% if data.prepare_return %}will_file{% else %}not_filing{% endif %}"
+                                    data-sent="{% if data.tax_return_sent_date %}sent{% else %}not_sent{% endif %}"
+                                    data-filed="{% if data.tax_return_filed %}filed{% else %}not_filed{% endif %}"
+                                    data-reviewed="{% if data.tax_return_reviewed %}reviewed{% elif data.has_stored_return %}pending{% else %}none{% endif %}"
+                                    data-engagement="{% with letter=data.engagement_letter %}{% if letter %}{% if letter.status == 'signed' %}signed{% elif letter.status == 'sent' %}sent{% else %}pending{% endif %}{% else %}not_created{% endif %}{% endwith %}"
+                                    data-invoice="{% if data.payment_received_date %}paid{% elif data.invoice_sent_date or data.invoiced %}invoiced{% elif data.prepare_return %}not_invoiced{% else %}na{% endif %}"
+                                    data-fiscal-month="{{ data.association.fiscal_year_end_month }}">
                                     <td data-name="{{ data.association.association_name }}" title="{{ data.association.association_name }}">
                                         {{ data.association.association_name }}
                                     </td>
@@ -175,9 +243,15 @@
                                     </td>
                                     <td>
                                         {% if data.prepare_return %}
-                                            <span class="badge bg-success">Will File</span>
+                                            <a href="/filing-status/{{ data.association.id }}/{{ selected_year }}/"
+                                               onclick="event.stopPropagation();" class="text-decoration-none">
+                                                <span class="badge bg-success">Will File</span>
+                                            </a>
                                         {% else %}
-                                            <span class="badge bg-danger" title="{{ data.not_filing_reason }}">Not Filing</span>
+                                            <a href="/filing-status/{{ data.association.id }}/{{ selected_year }}/"
+                                               onclick="event.stopPropagation();" class="text-decoration-none">
+                                                <span class="badge bg-danger" title="{{ data.not_filing_reason }}">Not Filing</span>
+                                            </a>
                                         {% endif %}
                                     </td>
                                     <td data-sent="{{ data.tax_return_sent_date|date:'Y-m-d'|default:'9999-12-31' }}">
@@ -232,23 +306,6 @@
                                                 <span class="badge bg-light text-dark">N/A</span>
                                             {% endif %}
                                         {% endif %}
-                                    </td>
-                                    <td>
-                                        <div class="btn-group w-100">
-                                            <a href="/filing-status/{{ data.association.id }}/{{ selected_year }}/" 
-                                               class="btn btn-sm btn-primary" onclick="event.stopPropagation();">
-                                                Status
-                                            </a>
-                                            <button type="button" class="btn btn-sm btn-primary dropdown-toggle dropdown-toggle-split" 
-                                                    data-bs-toggle="dropdown" aria-expanded="false" onclick="event.stopPropagation();">
-                                                <span class="visually-hidden">Toggle Dropdown</span>
-                                            </button>
-                                            <ul class="dropdown-menu dropdown-menu-end">
-                                                <li><a class="dropdown-item" href="{% url 'edit_tax_year_info' association_id=data.association.id tax_year=selected_year %}" onclick="event.stopPropagation();">Tax Info</a></li>
-                                                <li><a class="dropdown-item" href="{% url 'engagement_letter' %}?tax_year={{ selected_year }}" onclick="event.stopPropagation();">Engagement Letter</a></li>
-                                                <li><a class="dropdown-item" href="{% url 'form_1120h' %}?association_id={{ data.association.id }}&tax_year={{ selected_year %}" onclick="event.stopPropagation();">Form 1120-H</a></li>
-                                            </ul>
-                                        </div>
                                     </td>
                                 </tr>
                                 {% endfor %}

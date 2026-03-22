@@ -114,7 +114,8 @@ main.container:has(.dashboard-container) {
 #associationTable td:nth-child(5),
 #associationTable td:nth-child(6),
 #associationTable td:nth-child(7),
-#associationTable td:nth-child(8) {
+#associationTable td:nth-child(8),
+#associationTable td:nth-child(9) {
     text-align: center;
 }
 
@@ -140,7 +141,8 @@ main.container:has(.dashboard-container) {
 #associationTable thead th:nth-child(5),
 #associationTable thead th:nth-child(6),
 #associationTable thead th:nth-child(7),
-#associationTable thead th:nth-child(8) {
+#associationTable thead th:nth-child(8),
+#associationTable thead th:nth-child(9) {
     text-align: center;
 }
 
@@ -178,17 +180,17 @@ main.container:has(.dashboard-container) {
 
 #associationTable th:nth-child(7),
 #associationTable td:nth-child(7) {
-    min-width: 80px; /* Engagement Letter */
+    min-width: 80px; /* Reviewed */
 }
 
 #associationTable th:nth-child(8),
 #associationTable td:nth-child(8) {
-    min-width: 80px; /* Invoice Status */
+    min-width: 80px; /* Engagement Letter */
 }
 
 #associationTable th:nth-child(9),
 #associationTable td:nth-child(9) {
-    min-width: 90px; /* Actions */
+    min-width: 80px; /* Invoice Status */
 }
 
 /* Large screen: more spacious table */
@@ -227,31 +229,6 @@ main.container:has(.dashboard-container) {
     }
 }
 
-/* Action buttons styling */
-#associationTable .btn-group {
-    display: inline-flex;
-    white-space: nowrap;
-}
-
-#associationTable .btn-group .btn {
-    padding: 0.2rem 0.5rem;
-    font-size: 0.75rem;
-    white-space: nowrap;
-}
-
-#associationTable .dropdown-toggle-split {
-    padding-left: 0.3rem;
-    padding-right: 0.3rem;
-}
-
-.dropdown-menu {
-    min-width: 150px;
-}
-
-.dropdown-item {
-    padding: 0.25rem 1rem;
-    font-size: 0.85rem;
-}
 
 /* Styles for clickable rows */
 .clickable-row {
@@ -335,14 +312,15 @@ tr.not-filing .badge.bg-danger {
         padding: 0.25em 0.4em;
     }
 
-    #associationTable .btn-group .btn {
-        font-size: 0.7rem;
-        padding: 0.15rem 0.35rem;
-    }
 }
 
 /* Management column styling */
 .management-column {
     font-weight: 500;
     color: #5b6d9a;
+}
+
+/* Filter row styling */
+#filter-row select {
+    font-size: 0.8rem;
 }

@@ -4,6 +4,7 @@ from django.views import View
 from django.shortcuts import render
 from django.contrib.auth.mixins import LoginRequiredMixin   
 from ..models import Association, Financial, Extension, CompletedTaxReturn, EngagementLetter, AssociationFilingStatus, ManagementCompany
+from ..tax_calculations import calculate_total_tax, calculate_total_payments, calculate_amount_owed
 from django.utils import timezone
 from django.db.models import Min, Max, Count, Q, F, Value, BooleanField
 from django.db.models.functions import Coalesce
@@ -104,6 +105,13 @@ class DashboardView(LoginRequiredMixin, View):
         # Count uninvoiced associations that we'll prepare returns for
         uninvoiced_associations = associations_to_file - invoiced_count
 
+        # Count reviewed returns - filtered by current selection
+        reviewed_returns = CompletedTaxReturn.objects.filter(
+            financial__tax_year=selected_year,
+            reviewed=True,
+            financial__association__in=associations.filter(id__in=filing_association_ids)
+        ).count()
+
         # Get signed engagement letters - filtered by current selection
         signed_engagement_letters = EngagementLetter.objects.filter(
             tax_year=selected_year,
@@ -155,6 +163,13 @@ class DashboardView(LoginRequiredMixin, View):
             else:
                 management_info = "Unspecified"
 
+            # Calculate balance due
+            amount_owed = 0
+            if financial:
+                total_tax = calculate_total_tax(financial)
+                total_pmts = calculate_total_payments(financial)
+                amount_owed = calculate_amount_owed(total_tax, total_pmts)
+
             dashboard_data.append({
                 'association': association,
                 'fiscal_year_end': fiscal_year_end,
@@ -172,6 +187,7 @@ class DashboardView(LoginRequiredMixin, View):
                 'payment_received_date': filing_status.payment_received_date if filing_status else None,
                 'not_filing_reason': filing_status.not_filing_reason if filing_status and not filing_status.prepare_return else "",
                 'management_info': management_info,
+                'amount_owed': amount_owed,
             })
 
         context = {
@@ -183,6 +199,7 @@ class DashboardView(LoginRequiredMixin, View):
             'filed_returns': filed_returns,
             'unfiled_returns': unfiled_returns,
             'sent_returns': sent_returns,
+            'reviewed_returns': reviewed_returns,
             'signed_engagement_letters': signed_engagement_letters,
             'engagement_letters_needed': engagement_letters_needed,
             'invoiced_associations': invoiced_count,

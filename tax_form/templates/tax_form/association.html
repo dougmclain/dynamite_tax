@@ -3,272 +3,393 @@
 {% load static %}
 {% block title %}Association Details{% endblock %}
 
+{% block main_class %}container-fluid{% endblock %}
+
+{% block extra_css %}
+<style>
+    .association-container {
+        max-width: 1600px;
+        margin: 0 auto;
+        padding: 0 30px;
+    }
+    .detail-card .card-header h2,
+    .detail-card .card-header h3 {
+        color: var(--tax-purple, #6f42c1);
+    }
+    .detail-card .card-body h3,
+    .detail-card .card-body h4 {
+        color: var(--tax-purple, #6f42c1);
+        font-size: 1rem;
+        font-weight: 600;
+        margin-top: 1.2rem;
+        margin-bottom: 0.6rem;
+        padding-bottom: 0.3rem;
+        border-bottom: 1px solid #e9ecef;
+    }
+    .detail-card .card-body h3:first-child,
+    .detail-card .card-body h4:first-child {
+        margin-top: 0;
+    }
+    .detail-card .info-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.25rem 0;
+        border-bottom: 1px solid #f8f9fa;
+    }
+    .detail-card .info-row:last-child {
+        border-bottom: none;
+    }
+    .detail-card .info-label {
+        font-weight: 500;
+        color: #555;
+        white-space: nowrap;
+        margin-right: 1rem;
+    }
+    .detail-card .info-value {
+        text-align: right;
+        word-break: break-word;
+    }
+    .detail-card .file-btn-group {
+        display: flex;
+        gap: 0.4rem;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    .detail-card .table td {
+        padding: 0.3rem 0.5rem;
+    }
+    .detail-card .table td:last-child {
+        text-align: right;
+        white-space: nowrap;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container mt-5">
+<div class="association-container mt-4">
     <h1 class="mb-4">Association Details</h1>
 
-    <div class="row justify-content-center">
-        <div class="col-12">
-            <form method="get" class="mb-4">
-                <div class="row">
-                    <div class="col-md-6">
-                        <label for="association_id" class="form-label">Select an Association:</label>
-                        <select name="association_id" id="association_id" class="form-select" onchange="this.form.submit()">
-                            <option value="">-- Select an Association --</option>
-                            {% for association in associations %}
-                                <option value="{{ association.id }}" {% if selected_association.id == association.id %}selected{% endif %}>
-                                    {{ association.association_name }}
-                                </option>
-                            {% endfor %}
-                        </select>
+    <form method="get" class="mb-4">
+        <div class="row">
+            <div class="col-md-5">
+                <label for="association_id" class="form-label">Select an Association:</label>
+                <select name="association_id" id="association_id" class="form-select" onchange="this.form.submit()">
+                    <option value="">-- Select an Association --</option>
+                    {% for association in associations %}
+                        <option value="{{ association.id }}" {% if selected_association.id == association.id %}selected{% endif %}>
+                            {{ association.association_name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="tax_year" class="form-label">Select Tax Year:</label>
+                <select name="tax_year" id="tax_year" class="form-select" onchange="this.form.submit()">
+                    {% for year in available_tax_years %}
+                        <option value="{{ year }}" {% if selected_tax_year == year %}selected{% endif %}>
+                            {{ year }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </form>
+
+    {% if selected_association %}
+    <div class="row">
+        <!-- Association Info Card -->
+        <div class="col-xl-4 col-lg-6 mb-4">
+            <div class="card h-100 detail-card">
+                <div class="card-header">
+                    <h2 class="h5 mb-0">{{ selected_association.association_name }}</h2>
+                </div>
+                <div class="card-body">
+                    <h4>Association Information</h4>
+                    <div class="info-row">
+                        <span class="info-label">Address</span>
+                        <span class="info-value">
+                            {{ association_info.mailing_address }}<br>
+                            {{ association_info.city }}, {{ association_info.state }} {{ association_info.zipcode }}
+                        </span>
                     </div>
-                    <div class="col-md-6">
-                        <label for="tax_year" class="form-label">Select Tax Year:</label>
-                        <select name="tax_year" id="tax_year" class="form-select" onchange="this.form.submit()">
-                            {% for year in available_tax_years %}
-                                <option value="{{ year }}" {% if selected_tax_year == year %}selected{% endif %}>
-                                    {{ year }}
-                                </option>
-                            {% endfor %}
-                        </select>
+                    <div class="info-row">
+                        <span class="info-label">EIN</span>
+                        <span class="info-value">{{ association_info.ein }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Formation Date</span>
+                        <span class="info-value">{{ association_info.formation_date|date:"F d, Y" }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Type</span>
+                        <span class="info-value">{{ association_info.association_type }}</span>
+                    </div>
+
+                    <h4>Management</h4>
+                    {% if selected_association.is_self_managed %}
+                        <div class="info-row">
+                            <span class="info-label">Management</span>
+                            <span class="info-value"><span class="badge bg-info">Self-Managed</span></span>
+                        </div>
+                    {% elif selected_association.management_company %}
+                        <div class="info-row">
+                            <span class="info-label">Company</span>
+                            <span class="info-value">{{ selected_association.management_company.name }}</span>
+                        </div>
+                        {% if selected_association.management_company.contact_person %}
+                        <div class="info-row">
+                            <span class="info-label">Contact</span>
+                            <span class="info-value">{{ selected_association.management_company.contact_person }}</span>
+                        </div>
+                        {% endif %}
+                        {% if selected_association.management_company.email %}
+                        <div class="info-row">
+                            <span class="info-label">Email</span>
+                            <span class="info-value"><a href="mailto:{{ selected_association.management_company.email }}">{{ selected_association.management_company.email }}</a></span>
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="info-row">
+                            <span class="info-label">Management</span>
+                            <span class="info-value"><span class="badge bg-warning">Unspecified</span></span>
+                        </div>
+                    {% endif %}
+
+                    <h4>Contact</h4>
+                    <div class="info-row">
+                        <span class="info-label">Name</span>
+                        <span class="info-value">{{ association_info.contact_name }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Email</span>
+                        <span class="info-value">{{ association_info.contact_email }}</span>
+                    </div>
+                    <div class="mt-3 text-end">
+                        <a href="{% url 'edit_association' association_id=selected_association.id %}" class="btn btn-primary btn-sm">Edit Association</a>
                     </div>
                 </div>
-            </form>
+            </div>
+        </div>
 
-            {% if selected_association %}
-            <div class="row">
-                <div class="col-xl-4 col-lg-6 mb-4">
-                    <div class="card h-100">
-                        <div class="card-header d-flex justify-content-between align-items-center">
-                            <h2 class="h4 mb-0">{{ selected_association.association_name }}</h2>
-                        </div>
-                        <div class="card-body">
-                            <h3 class="h5">Association Information</h3>
-                            <address>
-                                <strong>Address:</strong><br>
-                                {{ association_info.mailing_address }}<br>
-                                {{ association_info.city }}, {{ association_info.state }} {{ association_info.zipcode }}
-                            </address>
-                            <p><strong>EIN:</strong> {{ association_info.ein }}</p>
-                            <p><strong>Formation Date:</strong> {{ association_info.formation_date|date:"F d, Y" }}</p>
-                            <p><strong>Association Type:</strong> {{ association_info.association_type }}</p>
-                            
-                            <!-- New Management section -->
-                            <h3 class="h5 mt-4">Management Information</h3>
-                            {% if selected_association.is_self_managed %}
-                                <p><strong>Management Type:</strong> <span class="badge bg-info">Self-Managed</span></p>
-                            {% elif selected_association.management_company %}
-                                <p><strong>Management Type:</strong> <span class="badge bg-success">Managed</span></p>
-                                <p><strong>Management Company:</strong> {{ selected_association.management_company.name }}</p>
-                                {% if selected_association.management_company.contact_person %}
-                                    <p><strong>Contact Person:</strong> {{ selected_association.management_company.contact_person }}</p>
-                                {% endif %}
-                                {% if selected_association.management_company.email %}
-                                    <p><strong>Email:</strong> <a href="mailto:{{ selected_association.management_company.email }}">{{ selected_association.management_company.email }}</a></p>
-                                {% endif %}
-                                {% if selected_association.management_company.phone %}
-                                    <p><strong>Phone:</strong> <a href="tel:{{ selected_association.management_company.phone }}">{{ selected_association.management_company.phone }}</a></p>
-                                {% endif %}
+        <!-- Tax Year Card -->
+        <div class="col-xl-4 col-lg-6 mb-4">
+            <div class="card h-100 detail-card">
+                <div class="card-header">
+                    <h2 class="h5 mb-0">Tax Year {{ selected_tax_year }}</h2>
+                </div>
+                <div class="card-body">
+                    <h4>Dates &amp; Deadlines</h4>
+                    <div class="info-row">
+                        <span class="info-label">Fiscal Year End</span>
+                        <span class="info-value">{{ selected_association.get_fiscal_year_end_month_display }} {{ selected_tax_year }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Due Date</span>
+                        <span class="info-value">{{ tax_return_due_date|date:"F d, Y" }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Extended Due Date</span>
+                        <span class="info-value">{{ extended_due_date|date:"F d, Y" }}</span>
+                    </div>
+
+                    <h4>Extension</h4>
+                    <div class="info-row">
+                        <span class="info-label">Filed</span>
+                        <span class="info-value">
+                            {% if extension_data and extension_data.filed %}
+                                <span class="badge bg-success">Yes</span> {{ extension_data.filed_date|date:"n/d/Y" }}
                             {% else %}
-                                <p><strong>Management Type:</strong> <span class="badge bg-warning">Unspecified</span></p>
+                                <span class="badge bg-secondary">No</span>
                             {% endif %}
-
-                            <h3 class="h5 mt-4">Contact Information</h3>
-                            <p><strong>Name:</strong> {{ association_info.contact_name }}</p>
-                            <p><strong>Email:</strong> {{ association_info.contact_email }}</p>
-                            <div class="container mt-4 d-flex justify-content-md-end">
-                                <a href="{% url 'edit_association' association_id=selected_association.id %}" class="btn btn-primary btn-sm">Edit</a>
-                            </div>
-                        </div>
+                        </span>
                     </div>
-                </div>
-                
-                <div class="col-xl-4 col-lg-6 mb-4">
-                    <div class="card h-100">
-                        <div class="card-header">
-                            <h2 class="h4 mb-0">Tax Year {{ selected_tax_year }}</h2>
-                        </div>
-                        <div class="card-body">
-                            <p><strong>Fiscal Year End:</strong> {{ selected_association.get_fiscal_year_end_month_display }} {{ selected_tax_year }}</p>
-                            <p><strong>Tax Return Due Date:</strong> {{ tax_return_due_date|date:"F d, Y" }}</p>
-                            <p><strong>Extended Due Date:</strong> {{ extended_due_date|date:"F d, Y" }}</p>
-                            <p><strong>Extension Filed:</strong> 
-                                {% if extension_data %}
-                                    {% if extension_data.filed %}
-                                        Yes (Filed on {{ extension_data.filed_date|date:"F d, Y" }})
-                                    {% else %}
-                                        No
-                                    {% endif %}
-                                {% else %}
-                                    No information available
-                                {% endif %}
-                            </p>
-                            <p><strong>Extension Form:</strong>
-                                {% if extension_data and extension_data.form_7004 %}
-                                    <a href="{{ extension_data.form_7004.url }}?v={{ request.session.pdf_timestamp|default:'0' }}" class="btn btn-sm btn-secondary" target="_blank">View Form 7004</a>
-                                {% else %}
-                                    Not available
-                                {% endif %}
-                            </p>
-                            <p><strong>Tax Return:</strong>
-                                {% if completed_tax_return_data and completed_tax_return_data.sent_tax_return_pdf %}
-                                    <a href="{{ completed_tax_return_data.sent_tax_return_pdf.url }}?v={{ request.session.pdf_timestamp|default:'0' }}" class="btn btn-sm btn-secondary" target="_blank">View Tax Return</a>
+                    {% if extension_data and extension_data.form_7004 %}
+                    <div class="info-row">
+                        <span class="info-label">Form 7004</span>
+                        <span class="info-value">
+                            <a href="{{ extension_data.form_7004.url }}?v={{ request.session.pdf_timestamp|default:'0' }}" class="btn btn-sm btn-outline-secondary" target="_blank">View</a>
+                        </span>
+                    </div>
+                    {% endif %}
+
+                    <h4>Tax Return</h4>
+                    <div class="info-row">
+                        <span class="info-label">Return</span>
+                        <span class="info-value">
+                            {% if completed_tax_return_data and completed_tax_return_data.sent_tax_return_pdf %}
+                                <div class="file-btn-group justify-content-end">
+                                    <a href="{{ completed_tax_return_data.sent_tax_return_pdf.url }}?v={{ request.session.pdf_timestamp|default:'0' }}" class="btn btn-sm btn-outline-secondary" target="_blank">View</a>
                                     {% if not completed_tax_return_data.sent_for_signature %}
                                     <form method="post" action="{% url 'delete_completed_return' financial_id=financial_data.id %}"
-                                          onsubmit="return confirm('Are you sure you want to delete this tax return? This action cannot be undone.');"
+                                          onsubmit="return confirm('Are you sure you want to delete this tax return?');"
                                           style="display: inline;">
                                         {% csrf_token %}
-                                        <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                                        <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
                                     </form>
                                     {% endif %}
-                                {% else %}
-                                    Not available
-                                {% endif %}
-                            </p>
-                            <p><strong>Sent for Signature:</strong>
-                                {% if completed_tax_return_data %}
-                                    {% if completed_tax_return_data.sent_for_signature %}
-                                        Yes{% if completed_tax_return_data.sent_date %} ({{ completed_tax_return_data.sent_date|date:"F d, Y" }}){% endif %}
-                                    {% else %}
-                                        No
-                                    {% endif %}
-                                {% else %}
-                                    No
-                                {% endif %}
-                            </p>
-                            <p><strong>Tax Return Filed:</strong>
-                                {% if completed_tax_return_data %}
-                                    {% if completed_tax_return_data.return_filed %}
-                                        Yes{% if completed_tax_return_data.date_prepared %} ({{ completed_tax_return_data.date_prepared|date:"F d, Y" }}){% endif %}
-                                        <span class="badge bg-info">{{ completed_tax_return_data.get_filing_status_display }}</span>
-                                    {% else %}
-                                        No
-                                    {% endif %}
-                                {% else %}
-                                    No
-                                {% endif %}
-                            </p>
-                            <p><strong>Reviewed:</strong>
-                                {% if completed_tax_return_data %}
-                                    {% if completed_tax_return_data.reviewed %}
-                                        Yes{% if completed_tax_return_data.reviewed_date %} ({{ completed_tax_return_data.reviewed_date|date:"F d, Y" }}){% endif %}
-                                    {% else %}
-                                        No
-                                    {% endif %}
-                                {% else %}
-                                    No
-                                {% endif %}
-                            </p>
-                            <!-- Invoice & Payment Tracking -->
-                            <p><strong>Invoice Sent:</strong>
-                                {% if filing_status.invoice_sent_date %}
-                                    Yes ({{ filing_status.invoice_sent_date|date:"F d, Y" }})
-                                {% else %}
-                                    No
-                                {% endif %}
-                            </p>
-                            <p><strong>Payment Received:</strong>
-                                {% if filing_status.payment_received_date %}
-                                    Yes ({{ filing_status.payment_received_date|date:"F d, Y" }})
-                                {% else %}
-                                    No
-                                {% endif %}
-                            </p>
-
-                            <p><strong>Financial Info PDF:</strong>
-                                {% if financial_data and financial_data.financial_info_pdf %}
-                                    <div class="file-actions">
-                                        <a href="{{ financial_data.financial_info_pdf.url }}?v={{ request.session.pdf_timestamp|default:'0' }}" class="btn btn-sm btn-secondary" target="_blank">View Financial Info</a>
-                                        <!-- Add delete button with confirmation -->
-                                        <form method="post" action="{% url 'delete_financial_pdf' financial_id=financial_data.id %}" 
-                                              onsubmit="return confirm('Are you sure you want to delete this financial PDF? This action cannot be undone.');" 
-                                              style="display: inline;">
-                                            {% csrf_token %}
-                                            <button type="submit" class="btn btn-sm btn-danger">Delete</button>
-                                        </form>
-                                    </div>
-                                {% else %}
-                                    Not available
-                                {% endif %}
-                                <div class="container mt-4 d-flex justify-content-md-end">
-                                    <a href="{% url 'edit_tax_year_info' association_id=selected_association.id tax_year=selected_tax_year %}" class="btn btn-primary btn-sm">Edit</a>
                                 </div>
-                            </p>
-                        </div>
+                            {% else %}
+                                <span class="text-muted">Not available</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Sent for Signature</span>
+                        <span class="info-value">
+                            {% if completed_tax_return_data and completed_tax_return_data.sent_for_signature %}
+                                <span class="badge bg-success">Yes</span> {{ completed_tax_return_data.sent_date|date:"n/d/Y" }}
+                            {% else %}
+                                <span class="badge bg-secondary">No</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Filed</span>
+                        <span class="info-value">
+                            {% if completed_tax_return_data and completed_tax_return_data.return_filed %}
+                                <span class="badge bg-success">Yes</span> {{ completed_tax_return_data.date_prepared|date:"n/d/Y" }}
+                                <span class="badge bg-info ms-1">{{ completed_tax_return_data.get_filing_status_display }}</span>
+                            {% else %}
+                                <span class="badge bg-secondary">No</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Reviewed</span>
+                        <span class="info-value">
+                            {% if completed_tax_return_data and completed_tax_return_data.reviewed %}
+                                <span class="badge bg-success">Yes</span> {{ completed_tax_return_data.reviewed_date|date:"n/d/Y" }}
+                            {% else %}
+                                <span class="badge bg-secondary">No</span>
+                            {% endif %}
+                        </span>
+                    </div>
+
+                    <h4>Billing</h4>
+                    <div class="info-row">
+                        <span class="info-label">Invoice Sent</span>
+                        <span class="info-value">
+                            {% if filing_status.invoice_sent_date %}
+                                <span class="badge bg-success">Yes</span> {{ filing_status.invoice_sent_date|date:"n/d/Y" }}
+                            {% else %}
+                                <span class="badge bg-secondary">No</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Payment Received</span>
+                        <span class="info-value">
+                            {% if filing_status.payment_received_date %}
+                                <span class="badge bg-success">Yes</span> {{ filing_status.payment_received_date|date:"n/d/Y" }}
+                            {% else %}
+                                <span class="badge bg-secondary">No</span>
+                            {% endif %}
+                        </span>
+                    </div>
+
+                    <h4>Documents</h4>
+                    <div class="info-row">
+                        <span class="info-label">Financial Info PDF</span>
+                        <span class="info-value">
+                            {% if financial_data and financial_data.financial_info_pdf %}
+                                <div class="file-btn-group justify-content-end">
+                                    <a href="{{ financial_data.financial_info_pdf.url }}?v={{ request.session.pdf_timestamp|default:'0' }}" class="btn btn-sm btn-outline-secondary" target="_blank">View</a>
+                                    <form method="post" action="{% url 'delete_financial_pdf' financial_id=financial_data.id %}"
+                                          onsubmit="return confirm('Delete this financial PDF?');"
+                                          style="display: inline;">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                    </form>
+                                </div>
+                            {% else %}
+                                <span class="text-muted">Not available</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="mt-3 text-end">
+                        <a href="{% url 'edit_tax_year_info' association_id=selected_association.id tax_year=selected_tax_year %}" class="btn btn-primary btn-sm">Edit Tax Year Info</a>
                     </div>
                 </div>
-                <div class="col-xl-4 col-lg-6 mb-4">
-                    {% if financial_data %}
-                    <div class="card h-100">
-                        <div class="card-header">
-                            <h3 class="h4 mb-0">Financial Information</h3>
-                        </div>
-                        <div class="card-body">
-                            <h4>Exempt</h4>
-                            <table class="table table-sm">
-                                <tr>
-                                    <td>Total Exempt Function Income:</td>
-                                    <td>${{ total_exempt_income|default_if_none:0|intcomma }}</td>
-                                </tr>
-                                <tr>
-                                    <td>Total Exempt Function Expenses:</td>
-                                    <td>${{ expenses_lineC|default_if_none:0|intcomma }}</td>
-                                </tr>
-                            </table>
+            </div>
+        </div>
 
-                            <h4>Non-Exempt</h4>
-                            <table class="table table-sm">
-                                {% for income_type, amount in taxable_income.items %}
-                                    {% if amount > 0 %}
-                                        <tr>
-                                            <td>{{ income_type|title }}:</td>
-                                            <td>${{ amount|intcomma }}</td>
-                                        </tr>
-                                    {% endif %}
-                                {% endfor %}
-                                <tr>
-                                    <td>Total Non-Exempt Income:</td>
-                                    <td>${{ gross_income|default_if_none:0|intcomma }}</td>
-                                </tr>
-                            </table>
+        <!-- Financial Information Card -->
+        <div class="col-xl-4 col-lg-6 mb-4">
+            {% if financial_data %}
+            <div class="card h-100 detail-card">
+                <div class="card-header">
+                    <h3 class="h5 mb-0">Financial Information</h3>
+                </div>
+                <div class="card-body">
+                    <h4>Exempt</h4>
+                    <table class="table table-sm mb-0">
+                        <tr>
+                            <td>Total Exempt Function Income</td>
+                            <td>${{ total_exempt_income|default_if_none:0|intcomma }}</td>
+                        </tr>
+                        <tr>
+                            <td>Total Exempt Function Expenses</td>
+                            <td>${{ expenses_lineC|default_if_none:0|intcomma }}</td>
+                        </tr>
+                    </table>
 
-                            <h4>Deductions and Tax</h4>
-                            <table class="table table-sm">
+                    <h4>Non-Exempt</h4>
+                    <table class="table table-sm mb-0">
+                        {% for income_type, amount in taxable_income.items %}
+                            {% if amount > 0 %}
                                 <tr>
-                                    <td>Other Deductions:</td>
-                                    <td>${{ other_deductions|default_if_none:0|intcomma }}</td>
+                                    <td>{{ income_type|title }}</td>
+                                    <td>${{ amount|intcomma }}</td>
                                 </tr>
-                                <tr>
-                                    <td>Total Tax:</td>
-                                    <td>${{ total_tax|default_if_none:0|intcomma }}</td>
-                                </tr>
-                                <tr>
-                                    <td>Total Payments:</td>
-                                    <td>${{ total_payments|default_if_none:0|intcomma }}</td>
-                                </tr>
-                            </table>
-
-                            {% if amount_owed > 0 %}
-                                <p><strong>Amount Owed:</strong> ${{ amount_owed|intcomma }}</p>
                             {% endif %}
-                            {% if overpayment > 0 %}
-                                <p><strong>Overpayment (Refund):</strong> ${{ overpayment|intcomma }}</p>
-                            {% endif %}
+                        {% endfor %}
+                        <tr class="fw-bold">
+                            <td>Total Non-Exempt Income</td>
+                            <td>${{ gross_income|default_if_none:0|intcomma }}</td>
+                        </tr>
+                    </table>
+
+                    <h4>Deductions and Tax</h4>
+                    <table class="table table-sm mb-0">
+                        <tr>
+                            <td>Other Deductions</td>
+                            <td>${{ other_deductions|default_if_none:0|intcomma }}</td>
+                        </tr>
+                        <tr>
+                            <td>Total Tax</td>
+                            <td>${{ total_tax|default_if_none:0|intcomma }}</td>
+                        </tr>
+                        <tr>
+                            <td>Total Payments</td>
+                            <td>${{ total_payments|default_if_none:0|intcomma }}</td>
+                        </tr>
+                    </table>
+
+                    {% if amount_owed > 0 %}
+                        <div class="alert alert-danger py-2 px-3 mt-3 mb-0">
+                            <strong>Amount Owed:</strong> ${{ amount_owed|intcomma }}
                         </div>
-                    </div>
-                    {% else %}
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <p>No financial data available for the selected tax year.</p>
+                    {% endif %}
+                    {% if overpayment > 0 %}
+                        <div class="alert alert-success py-2 px-3 mt-3 mb-0">
+                            <strong>Overpayment (Refund):</strong> ${{ overpayment|intcomma }}
                         </div>
-                    </div>
                     {% endif %}
                 </div>
             </div>
-
+            {% else %}
+            <div class="card h-100 detail-card">
+                <div class="card-header">
+                    <h3 class="h5 mb-0">Financial Information</h3>
+                </div>
+                <div class="card-body d-flex align-items-center justify-content-center">
+                    <p class="text-muted mb-0">No financial data available for the selected tax year.</p>
+                </div>
+            </div>
             {% endif %}
         </div>
     </div>
+    {% endif %}
 </div>
 {% endblock %}
 

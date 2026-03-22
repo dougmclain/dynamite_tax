@@ -94,9 +94,9 @@
                             <div class="card bg-light mb-2">
                                 <div class="card-body py-2">
                                     <h5 class="mb-0">Association Counts</h5>
-                                    <p class="mb-1">Total: {{ total_associations }}</p>
-                                    <p class="mb-1">To File: {{ associations_to_file }}</p>
-                                    <p class="mb-0">Not Filing: {{ total_associations|subtract:associations_to_file }}</p>
+                                    <p class="mb-1">Total: <span id="summary-total">{{ total_associations }}</span></p>
+                                    <p class="mb-1">To File: <span id="summary-to-file">{{ associations_to_file }}</span></p>
+                                    <p class="mb-0">Not Filing: <span id="summary-not-filing">{{ total_associations|subtract:associations_to_file }}</span></p>
                                 </div>
                             </div>
                         </div>
@@ -104,9 +104,10 @@
                             <div class="card bg-light mb-2">
                                 <div class="card-body py-2">
                                     <h5 class="mb-0">Return Status</h5>
-                                    <p class="mb-1">Filed: {{ filed_returns }}</p>
-                                    <p class="mb-1">Sent for Signature: {{ sent_returns }}</p>
-                                    <p class="mb-0">Unfiled: {{ unfiled_returns }}</p>
+                                    <p class="mb-1">Filed: <span id="summary-filed">{{ filed_returns }}</span></p>
+                                    <p class="mb-1">Sent for Signature: <span id="summary-sent">{{ sent_returns }}</span></p>
+                                    <p class="mb-1">Reviewed: <span id="summary-reviewed">{{ reviewed_returns }}</span></p>
+                                    <p class="mb-0">Unfiled: <span id="summary-unfiled">{{ unfiled_returns }}</span></p>
                                 </div>
                             </div>
                         </div>
@@ -114,8 +115,8 @@
                             <div class="card bg-light mb-2">
                                 <div class="card-body py-2">
                                     <h5 class="mb-0">Engagement Letters</h5>
-                                    <p class="mb-1">Signed: {{ signed_engagement_letters }}</p>
-                                    <p class="mb-0">Needed: {{ engagement_letters_needed }}</p>
+                                    <p class="mb-1">Signed: <span id="summary-signed">{{ signed_engagement_letters }}</span></p>
+                                    <p class="mb-0">Needed: <span id="summary-needed">{{ engagement_letters_needed }}</span></p>
                                 </div>
                             </div>
                         </div>
@@ -123,9 +124,9 @@
                             <div class="card bg-light mb-2">
                                 <div class="card-body py-2">
                                     <h5 class="mb-0">Invoicing</h5>
-                                    <p class="mb-1">Paid: {{ paid_associations }}</p>
-                                    <p class="mb-1">Invoiced: {{ invoiced_associations }}</p>
-                                    <p class="mb-0">To Invoice: {{ uninvoiced_associations }}</p>
+                                    <p class="mb-1">Paid: <span id="summary-paid">{{ paid_associations }}</span></p>
+                                    <p class="mb-1">Invoiced: <span id="summary-invoiced">{{ invoiced_associations }}</span></p>
+                                    <p class="mb-0">To Invoice: <span id="summary-to-invoice">{{ uninvoiced_associations }}</span></p>
                                 </div>
                             </div>
                         </div>
@@ -187,6 +188,13 @@
                             </div>
                         </div>
                         <div class="dropdown filter-dropdown">
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside">Balance Due</button>
+                            <div class="dropdown-menu p-2" data-filter="balance">
+                                <label class="dropdown-item-check"><input type="checkbox" value="due"> Tax Due</label>
+                                <label class="dropdown-item-check"><input type="checkbox" value="none"> No Tax Due</label>
+                            </div>
+                        </div>
+                        <div class="dropdown filter-dropdown">
                             <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside">Fiscal Year End</button>
                             <div class="dropdown-menu p-2" data-filter="fiscal-month">
                                 <label class="dropdown-item-check"><input type="checkbox" value="1"> January</label>
@@ -231,6 +239,7 @@
                                     data-reviewed="{% if data.tax_return_reviewed %}reviewed{% elif data.has_stored_return %}pending{% else %}none{% endif %}"
                                     data-engagement="{% with letter=data.engagement_letter %}{% if letter %}{% if letter.status == 'signed' %}signed{% elif letter.status == 'sent' %}sent{% else %}pending{% endif %}{% else %}not_created{% endif %}{% endwith %}"
                                     data-invoice="{% if data.payment_received_date %}paid{% elif data.invoice_sent_date or data.invoiced %}invoiced{% elif data.prepare_return %}not_invoiced{% else %}na{% endif %}"
+                                    data-balance="{% if data.amount_owed > 0 %}due{% else %}none{% endif %}"
                                     data-fiscal-month="{{ data.association.fiscal_year_end_month }}">
                                     <td data-name="{{ data.association.association_name }}" title="{{ data.association.association_name }}">
                                         {{ data.association.association_name }}

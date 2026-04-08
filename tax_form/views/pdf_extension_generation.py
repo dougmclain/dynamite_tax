@@ -29,6 +29,33 @@ def format_tax_year(year):
     """Format tax year to show only last two digits."""
     return str(year)[-2:]
 
+# Year-specific field positions for Form 7004
+# The 2024 template has a page height of 783, while 2025 uses standard 792 (letter)
+EXTENSION_POSITIONS_BY_YEAR = {
+    2024: {
+        'form_code': (555, 595),
+        'name': (87, 682),
+        'ein': (450, 682),
+        'address': (87, 658),
+        'city_state_zip': (87, 635),
+        'tax_year': (217, 264),
+        'line_6': (550, 217),
+        'line_7': (550, 194),
+        'line_8': (550, 171),
+    },
+    2025: {
+        'form_code': (555, 604),
+        'name': (87, 691),
+        'ein': (450, 691),
+        'address': (87, 667),
+        'city_state_zip': (87, 644),
+        'tax_year': (217, 273),
+        'line_6': (550, 226),
+        'line_7': (550, 203),
+        'line_8': (550, 180),
+    },
+}
+
 def generate_7004_extension(data, template_path, output_path):
     """Generate Form 7004 extension PDF.
     
@@ -54,19 +81,28 @@ def generate_7004_extension(data, template_path, output_path):
         # Set default font
         can.setFont("Helvetica", 10)
 
+        # Get year-specific field positions (default to 2024 for older years)
+        tax_year = int(data.get('tax_year', 2024))
+        pos = EXTENSION_POSITIONS_BY_YEAR.get(tax_year, EXTENSION_POSITIONS_BY_YEAR[2024])
+
         # Part I - Write Form Code (17 for Form 1120-H)
-        can.drawString(555, 595, "1")  # Draw the "1"
-        can.drawString(564, 595, "7")  # Draw the "7" slightly to the right
+        fc_x, fc_y = pos['form_code']
+        can.drawString(fc_x, fc_y, "1")  # Draw the "1"
+        can.drawString(fc_x + 9, fc_y, "7")  # Draw the "7" slightly to the right
 
         # Write Association Information
-        can.drawString(87, 682, data['association_name'])  # Name
-        can.drawString(450, 682, data['ein'])  # EIN
-        can.drawString(87, 658, data['address'])  # Address
-        can.drawString(87, 635, f"{data['city']}, {data['state']} {data['zipcode']}")  # City, State, ZIP
+        name_x, name_y = pos['name']
+        can.drawString(name_x, name_y, data['association_name'])  # Name
+        ein_x, ein_y = pos['ein']
+        can.drawString(ein_x, ein_y, data['ein'])  # EIN
+        addr_x, addr_y = pos['address']
+        can.drawString(addr_x, addr_y, data['address'])  # Address
+        csz_x, csz_y = pos['city_state_zip']
+        can.drawString(csz_x, csz_y, f"{data['city']}, {data['state']} {data['zipcode']}")  # City, State, ZIP
 
         # Part II - Write Tax Year Information
-        # Check box for calendar year
-        can.drawString(217, 264, format_tax_year(data['tax_year']))  # Will display "23" for 2023
+        ty_x, ty_y = pos['tax_year']
+        can.drawString(ty_x, ty_y, format_tax_year(data['tax_year']))
 
         # Function to right-align amounts in their boxes
         def draw_amount(amount, x, y):
@@ -75,12 +111,15 @@ def generate_7004_extension(data, template_path, output_path):
             can.drawString(x - text_width, y, text)
 
         # Write Financial Information
-        draw_amount(data['tentative_tax'], 550, 217)  # Line 6 - Tentative total tax
-        draw_amount(data['total_payments'], 550, 194)  # Line 7 - Total payments and credits
+        l6_x, l6_y = pos['line_6']
+        draw_amount(data['tentative_tax'], l6_x, l6_y)  # Line 6 - Tentative total tax
+        l7_x, l7_y = pos['line_7']
+        draw_amount(data['total_payments'], l7_x, l7_y)  # Line 7 - Total payments and credits
 
         # Calculate and write balance due
         balance_due = max(0, data['tentative_tax'] - data['total_payments'])
-        draw_amount(balance_due, 550, 171)  # Line 8 - Balance due
+        l8_x, l8_y = pos['line_8']
+        draw_amount(balance_due, l8_x, l8_y)  # Line 8 - Balance due
 
         # Save the form
         can.save()

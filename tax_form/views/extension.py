@@ -103,7 +103,11 @@ class ExtensionFormView(LoginRequiredMixin, View):
                 # Handle PDF generation if requested
                 if 'generate_pdf' in request.POST:
                     logger.debug("Generating PDF...")
-                    template_path = os.path.join(settings.PDF_TEMPLATE_DIR, 'template_7004.pdf')
+                    # Use year-specific template; fall back to generic template
+                    template_name = f'template_7004_{tax_year}.pdf'
+                    template_path = os.path.join(settings.PDF_TEMPLATE_DIR, template_name)
+                    if not os.path.exists(template_path):
+                        template_path = os.path.join(settings.PDF_TEMPLATE_DIR, 'template_7004.pdf')
                     logger.debug(f"Template path: {template_path}")
                     
                     # Prepare data for PDF generation

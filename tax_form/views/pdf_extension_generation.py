@@ -48,7 +48,9 @@ EXTENSION_POSITIONS_BY_YEAR = {
         'name': (87, 691),
         'ein': (450, 691),
         'address': (87, 667),
-        'city_state_zip': (87, 644),
+        'city': (87, 644),
+        'state': (370, 644),
+        'zip': (630, 644),
         'tax_year': (217, 273),
         'line_6': (550, 226),
         'line_7': (550, 203),
@@ -78,8 +80,9 @@ def generate_7004_extension(data, template_path, output_path):
         packet = BytesIO()
         can = canvas.Canvas(packet, pagesize=letter)
         
-        # Set default font
-        can.setFont("Helvetica", 10)
+        # Set default font - use bold so text isn't obscured by template field backgrounds
+        can.setFont("Helvetica-Bold", 10)
+        can.setFillColor(colors.black)
 
         # Get year-specific field positions (default to 2024 for older years)
         tax_year = int(data.get('tax_year', 2024))
@@ -97,8 +100,18 @@ def generate_7004_extension(data, template_path, output_path):
         can.drawString(ein_x, ein_y, data['ein'])  # EIN
         addr_x, addr_y = pos['address']
         can.drawString(addr_x, addr_y, data['address'])  # Address
-        csz_x, csz_y = pos['city_state_zip']
-        can.drawString(csz_x, csz_y, f"{data['city']}, {data['state']} {data['zipcode']}")  # City, State, ZIP
+
+        # 2025+ forms have separate City, State, ZIP boxes
+        if 'city' in pos:
+            city_x, city_y = pos['city']
+            can.drawString(city_x, city_y, data['city'])
+            state_x, state_y = pos['state']
+            can.drawString(state_x, state_y, data['state'])
+            zip_x, zip_y = pos['zip']
+            can.drawString(zip_x, zip_y, data['zipcode'])
+        else:
+            csz_x, csz_y = pos['city_state_zip']
+            can.drawString(csz_x, csz_y, f"{data['city']}, {data['state']} {data['zipcode']}")
 
         # Part II - Write Tax Year Information
         ty_x, ty_y = pos['tax_year']
@@ -107,7 +120,7 @@ def generate_7004_extension(data, template_path, output_path):
         # Function to right-align amounts in their boxes
         def draw_amount(amount, x, y):
             text = f"${format_number(amount)}"
-            text_width = can.stringWidth(text, "Helvetica", 10)
+            text_width = can.stringWidth(text, "Helvetica-Bold", 10)
             can.drawString(x - text_width, y, text)
 
         # Write Financial Information
@@ -124,11 +137,12 @@ def generate_7004_extension(data, template_path, output_path):
         # Save the form
         can.save()
 
-        # Merge the new content with the template
+        # Merge our text ON TOP of the template so form field
+        # backgrounds don't obscure the filled-in values
         packet.seek(0)
-        new_pdf = PdfReader(packet)
-        page.merge_page(new_pdf.pages[0])
-        
+        overlay = PdfReader(packet)
+        page.merge_page(overlay.pages[0])
+
         writer.add_page(page)
         
         # Write the final PDF to file

@@ -44,17 +44,17 @@ EXTENSION_POSITIONS_BY_YEAR = {
         'line_8': (550, 171),
     },
     2025: {
-        'form_code': (555, 604),
-        'name': (87, 691),
-        'ein': (450, 691),
-        'address': (87, 667),
-        'city': (87, 644),
-        'state': (370, 644),
-        'zip': (630, 644),
-        'tax_year': (217, 273),
-        'line_6': (550, 226),
-        'line_7': (550, 203),
-        'line_8': (550, 180),
+        'form_code': (549, 602),
+        'name': (90, 688),
+        'ein': (449, 688),
+        'address': (90, 664),
+        'city': (90, 640),
+        'state': (277, 640),
+        'zip': (492, 640),
+        'tax_year': (225, 268),
+        'line_6': (573, 220),
+        'line_7': (573, 196),
+        'line_8': (573, 172),
     },
 }
 
@@ -75,6 +75,18 @@ def generate_7004_extension(data, template_path, output_path):
         reader = PdfReader(template_path)
         writer = PdfWriter()
         page = reader.pages[0]
+
+        # Remove form field widget annotations from the template page —
+        # their white backgrounds obscure any text we overlay
+        if '/Annots' in page:
+            from PyPDF2.generic import ArrayObject, NameObject
+            annots = page['/Annots']
+            resolved = annots.get_object() if hasattr(annots, 'get_object') else annots
+            cleaned = ArrayObject([
+                a for a in resolved
+                if a.get_object().get('/Subtype') != '/Widget'
+            ])
+            page[NameObject('/Annots')] = cleaned
 
         # Create a new PDF with Reportlab to overlay the form fields
         packet = BytesIO()

@@ -143,7 +143,10 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [BASE_DIR / "static"]
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# Django 5.1 only reads the STORAGES setting (DEFAULT_FILE_STORAGE and
+# STATICFILES_STORAGE were removed and are ignored). Static files use plain
+# storage because Render doesn't run collectstatic, so there is no manifest.
+STATIC_FILES_BACKEND = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 # Serve files straight from STATICFILES_DIRS too, so pages never pick up a stale
 # copy in STATIC_ROOT when collectstatic hasn't been run on the server.
 WHITENOISE_USE_FINDERS = True
@@ -159,6 +162,10 @@ if USE_AZURE_STORAGE:
     
     # Configure the default storage
     DEFAULT_FILE_STORAGE = 'storages.backends.azure_storage.AzureStorage'
+    STORAGES = {
+        'default': {'BACKEND': DEFAULT_FILE_STORAGE},
+        'staticfiles': {'BACKEND': STATIC_FILES_BACKEND},
+    }
     
     # Media files URL (this will be the base URL for accessing your files)
     MEDIA_URL = f'https://{AZURE_ACCOUNT_NAME}.blob.core.windows.net/{AZURE_CONTAINER}/'
@@ -183,6 +190,10 @@ else:
     MEDIA_URL = '/media/'
     MEDIA_ROOT = os.path.join(BASE_DIR, 'media_files')
     DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+    STORAGES = {
+        'default': {'BACKEND': DEFAULT_FILE_STORAGE},
+        'staticfiles': {'BACKEND': STATIC_FILES_BACKEND},
+    }
     
     # Create media directories if they don't exist
     os.makedirs(MEDIA_ROOT, exist_ok=True)

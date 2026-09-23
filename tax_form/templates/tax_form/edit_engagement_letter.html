@@ -4,21 +4,24 @@
 {% block title %}Edit Engagement Letter{% endblock %}
 
 {% block content %}
-<div class="edit-letter-container mt-5">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="mb-0">Edit Engagement Letter</h2>
+<div class="edit-letter-container content-medium">
+    <a href="{% url 'engagement_letter' %}" class="back-link"><i class="fa-solid fa-arrow-left"></i> Engagement letters</a>
+    <div class="page-header">
         <div>
-            <a href="{% url 'preview_engagement_letter' letter.id %}" class="btn btn-info" target="_blank">
-                <i class="fas fa-eye"></i> Preview PDF
+            <p class="page-eyebrow">Engagement letter · {{ letter.tax_year }}</p>
+            <h1 class="page-title">{{ letter.association.association_name }}</h1>
+        </div>
+        <div class="page-actions">
+            <a href="{% url 'preview_engagement_letter' letter.id %}" class="btn btn-secondary" target="_blank">
+                <i class="fa-regular fa-eye"></i> Preview PDF
             </a>
-            <a href="{% url 'engagement_letter' %}" class="btn btn-secondary">Back to List</a>
         </div>
     </div>
 
     <!-- Letter Info -->
     <div class="card mb-4">
         <div class="card-header">
-            <h3 class="card-title h5 mb-0">{{ letter.association.association_name }} - {{ letter.tax_year }}</h3>
+            <h2 class="card-title">Letter summary</h2>
         </div>
         <div class="card-body">
             <div class="row">
@@ -56,7 +59,7 @@
 
         <div class="card mb-4">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <h3 class="card-title h5 mb-0">Letter Details</h3>
+                <h2 class="card-title">Fees &amp; wording</h2>
             </div>
             <div class="card-body">
                 <div class="row mb-4">
@@ -114,7 +117,7 @@
 
                 <div id="template-notice" {% if letter.custom_services_text %}style="display: none;"{% endif %}>
                     <div class="alert alert-info">
-                        <i class="fas fa-info-circle"></i>
+                        <i class="fa-solid fa-circle-info"></i>
                         This letter is using the <strong>{{ letter.tax_year }} template</strong>.
                         {% if template %}
                             <a href="{% url 'engagement_letter_template' %}?year={{ letter.tax_year }}">Edit the template</a> to change the text for all {{ letter.tax_year }} letters, or enable custom text above to customize just this letter.
@@ -127,8 +130,8 @@
             <div class="card-footer d-flex justify-content-between">
                 <a href="{% url 'engagement_letter' %}" class="btn btn-secondary">Cancel</a>
                 <div>
-                    <a href="{% url 'preview_engagement_letter' letter.id %}" class="btn btn-info" target="_blank">Preview PDF</a>
-                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                    <a href="{% url 'preview_engagement_letter' letter.id %}" class="btn btn-secondary" target="_blank">Preview PDF</a>
+                    <button type="submit" class="btn btn-primary">Save changes</button>
                 </div>
             </div>
         </div>
@@ -138,38 +141,10 @@
 
 {% block extra_css %}
 <style>
-    /* Override parent container for wider layout */
-    main.container:has(.edit-letter-container) {
-        max-width: 1200px;
-        width: 100%;
-        margin: 0 auto;
-        padding-left: 20px;
-        padding-right: 20px;
-    }
-
-    @media (min-width: 1200px) {
-        main.container:has(.edit-letter-container) {
-            padding-left: 40px;
-            padding-right: 40px;
-        }
-    }
-
-    .edit-letter-container {
-        width: 100%;
-    }
-
-    .card {
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        border: none;
-    }
-
-    .card-header {
-        background-color: #f7f7f7;
-    }
-
     textarea.form-control {
-        font-family: monospace;
-        font-size: 0.9rem;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.875rem;
+        line-height: 1.55;
     }
 </style>
 {% endblock %}

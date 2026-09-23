@@ -1,39 +1,46 @@
 {% extends "tax_form/base.html" %}
 {% load static %}
 
-{% block title %}Management Companies{% endblock %}
+{% block title %}Management companies{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Management Companies</h1>
-        <a href="{% url 'management_company_create' %}" class="btn btn-primary">Create New</a>
+<div class="page-header">
+    <div>
+        <p class="page-eyebrow">Clients</p>
+        <h1 class="page-title">Management companies</h1>
+        <p class="page-subtitle">Companies that manage associations for their boards, with their contacts and AI extraction settings.</p>
     </div>
+    <div class="page-actions">
+        <a href="{% url 'management_company_create' %}" class="btn btn-primary"><i class="fa-solid fa-plus"></i> New management company</a>
+    </div>
+</div>
 
-    {% if management_companies %}
+{% if management_companies %}
+<div class="card">
+    <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover">
                 <thead>
                     <tr>
-                        <th>Name</th>
-                        <th>Contact Person</th>
+                        <th>Company</th>
+                        <th>Contact</th>
                         <th>Email</th>
                         <th>Phone</th>
-                        <th>Associations</th>
-                        <th>Actions</th>
+                        <th class="text-center">Associations</th>
+                        <th class="text-end">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for company in management_companies %}
                     <tr>
-                        <td><a href="{% url 'management_company_detail' pk=company.id %}">{{ company.name }}</a></td>
-                        <td>{{ company.contact_person|default:"-" }}</td>
-                        <td>{{ company.email|default:"-" }}</td>
-                        <td>{{ company.phone|default:"-" }}</td>
-                        <td>{{ company.associations.count }}</td>
-                        <td>
-                            <div class="btn-group">
-                                <a href="{% url 'management_company_update' pk=company.id %}" class="btn btn-sm btn-outline-primary">Edit</a>
+                        <td><a href="{% url 'management_company_detail' pk=company.id %}" class="fw-semibold text-decoration-none">{{ company.name }}</a></td>
+                        <td>{{ company.contact_person|default:"—" }}</td>
+                        <td>{% if company.email %}<a href="mailto:{{ company.email }}">{{ company.email }}</a>{% else %}—{% endif %}</td>
+                        <td class="text-nowrap">{{ company.phone|default:"—" }}</td>
+                        <td class="text-center"><span class="badge bg-secondary">{{ company.associations.count }}</span></td>
+                        <td class="text-end">
+                            <div class="d-inline-flex gap-1">
+                                <a href="{% url 'management_company_update' pk=company.id %}" class="btn btn-sm btn-outline-secondary"><i class="fa-solid fa-pen"></i> Edit</a>
                                 <a href="{% url 'management_company_delete' pk=company.id %}" class="btn btn-sm btn-outline-danger">Delete</a>
                             </div>
                         </td>
@@ -42,10 +49,14 @@
                 </tbody>
             </table>
         </div>
-    {% else %}
-        <div class="alert alert-info">
-            No management companies found. <a href="{% url 'management_company_create' %}">Create one now</a>.
-        </div>
-    {% endif %}
+    </div>
 </div>
+{% else %}
+<div class="card">
+    <div class="empty-state">
+        <i class="fa-solid fa-briefcase d-block"></i>
+        No management companies yet. <a href="{% url 'management_company_create' %}">Add the first one</a>.
+    </div>
+</div>
+{% endif %}
 {% endblock %}

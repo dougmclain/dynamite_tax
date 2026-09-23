@@ -1,37 +1,72 @@
 {% extends "tax_form/base.html" %}
-{% load crispy_forms_tags %}
+{% load static %}
 
-{% block title %}Create Association{% endblock %}
+{% block title %}New association{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-md-6">
-        <h2 class="mb-4">Create New Association</h2>
-        <form method="post" class="mb-4">
-            {% csrf_token %}
-            {{ form|crispy }}
-            <button type="submit" class="btn btn-primary">Create Association</button>
-        </form>
-    </div>
-
-    <div class="col-md-6">
-        <h2 class="mb-4">Existing Associations</h2>
-        {% if associations %}
-            <ul class="list-group">
-                {% for association in associations %}
-                    <li class="list-group-item">
-                        <strong>{{ association.association_name }}</strong><br>
-                        EIN: {{ association.ein }}<br>
-                        Type: {{ association.get_association_type_display }}<br>
-                        Formed: {{ association.formation_date|date:"F j, Y" }}<br>
-                        Fiscal Year End: {{ association.get_fiscal_year_end_month_display }}<br>
-                        Contact: {{ association.get_full_contact_name }} ({{ association.contact_email }})
-                    </li>
-                {% endfor %}
-            </ul>
-        {% else %}
-            <p>No associations have been created yet.</p>
-        {% endif %}
+<a href="{% url 'association' %}" class="back-link"><i class="fa-solid fa-arrow-left"></i> Associations</a>
+<div class="page-header">
+    <div>
+        <h1 class="page-title">New association</h1>
+        <p class="page-subtitle">Add an association once; its details carry forward to every tax year.</p>
     </div>
 </div>
+
+{% if form.non_field_errors %}
+    <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+{% endif %}
+
+<form method="post">
+    {% csrf_token %}
+    {% include 'tax_form/partials/association_form_sections.html' %}
+    <div class="form-actions">
+        <a href="{% url 'association' %}" class="btn btn-secondary">Cancel</a>
+        <button type="submit" class="btn btn-primary btn-lg">Create association</button>
+    </div>
+</form>
+
+{% if associations %}
+<details class="card mt-5">
+    <summary class="card-header d-flex justify-content-between align-items-center" style="cursor: pointer;">
+        <span class="card-title">Existing associations ({{ associations|length }})</span>
+        <span class="small text-secondary">Check for duplicates</span>
+    </summary>
+    <div class="table-responsive">
+        <table class="table table-sm table-hover mb-0">
+            <thead>
+                <tr><th>Name</th><th>EIN</th><th>Type</th><th>Fiscal year end</th><th>Contact</th></tr>
+            </thead>
+            <tbody>
+                {% for association in associations %}
+                <tr>
+                    <td><a href="{% url 'association' %}?association_id={{ association.id }}">{{ association.association_name }}</a></td>
+                    <td class="tabular">{{ association.ein }}</td>
+                    <td>{{ association.get_association_type_display }}</td>
+                    <td>{{ association.get_fiscal_year_end_month_display }}</td>
+                    <td>{{ association.get_full_contact_name }}{% if association.contact_email %} · {{ association.contact_email }}{% endif %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</details>
+{% endif %}
+
+{% include 'tax_form/partials/management_company_modal.html' %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/management_company.js' %}"></script>
+<script>
+    // Show the state filing fields only when a filing state is chosen
+    (function () {
+        var filingState = document.getElementById('id_filing_state');
+        if (!filingState) return;
+        filingState.addEventListener('change', function () {
+            var show = this.value ? '' : 'none';
+            document.getElementById('state-tax-id-field').style.display = show;
+            document.getElementById('state-filing-details').style.display = show;
+        });
+    })();
+</script>
 {% endblock %}

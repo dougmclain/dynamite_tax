@@ -1,0 +1,99 @@
+{% load crispy_forms_tags %}
+{# Shared by create_association.html and edit_association.html. Expects `form` (AssociationForm). #}
+<div class="row g-4">
+    <div class="col-xl-7">
+        <div class="card mb-4">
+            <div class="card-header"><h2 class="card-title">Association</h2></div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-8">{{ form.association_name|as_crispy_field }}</div>
+                    <div class="col-md-4">{{ form.ein|as_crispy_field }}</div>
+                    <div class="col-md-4">{{ form.association_type|as_crispy_field }}</div>
+                    <div class="col-md-4">{{ form.formation_date|as_crispy_field }}</div>
+                    <div class="col-md-4">{{ form.fiscal_year_end_month|as_crispy_field }}</div>
+                    <div class="col-12">
+                        <div class="form-check">
+                            {{ form.zoned }}
+                            <label class="form-check-label" for="{{ form.zoned.id_for_label }}">{{ form.zoned.label }}</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header"><h2 class="card-title">Mailing address</h2></div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-12">
+                        {{ form.care_of|as_crispy_field }}
+                    </div>
+                    <div class="col-md-8">{{ form.mailing_address|as_crispy_field }}</div>
+                    <div class="col-md-4">{{ form.room_suite|as_crispy_field }}</div>
+                    <div class="col-md-5">{{ form.city|as_crispy_field }}</div>
+                    <div class="col-md-3">{{ form.state|as_crispy_field }}</div>
+                    <div class="col-md-4">{{ form.zipcode|as_crispy_field }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header">
+                <h2 class="card-title">State tax filing</h2>
+                <div class="card-subtitle-sm">Only needed when the association files a state return, or the property is in a different state than the mailing address.</div>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">{{ form.filing_state|as_crispy_field }}</div>
+                    <div class="col-md-6" id="state-tax-id-field" style="{% if not form.filing_state.value %}display:none{% endif %}">
+                        {{ form.state_tax_id|as_crispy_field }}
+                    </div>
+                </div>
+                <div id="state-filing-details" style="{% if not form.filing_state.value %}display:none{% endif %}">
+                    <div class="row g-3 mt-1">
+                        <div class="col-md-4">
+                            {{ form.naics_code|as_crispy_field }}
+                        </div>
+                    </div>
+                    <div class="card-section-title mt-3">Where the accounting records are kept</div>
+                    <div class="row g-3">
+                        <div class="col-md-5">{{ form.records_city|as_crispy_field }}</div>
+                        <div class="col-md-3">{{ form.records_state|as_crispy_field }}</div>
+                        <div class="col-md-4">{{ form.records_zip|as_crispy_field }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-5">
+        <div class="card mb-4">
+            <div class="card-header"><h2 class="card-title">Board contact</h2></div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">{{ form.contact_first_name|as_crispy_field }}</div>
+                    <div class="col-md-6">{{ form.contact_last_name|as_crispy_field }}</div>
+                    <div class="col-12">{{ form.contact_email|as_crispy_field }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header"><h2 class="card-title">Management</h2></div>
+            <div class="card-body">
+                <div class="form-check mb-3">
+                    {{ form.is_self_managed }}
+                    <label class="form-check-label" for="{{ form.is_self_managed.id_for_label }}">{{ form.is_self_managed.label }}</label>
+                    <div class="form-text">{{ form.is_self_managed.help_text }}</div>
+                </div>
+                <div class="management-company-field">
+                    {{ form.management_company|as_crispy_field }}
+                    <a href="{% url 'management_company_create' %}" class="btn btn-sm btn-outline-primary" id="new-management-company-btn">
+                        <i class="fa-solid fa-plus"></i> Add a management company
+                    </a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>

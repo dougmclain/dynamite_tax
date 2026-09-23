@@ -1,33 +1,70 @@
-{% extends "tax_form/base.html" %}
-{% load crispy_forms_tags %}
+{% extends "tax_form/public_base.html" %}
+{% load static %}
 
-{% block title %}Login - HOA Tax Help{% endblock %}
+{% block title %}Sign in · HOA Tax Help{% endblock %}
+{% block extra_head %}<meta name="robots" content="noindex">{% endblock %}
+{% block body_class %}public auth{% endblock %}
 
-{% block content %}
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h2 class="text-center">Login</h2>
-                </div>
-                <div class="card-body">
-                    {% if form.errors %}
-                        <div class="alert alert-danger">
-                            Your username and password didn't match. Please try again.
-                        </div>
-                    {% endif %}
-                    <form method="post">
-                        {% csrf_token %}
-                        {{ form|crispy }}
-                        <input type="hidden" name="next" value="{{ next }}">
-                        <div class="d-grid gap-2 mt-3">
-                            <button type="submit" class="btn btn-primary">Login</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
+{% block body %}
+<div class="auth-shell">
+    <aside class="auth-aside">
+        <svg class="hero-roof" viewBox="0 0 800 300" aria-hidden="true" focusable="false">
+            <path d="M20 280 L400 30 L780 280" />
+            <path d="M580 150 L580 60 L640 60 L640 190" />
+        </svg>
+        <div class="position-relative">
+            <span class="roadmap-badge">HOA Tax Help workspace</span>
         </div>
-    </div>
+        <div class="position-relative">
+            <h2>Every association's return, in one place.</h2>
+            <p>Prepare Form 1120-H returns, file extensions and keep engagement letters on track for every association you serve.</p>
+            <ul class="roadmap-list mt-4">
+                <li><i class="fa-solid fa-chart-simple"></i> Filing status for the whole portfolio</li>
+                <li><i class="fa-solid fa-wand-magic-sparkles"></i> Financials pulled from PDF statements</li>
+                <li><i class="fa-solid fa-file-invoice-dollar"></i> Ready-to-sign 1120-H and 7004 PDFs</li>
+            </ul>
+        </div>
+        <div class="position-relative small">
+            &copy; {% now "Y" %} Dynamite Management, LLC
+        </div>
+    </aside>
+
+    <main class="auth-main" id="content">
+        <div class="auth-card">
+            <a href="{% url 'index' %}"><img src="{% static 'images/hoataxhelp_logo.png' %}" alt="HOA Tax Help" class="auth-logo"></a>
+            <h1>Sign in</h1>
+            <p class="text-secondary mb-4">Welcome back. Sign in to your workspace.</p>
+
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger py-2" role="alert">
+                    Your username and password didn't match. Please try again.
+                </div>
+            {% endif %}
+
+            <form method="post" action="{% url 'login' %}" novalidate>
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="{{ form.username.id_for_label }}" class="form-label">Username</label>
+                    <input type="text" name="{{ form.username.html_name }}" id="{{ form.username.id_for_label }}"
+                           class="form-control{% if form.username.errors %} is-invalid{% endif %}"
+                           value="{{ form.username.value|default:'' }}" autocomplete="username" autocapitalize="none" autofocus required>
+                </div>
+                <div class="mb-4">
+                    <label for="{{ form.password.id_for_label }}" class="form-label">Password</label>
+                    <input type="password" name="{{ form.password.html_name }}" id="{{ form.password.id_for_label }}"
+                           class="form-control{% if form.password.errors %} is-invalid{% endif %}"
+                           autocomplete="current-password" required>
+                </div>
+                <input type="hidden" name="next" value="{{ next }}">
+                <button type="submit" class="btn btn-primary btn-lg w-100">Sign in</button>
+            </form>
+
+            <p class="small text-secondary mt-4 mb-0">
+                Need an account or forgot your password? Email
+                <a href="mailto:{{ site_contact_email }}">{{ site_contact_email }}</a>.
+            </p>
+        </div>
+        <div class="auth-back"><a href="{% url 'index' %}"><i class="fa-solid fa-arrow-left"></i> Back to hoataxhelp.com</a></div>
+    </main>
 </div>
 {% endblock %}

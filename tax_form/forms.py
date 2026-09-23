@@ -97,7 +97,15 @@ class AssociationForm(forms.ModelForm):
         self.fields['contact_first_name'].widget.attrs['placeholder'] = 'First Name'
         self.fields['contact_last_name'].widget.attrs['placeholder'] = 'Last Name'
         self.fields['contact_email'].widget.attrs['placeholder'] = 'Email'
-        self.fields['fiscal_year_end_month'].label = 'Fiscal Year End Month'
+        self.fields['fiscal_year_end_month'].label = 'Fiscal year ends in'
+        self.fields['ein'].label = 'EIN'
+        self.fields['care_of'].label = 'Care of (c/o)'
+        self.fields['room_suite'].label = 'Suite / unit'
+        self.fields['zipcode'].label = 'ZIP code'
+        self.fields['records_zip'].label = 'Records ZIP code'
+        self.fields['state_tax_id'].label = 'State tax ID'
+        self.fields['naics_code'].label = 'NAICS code'
+        self.fields['is_self_managed'].label = 'Self-managed (no management company)'
         
         # Add an empty option for management company field
         self.fields['management_company'].empty_label = "Select a management company"
@@ -135,6 +143,25 @@ class FinancialForm(forms.ModelForm):
     class Meta:
         model = Financial
         fields = '__all__'
+        labels = {
+            'capital_contribution': 'Less: dues allocated to capital reserves',
+            'moving_fees': 'Move-in / move-out fees',
+            'utilities': 'Utility pass-throughs',
+            'state_local_taxes': 'State & local income taxes',
+            'non_exempt_income_description1': 'Description',
+            'non_exempt_income_description2': 'Description',
+            'non_exempt_income_description3': 'Description',
+            'non_exempt_income_amount1': 'Amount',
+            'non_exempt_income_amount2': 'Amount',
+            'non_exempt_income_amount3': 'Amount',
+            'non_exempt_expense_description1': 'Description',
+            'non_exempt_expense_description2': 'Description',
+            'non_exempt_expense_description3': 'Description',
+            'non_exempt_expense_amount1': 'Amount',
+            'non_exempt_expense_amount2': 'Amount',
+            'non_exempt_expense_amount3': 'Amount',
+            'prior_year_over_payment': 'Prior-year overpayment applied',
+        }
         widgets = {
             'member_assessments': TextInput(attrs={'class': 'dollar-input'}),
             'capital_contribution': TextInput(attrs={'class': 'dollar-input'}),

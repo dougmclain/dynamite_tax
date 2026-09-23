@@ -2,94 +2,110 @@
 {% load crispy_forms_tags %}
 {% load static %}
 
-{% block title %}File Extension - Form 7004{% endblock %}
+{% block title %}Extension (Form 7004){% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <h1 class="mb-4">File Extension - Form 7004</h1>
+<div class="page-header">
+    <div>
+        <p class="page-eyebrow">Tax returns</p>
+        <h1 class="page-title">Extension · Form 7004</h1>
+        <p class="page-subtitle">
+            {% if association and tax_year %}{{ association.association_name }} · Tax year {{ tax_year }}{% else %}Automatic six-month extension of time to file Form 1120-H.{% endif %}
+        </p>
+    </div>
+    {% if association and tax_year %}
+    <div class="page-actions">
+        <a href="{% url 'association' %}?association_id={{ association.id }}&tax_year={{ tax_year }}" class="btn btn-secondary"><i class="fa-solid fa-building"></i> Association</a>
+    </div>
+    {% endif %}
+</div>
 
-            <div class="row g-3 mb-4">
-                <div class="col-md-6">
-                    <label for="association_select" class="form-label">Association</label>
-                    <select id="association_select" class="form-select">
-                        <option value="">Select an Association</option>
-                        {% for assoc in associations %}
-                            <option value="{{ assoc.id }}" {% if association.id == assoc.id %}selected{% endif %}>
-                                {{ assoc.association_name }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-md-4">
-                    <label for="tax_year_select" class="form-label">Tax Year</label>
-                    <select id="tax_year_select" class="form-select" {% if not association %}disabled{% endif %} data-selected-year="{{ tax_year }}">
-                        <option value="">Select Tax Year</option>
-                        {% if association and tax_year %}
-                            <option value="{{ tax_year }}" selected>{{ tax_year }}</option>
-                        {% endif %}
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">&nbsp;</label>
-                    <button id="calculate_btn" class="btn btn-primary w-100">Start Extension</button>
+<div class="filter-bar">
+    <div class="filter-field grow">
+        <label for="association_select" class="form-label">Association</label>
+        <select id="association_select" class="form-select">
+            <option value="">Select an association</option>
+            {% for assoc in associations %}
+                <option value="{{ assoc.id }}" {% if association.id == assoc.id %}selected{% endif %}>{{ assoc.association_name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="filter-field">
+        <label for="tax_year_select" class="form-label">Tax year</label>
+        <select id="tax_year_select" class="form-select" {% if not association %}disabled{% endif %} data-selected-year="{{ tax_year }}">
+            <option value="">Select tax year</option>
+            {% if association and tax_year %}
+                <option value="{{ tax_year }}" selected>{{ tax_year }}</option>
+            {% endif %}
+        </select>
+    </div>
+    <div class="filter-actions">
+        <button id="calculate_btn" class="btn btn-primary">Start extension</button>
+    </div>
+</div>
+
+{% if association and tax_year and form %}
+<form method="post" enctype="multipart/form-data" id="extension_form">
+    {% csrf_token %}
+    <input type="hidden" name="association_id" value="{{ association.id }}">
+    <input type="hidden" name="tax_year" value="{{ tax_year }}">
+
+    <div class="row g-4">
+        <div class="col-xl-8">
+            <div class="card mb-4">
+                <div class="card-header"><h2 class="card-title">Filer</h2></div>
+                <div class="card-body">
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <div class="kv-row"><span class="kv-label">Name</span><span class="kv-value">{{ association.association_name }}</span></div>
+                            <div class="kv-row"><span class="kv-label">EIN</span><span class="kv-value tabular">{{ association.ein }}</span></div>
+                            <div class="kv-row"><span class="kv-label">Form code</span><span class="kv-value">17 (Form 1120-H)</span></div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="kv-row">
+                                <span class="kv-label">Address</span>
+                                <span class="kv-value">{{ association.mailing_address }}<br>{{ association.city }}, {{ association.state }} {{ association.zipcode }}</span>
+                            </div>
+                            <div class="kv-row"><span class="kv-label">Tax year</span><span class="kv-value">{{ tax_year }}</span></div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            {% if association and tax_year and form %}
-                <form method="post" enctype="multipart/form-data" id="extension_form">
-                    {% csrf_token %}
-                    <input type="hidden" name="association_id" value="{{ association.id }}">
-                    <input type="hidden" name="tax_year" value="{{ tax_year }}">
+            <div class="card mb-4">
+                <div class="card-header"><h2 class="card-title">Extension details</h2></div>
+                <div class="card-body">
+                    {{ form|crispy }}
+                </div>
+            </div>
+        </div>
 
-                    <div class="card mb-4">
-                        <div class="card-header">
-                            <h3 class="card-title mb-0">Association Information</h3>
-                        </div>
-                        <div class="card-body">
-                            <p><strong>Name:</strong> {{ association.association_name }}</p>
-                            <p><strong>EIN:</strong> {{ association.ein }}</p>
-                            <p><strong>Address:</strong><br>
-                                {{ association.mailing_address }}<br>
-                                {{ association.city }}, {{ association.state }} {{ association.zipcode }}</p>
-                            <p><strong>Tax Year:</strong> {{ tax_year }}</p>
-                            <p><strong>Form Code:</strong> 17 (Form 1120-H)</p>
-                        </div>
+        <div class="col-xl-4">
+            <div class="card sticky-xl">
+                <div class="card-header"><h2 class="card-title">Balance due</h2></div>
+                <div class="card-body">
+                    <p class="small text-secondary">Tentative tax minus payments and credits (Form 7004, line 8).</p>
+                    <div id="balanceDue" class="amount-callout neutral mb-4">
+                        Balance due <strong class="amount">$<span>0.00</span></strong>
                     </div>
-
-                    <div class="card mb-4">
-                        <div class="card-header">
-                            <h3 class="card-title mb-0">Extension Information</h3>
-                        </div>
-                        <div class="card-body">
-                            {{ form|crispy }}
-                        </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" name="generate_pdf" value="1" class="btn btn-primary btn-lg"><i class="fa-solid fa-file-pdf"></i> Generate extension</button>
+                        <button type="submit" name="save_only" value="1" class="btn btn-secondary">Save without generating</button>
+                        <a href="{% url 'dashboard' %}" class="btn btn-link text-secondary">Exit</a>
                     </div>
-
-                    <div class="card mb-4">
-                        <div class="card-header">
-                            <h3 class="card-title mb-0">Balance Due Calculation</h3>
-                        </div>
-                        <div class="card-body">
-                            <div id="balanceDue" class="h4 text-end">
-                                Balance Due: $<span>0.00</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="d-flex justify-content-between">
-                        <a href="{% url 'dashboard' %}" class="btn btn-secondary">Exit</a>
-                        <div>
-                            <button type="submit" name="save_only" value="1" class="btn btn-success me-2">Save</button>
-                            <button type="submit" name="generate_pdf" value="1" class="btn btn-primary">Generate Extension</button>
-                        </div>
-                    </div>
-                </form>
-            {% endif %}
+                </div>
+            </div>
         </div>
     </div>
+</form>
+{% elif not association %}
+<div class="card">
+    <div class="empty-state">
+        <i class="fa-solid fa-clock-rotate-left d-block"></i>
+        Choose an association and tax year, then press <strong>Start extension</strong>.
+    </div>
 </div>
+{% endif %}
 {% endblock %}
 
 {% block extra_js %}

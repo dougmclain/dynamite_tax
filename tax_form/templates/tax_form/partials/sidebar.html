@@ -1,0 +1,67 @@
+{% load static %}
+{% with url_name=request.resolver_match.url_name %}
+<aside class="app-sidebar offcanvas-lg offcanvas-start" id="appSidebar" tabindex="-1" aria-label="Main navigation">
+    <div class="sidebar-inner">
+        <div class="sidebar-brand">
+            <a href="{% url 'dashboard' %}" aria-label="HOA Tax Help dashboard">
+                <img src="{% static 'images/hoataxhelp_logo.png' %}" alt="HOA Tax Help">
+            </a>
+            <button type="button" class="btn-close d-lg-none" data-bs-dismiss="offcanvas" data-bs-target="#appSidebar" aria-label="Close menu"></button>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="sidebar-section">Workspace</div>
+            <a class="sidebar-link {% if url_name == 'dashboard' or url_name == 'export_associations' %}active{% endif %}" href="{% url 'dashboard' %}">
+                <i class="fa-solid fa-chart-simple"></i> Dashboard
+            </a>
+            <a class="sidebar-link {% if url_name == 'association' or url_name == 'edit_association' or url_name == 'edit_tax_year_info' or url_name == 'edit_filing_status' or url_name == 'create_association' %}active{% endif %}" href="{% url 'association' %}">
+                <i class="fa-solid fa-building"></i> Associations
+            </a>
+
+            <div class="sidebar-section">Tax returns</div>
+            <a class="sidebar-link {% if url_name == 'create_financial' %}active{% endif %}" href="{% url 'create_financial' %}">
+                <i class="fa-solid fa-calculator"></i> Financial data
+            </a>
+            <a class="sidebar-link {% if url_name == 'form_1120h' %}active{% endif %}" href="{% url 'form_1120h' %}">
+                <i class="fa-solid fa-file-invoice-dollar"></i> Form 1120-H
+            </a>
+            <a class="sidebar-link {% if url_name == 'extension_form' %}active{% endif %}" href="{% url 'extension_form' %}">
+                <i class="fa-solid fa-clock-rotate-left"></i> Extensions (7004)
+            </a>
+
+            <div class="sidebar-section">Clients</div>
+            <a class="sidebar-link {% if 'engagement' in url_name %}active{% endif %}" href="{% url 'engagement_letter' %}">
+                <i class="fa-solid fa-file-signature"></i> Engagement letters
+            </a>
+            <a class="sidebar-link {% if 'management_company' in url_name %}active{% endif %}" href="{% url 'management_company_list' %}">
+                <i class="fa-solid fa-briefcase"></i> Management companies
+            </a>
+
+            {% if user.is_staff %}
+            <div class="sidebar-section">Settings</div>
+            <a class="sidebar-link" href="{% url 'admin:index' %}">
+                <i class="fa-solid fa-gear"></i> Admin
+            </a>
+            {% endif %}
+            <a class="sidebar-link" href="{% url 'index' %}">
+                <i class="fa-solid fa-globe"></i> Public site
+            </a>
+        </nav>
+
+        {% if user.is_authenticated %}
+        <div class="sidebar-footer">
+            <div class="sidebar-user">
+                <span class="avatar">{% firstof user.first_name|slice:":1" user.username|slice:":1" %}{{ user.last_name|slice:":1" }}</span>
+                <div class="flex-grow-1 min-w-0">
+                    <div class="name text-truncate">{% firstof user.get_full_name user.username %}</div>
+                    <div class="role">{% if user.is_staff %}Staff{% else %}Member{% endif %}</div>
+                </div>
+                <button type="submit" form="logout-form" class="btn btn-sm btn-outline-secondary" title="Sign out" aria-label="Sign out">
+                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                </button>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</aside>
+{% endwith %}

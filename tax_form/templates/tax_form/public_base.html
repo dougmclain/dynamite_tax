@@ -1,0 +1,33 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}HOA Tax Help{% endblock %}</title>
+    <meta name="description" content="{% block meta_description %}HOA Tax Help prepares and files Form 1120-H federal tax returns, Form 7004 extensions and state returns for homeowners and condominium associations.{% endblock %}">
+    <link rel="canonical" href="https://hoataxhelp.com{{ request.path }}">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="HOA Tax Help">
+    <meta property="og:title" content="{% block og_title %}HOA Tax Help — Form 1120-H tax returns for HOAs and condos{% endblock %}">
+    <meta property="og:description" content="Year-end tax returns for homeowners and condominium associations: Form 1120-H, extensions and state returns, prepared by specialists.">
+    <meta property="og:url" content="https://hoataxhelp.com{{ request.path }}">
+    <meta property="og:image" content="https://hoataxhelp.com{% static 'images/hoatax_logo.png' %}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'images/favicon-32x32.png' %}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{% static 'images/favicon-16x16.png' %}">
+    <link rel="apple-touch-icon" href="{% static 'images/apple-touch-icon.png' %}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+    <link href="{% static 'css/styles.css' %}" rel="stylesheet">
+    <link href="{% static 'css/landing.css' %}" rel="stylesheet">
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="{% block body_class %}public{% endblock %}">
+    {% block body %}{% endblock %}
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

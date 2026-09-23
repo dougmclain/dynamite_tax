@@ -1,4 +1,5 @@
 from django.shortcuts import render, get_object_or_404, redirect
+from django.urls import reverse
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from ..models import Financial, Association
@@ -47,7 +48,7 @@ def create_financial(request):
             request.session['selected_tax_year'] = financial.tax_year
             
             messages.success(request, 'Financial information saved successfully.')
-            return redirect('index')
+            return redirect(f"{reverse('association')}?association_id={financial.association.id}&tax_year={financial.tax_year}")
     else:
         form = FinancialForm(instance=financial_instance)
 

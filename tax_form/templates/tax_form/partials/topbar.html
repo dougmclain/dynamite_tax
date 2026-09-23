@@ -1,0 +1,38 @@
+{% load static %}
+<header class="app-topbar">
+    <button class="topbar-menu-btn d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#appSidebar" aria-controls="appSidebar" aria-label="Open menu">
+        <i class="fa-solid fa-bars"></i>
+    </button>
+    <a class="topbar-logo d-lg-none" href="{% url 'dashboard' %}">
+        <img src="{% static 'images/hoataxhelp_logo.png' %}" alt="HOA Tax Help">
+    </a>
+
+    <div class="topbar-actions">
+        <a href="{% url 'create_association' %}" class="btn btn-sm btn-outline-secondary d-none d-md-inline-flex">
+            <i class="fa-solid fa-plus"></i> New association
+        </a>
+        <a href="{% url 'create_financial' %}" class="btn btn-sm btn-primary d-none d-md-inline-flex">
+            <i class="fa-solid fa-calculator"></i> Enter financials
+        </a>
+
+        {% if user.is_authenticated %}
+        <div class="dropdown">
+            <button class="topbar-user" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Account menu">
+                <span class="avatar">{% firstof user.first_name|slice:":1" user.username|slice:":1" %}{{ user.last_name|slice:":1" }}</span>
+                <i class="fa-solid fa-chevron-down small text-secondary"></i>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li class="px-3 py-2 small text-secondary">Signed in as <strong class="text-ink">{{ user.username }}</strong></li>
+                <li><hr class="dropdown-divider"></li>
+                <li class="d-md-none"><a class="dropdown-item" href="{% url 'create_association' %}"><i class="fa-solid fa-plus"></i> New association</a></li>
+                {% if user.is_staff %}
+                <li><a class="dropdown-item" href="{% url 'admin:index' %}"><i class="fa-solid fa-gear"></i> Admin</a></li>
+                {% endif %}
+                <li><a class="dropdown-item" href="{% url 'index' %}"><i class="fa-solid fa-globe"></i> Public site</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><button type="submit" form="logout-form" class="dropdown-item"><i class="fa-solid fa-arrow-right-from-bracket"></i> Sign out</button></li>
+            </ul>
+        </div>
+        {% endif %}
+    </div>
+</header>

@@ -5,84 +5,70 @@
 {% block title %}{{ title }}{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <div class="card">
-                <div class="card-header">
-                    <h1 class="h3 mb-0">{{ title }}</h1>
+<div class="content-medium">
+    <a href="{% url 'management_company_list' %}" class="back-link"><i class="fa-solid fa-arrow-left"></i> Management companies</a>
+    <div class="page-header">
+        <div>
+            <p class="page-eyebrow">Management company</p>
+            <h1 class="page-title">{{ title }}</h1>
+        </div>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+
+        <div class="row g-4">
+            <div class="col-xl-6">
+                <div class="card mb-4">
+                    <div class="card-header"><h2 class="card-title">Company</h2></div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-12">{{ form.name|as_crispy_field }}</div>
+                            <div class="col-md-6">{{ form.contact_person|as_crispy_field }}</div>
+                            <div class="col-md-6">{{ form.phone|as_crispy_field }}</div>
+                            <div class="col-12">{{ form.email|as_crispy_field }}</div>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <form method="post">
-                        {% csrf_token %}
-                        
-                        <div class="row">
-                            <div class="col-md-12 mb-3">
-                                {{ form.name|as_crispy_field }}
-                            </div>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                {{ form.contact_person|as_crispy_field }}
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                {{ form.email|as_crispy_field }}
-                            </div>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                {{ form.phone|as_crispy_field }}
-                            </div>
-                        </div>
-                        
-                        <h4 class="mt-4 mb-3">Address Information</h4>
-                        
-                        <div class="row">
-                            <div class="col-md-12 mb-3">
-                                {{ form.address|as_crispy_field }}
-                            </div>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-5 mb-3">
-                                {{ form.city|as_crispy_field }}
-                            </div>
-                            <div class="col-md-3 mb-3">
-                                {{ form.state|as_crispy_field }}
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                {{ form.zipcode|as_crispy_field }}
-                            </div>
-                        </div>
-                        
-                        <h4 class="mt-4 mb-3">AI Extraction Settings</h4>
 
-                        <div class="row">
-                            <div class="col-md-12 mb-3">
-                                {{ form.extraction_hints|as_crispy_field }}
-                                <small class="text-muted">
-                                    Describe how this company formats their financial reports so the AI can better extract data.
-                                    For example: field name mappings, which columns to use, or how income categories are labeled.
-                                </small>
-                            </div>
+                <div class="card mb-4">
+                    <div class="card-header"><h2 class="card-title">Address</h2></div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-12">{{ form.address|as_crispy_field }}</div>
+                            <div class="col-md-5">{{ form.city|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.state|as_crispy_field }}</div>
+                            <div class="col-md-4">{{ form.zipcode|as_crispy_field }}</div>
                         </div>
+                    </div>
+                </div>
+            </div>
 
-                        <div class="row">
-                            <div class="col-md-12 mb-3">
-                                {{ form.notes|as_crispy_field }}
-                            </div>
-                        </div>
+            <div class="col-xl-6">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h2 class="card-title">AI extraction hints</h2>
+                        <div class="card-subtitle-sm">Describe how this company formats financial reports: field names, which column to use, how income is labeled.</div>
+                    </div>
+                    <div class="card-body">
+                        {{ form.extraction_hints|as_crispy_field }}
+                    </div>
+                </div>
 
-                        <div class="d-flex justify-content-between mt-4">
-                            <a href="{% url 'management_company_list' %}" class="btn btn-secondary">Cancel</a>
-                            <button type="submit" class="btn btn-primary">{{ action }}</button>
-                        </div>
-                    </form>
+                <div class="card mb-4">
+                    <div class="card-header"><h2 class="card-title">Notes</h2></div>
+                    <div class="card-body">
+                        {{ form.notes|as_crispy_field }}
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
+
+        <div class="form-actions">
+            <a href="{% url 'management_company_list' %}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary btn-lg">{{ action }}</button>
+        </div>
+    </form>
 </div>
 {% endblock %}

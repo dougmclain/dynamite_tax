@@ -4,19 +4,23 @@
 {% block title %}Edit Engagement Letter Template{% endblock %}
 
 {% block content %}
-<div class="template-container mt-5">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="mb-0">Engagement Letter Template</h2>
+<div class="template-container content-medium">
+    <a href="{% url 'engagement_letter' %}" class="back-link"><i class="fa-solid fa-arrow-left"></i> Engagement letters</a>
+    <div class="page-header">
         <div>
-            <a href="{% url 'state_engagement_templates' %}" class="btn btn-outline-primary me-2">State Templates</a>
-            <a href="{% url 'engagement_letter' %}" class="btn btn-secondary">Back to Engagement Letters</a>
+            <p class="page-eyebrow">Clients</p>
+            <h1 class="page-title">Engagement letter template</h1>
+            <p class="page-subtitle">The standard wording and default fee for each tax year's letters.</p>
+        </div>
+        <div class="page-actions">
+            <a href="{% url 'state_engagement_templates' %}" class="btn btn-secondary"><i class="fa-solid fa-landmark"></i> State templates</a>
         </div>
     </div>
 
     <!-- Year Selection -->
     <div class="card mb-4">
         <div class="card-header">
-            <h3 class="card-title h5 mb-0">Select Tax Year</h3>
+            <h2 class="card-title">Tax year</h2>
         </div>
         <div class="card-body">
             <form method="get" class="row g-3 align-items-end">
@@ -48,7 +52,7 @@
 
         <div class="card mb-4">
             <div class="card-header">
-                <h3 class="card-title h5 mb-0">Template Content for {{ selected_year }}</h3>
+                <h2 class="card-title">Template for {{ selected_year }}</h2>
             </div>
             <div class="card-body">
                 <div class="mb-4">
@@ -84,7 +88,7 @@
             </div>
             <div class="card-footer d-flex justify-content-between">
                 <a href="{% url 'engagement_letter' %}" class="btn btn-secondary">Cancel</a>
-                <button type="submit" class="btn btn-primary">Save Template</button>
+                <button type="submit" class="btn btn-primary">Save template</button>
             </div>
         </div>
     </form>
@@ -93,38 +97,10 @@
 
 {% block extra_css %}
 <style>
-    /* Override parent container for wider layout */
-    main.container:has(.template-container) {
-        max-width: 1200px;
-        width: 100%;
-        margin: 0 auto;
-        padding-left: 20px;
-        padding-right: 20px;
-    }
-
-    @media (min-width: 1200px) {
-        main.container:has(.template-container) {
-            padding-left: 40px;
-            padding-right: 40px;
-        }
-    }
-
-    .template-container {
-        width: 100%;
-    }
-
-    .card {
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        border: none;
-    }
-
-    .card-header {
-        background-color: #f7f7f7;
-    }
-
     textarea.form-control {
-        font-family: monospace;
-        font-size: 0.9rem;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.875rem;
+        line-height: 1.55;
     }
 </style>
 {% endblock %}

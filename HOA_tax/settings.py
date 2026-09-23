@@ -24,9 +24,21 @@ IS_PRODUCTION = not DEBUG
 # Anthropic API key for AI-powered PDF financial data extraction
 ANTHROPIC_API_KEY = env('ANTHROPIC_API_KEY', default='')
 
-ALLOWED_HOSTS = ['dynamite-tax.onrender.com', 'localhost', '127.0.0.1']
+# Public domain for the site. The Render hostname keeps working alongside it.
+SITE_DOMAINS = ['hoataxhelp.com', 'www.hoataxhelp.com']
+
+ALLOWED_HOSTS = ['dynamite-tax.onrender.com', 'localhost', '127.0.0.1'] + SITE_DOMAINS
+ALLOWED_HOSTS += env.list('EXTRA_ALLOWED_HOSTS', default=[])
 if IS_PRODUCTION and 'RENDER_EXTERNAL_HOSTNAME' in os.environ:
     ALLOWED_HOSTS.append(os.environ['RENDER_EXTERNAL_HOSTNAME'])
+
+# When set (e.g. "hoataxhelp.com"), requests arriving on any other public host are
+# permanently redirected here. Leave unset until DNS for the domain is live.
+CANONICAL_HOST = env('CANONICAL_HOST', default='')
+
+# Contact details shown on the public site
+SITE_CONTACT_EMAIL = env('SITE_CONTACT_EMAIL', default='info@hoafiscal.com')
+SITE_CONTACT_PHONE = env('SITE_CONTACT_PHONE', default='360-524-9665')
 
 # Application definition
 INSTALLED_APPS = [
@@ -45,6 +57,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'tax_form.middleware.CanonicalHostMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -69,6 +82,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'tax_form.context_processors.site_info',
             ],
         },
     },
@@ -198,7 +212,7 @@ if IS_PRODUCTION:
     SECURE_REFERRER_POLICY = 'same-origin'
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
-    CSRF_TRUSTED_ORIGINS = ['https://dynamite-tax.onrender.com']
+    CSRF_TRUSTED_ORIGINS = ['https://dynamite-tax.onrender.com'] + [f'https://{d}' for d in SITE_DOMAINS]
 
 # Logging configuration
 LOGGING = {
@@ -241,4 +255,9 @@ LOGGING = {
 SESSION_COOKIE_AGE = 86400  # Session lasts for 24 hours (in seconds)
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # Session survives browser close
 
-LOGIN_URL = '/admin/login/'
+from django.contrib.messages import constants as message_constants
+MESSAGE_TAGS = {message_constants.ERROR: 'danger'}  # Bootstrap alert class
+
+LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = 'dashboard'
+LOGOUT_REDIRECT_URL = 'index'

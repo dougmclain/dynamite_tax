@@ -1,6 +1,7 @@
 # Update tax_form/urls.py
 
 from django.urls import path
+from django.views.generic import RedirectView
 from django.contrib.auth import views as auth_views
 from .views import main, association, financial, create_association, dashboard, edit_association, edit_tax_year_info, extension, engagement_letter, filing_status, management_company, extract_financial
 from .views.delete_files import DeleteFinancialPDFView, DeleteCompletedReturnPDFView
@@ -17,8 +18,9 @@ urlpatterns = [
     path('edit-association/<int:association_id>/', edit_association.EditAssociationView.as_view(), name='edit_association'),
     path('edit-tax-year-info/<int:association_id>/<int:tax_year>/', edit_tax_year_info.EditTaxYearInfoView.as_view(), name='edit_tax_year_info'),
     path('extension-form/', extension.ExtensionFormView.as_view(), name='extension_form'),
-    path('admin/login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
-    path('admin/logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
+    path('login/', auth_views.LoginView.as_view(template_name='tax_form/login.html', redirect_authenticated_user=True), name='login'),
+    path('logout/', auth_views.LogoutView.as_view(), name='logout'),
+    path('app/', RedirectView.as_view(pattern_name='dashboard'), name='app_home'),
     path('engagement-letter/', engagement_letter.EngagementLetterView.as_view(), name='engagement_letter'),
     path('engagement-letter/bulk-create/', engagement_letter.BulkEngagementLetterView.as_view(), name='bulk_engagement_letter'),
     path('engagement-letter/template/', engagement_letter.EngagementLetterTemplateView.as_view(), name='engagement_letter_template'),

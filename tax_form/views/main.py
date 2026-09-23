@@ -12,10 +12,9 @@ from .pdf_generation import generate_pdf, generate_pdf_to_storage
 
 logger = logging.getLogger(__name__)
 
-@login_required
 def index(request):
-    """View for the home page."""
-    return render(request, 'tax_form/index.html')
+    """Public landing page for hoataxhelp.com."""
+    return render(request, 'tax_form/landing.html')
 
 @login_required
 def form_1120h(request):

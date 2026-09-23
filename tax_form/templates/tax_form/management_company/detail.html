@@ -1,128 +1,102 @@
 {% extends "tax_form/base.html" %}
 {% load static %}
 
-{% block title %}{{ company.name }} - Management Company Details{% endblock %}
+{% block title %}{{ company.name }}{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>{{ company.name }}</h1>
-        <div>
-            <a href="{% url 'management_company_update' pk=company.id %}" class="btn btn-primary">Edit</a>
-            <a href="{% url 'management_company_delete' pk=company.id %}" class="btn btn-danger">Delete</a>
+<a href="{% url 'management_company_list' %}" class="back-link"><i class="fa-solid fa-arrow-left"></i> Management companies</a>
+<div class="page-header">
+    <div>
+        <p class="page-eyebrow">Management company</p>
+        <h1 class="page-title">{{ company.name }}</h1>
+        <p class="page-subtitle">{{ associations.count }} association{{ associations.count|pluralize }}{% if company.city %} · {{ company.city }}, {{ company.state }}{% endif %}</p>
+    </div>
+    <div class="page-actions">
+        <a href="{% url 'management_company_update' pk=company.id %}" class="btn btn-primary"><i class="fa-solid fa-pen"></i> Edit</a>
+        <a href="{% url 'management_company_delete' pk=company.id %}" class="btn btn-outline-danger">Delete</a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-xl-5 col-xxl-4">
+        <div class="card mb-4">
+            <div class="card-header"><h2 class="card-title">Contact</h2></div>
+            <div class="card-body">
+                <div class="kv-row"><span class="kv-label">Contact person</span><span class="kv-value">{{ company.contact_person|default:"—" }}</span></div>
+                <div class="kv-row">
+                    <span class="kv-label">Email</span>
+                    <span class="kv-value">{% if company.email %}<a href="mailto:{{ company.email }}">{{ company.email }}</a>{% else %}—{% endif %}</span>
+                </div>
+                <div class="kv-row">
+                    <span class="kv-label">Phone</span>
+                    <span class="kv-value">{% if company.phone %}<a href="tel:{{ company.phone }}">{{ company.phone }}</a>{% else %}—{% endif %}</span>
+                </div>
+                <div class="kv-row">
+                    <span class="kv-label">Address</span>
+                    <span class="kv-value">
+                        {% if company.address and company.city and company.state and company.zipcode %}
+                            {{ company.address }}<br>{{ company.city }}, {{ company.state }} {{ company.zipcode }}
+                        {% else %}—{% endif %}
+                    </span>
+                </div>
+            </div>
         </div>
+
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h2 class="card-title">AI extraction</h2>
+                <span class="badge bg-info">{{ corrections_count }} learned correction{{ corrections_count|pluralize }}</span>
+            </div>
+            <div class="card-body">
+                {% if company.extraction_hints %}
+                    <div class="small">{{ company.extraction_hints|linebreaks }}</div>
+                {% else %}
+                    <p class="text-secondary mb-0">No extraction hints yet. <a href="{% url 'management_company_update' pk=company.id %}">Add hints</a> about how this company formats its financial reports to improve PDF extraction.</p>
+                {% endif %}
+                {% if corrections_count > 0 %}
+                    <p class="small text-secondary mb-0 mt-2">The AI uses past corrections to avoid repeating the same mistakes.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if company.notes %}
+        <div class="card mb-4">
+            <div class="card-header"><h2 class="card-title">Notes</h2></div>
+            <div class="card-body small">{{ company.notes|linebreaks }}</div>
+        </div>
+        {% endif %}
     </div>
 
-    <div class="row">
-        <div class="col-md-6">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h2 class="h5 mb-0">Company Information</h2>
-                </div>
-                <div class="card-body">
-                    <dl class="row">
-                        <dt class="col-sm-4">Contact Person:</dt>
-                        <dd class="col-sm-8">{{ company.contact_person|default:"-" }}</dd>
-                        
-                        <dt class="col-sm-4">Email:</dt>
-                        <dd class="col-sm-8">
-                            {% if company.email %}
-                                <a href="mailto:{{ company.email }}">{{ company.email }}</a>
-                            {% else %}
-                                -
-                            {% endif %}
-                        </dd>
-                        
-                        <dt class="col-sm-4">Phone:</dt>
-                        <dd class="col-sm-8">
-                            {% if company.phone %}
-                                <a href="tel:{{ company.phone }}">{{ company.phone }}</a>
-                            {% else %}
-                                -
-                            {% endif %}
-                        </dd>
-                    </dl>
+    <div class="col-xl-7 col-xxl-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h2 class="card-title">Managed associations</h2>
+                <span class="badge bg-secondary">{{ associations.count }}</span>
+            </div>
+            {% if associations %}
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr><th>Association</th><th>Type</th><th>Location</th><th>EIN</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for association in associations %}
+                            <tr>
+                                <td><a href="{% url 'association' %}?association_id={{ association.id }}" class="fw-semibold text-decoration-none">{{ association.association_name }}</a></td>
+                                <td>{{ association.get_association_type_display }}</td>
+                                <td>{{ association.city }}, {{ association.state }}</td>
+                                <td class="tabular">{{ association.ein }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
             </div>
-            
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h2 class="h5 mb-0">Address</h2>
-                </div>
-                <div class="card-body">
-                    {% if company.address and company.city and company.state and company.zipcode %}
-                        <address>
-                            {{ company.address }}<br>
-                            {{ company.city }}, {{ company.state }} {{ company.zipcode }}
-                        </address>
-                    {% else %}
-                        <p>No address information available.</p>
-                    {% endif %}
-                </div>
-            </div>
-            
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h2 class="h5 mb-0">AI Extraction Settings</h2>
-                </div>
-                <div class="card-body">
-                    {% if company.extraction_hints %}
-                        <p>{{ company.extraction_hints|linebreaks }}</p>
-                    {% else %}
-                        <p class="text-muted">No extraction hints configured. <a href="{% url 'management_company_update' pk=company.id %}">Add hints</a> to improve AI data extraction for this company's financial reports.</p>
-                    {% endif %}
-                    <hr>
-                    <p class="mb-0">
-                        <strong>Learned corrections:</strong> {{ corrections_count }}
-                        {% if corrections_count > 0 %}
-                            <small class="text-muted">(The AI uses these to avoid repeating past mistakes)</small>
-                        {% endif %}
-                    </p>
-                </div>
-            </div>
-
-            {% if company.notes %}
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h2 class="h5 mb-0">Notes</h2>
-                    </div>
-                    <div class="card-body">
-                        <p>{{ company.notes|linebreaks }}</p>
-                    </div>
-                </div>
+            {% else %}
+            <div class="empty-state">No associations are assigned to this company yet.</div>
             {% endif %}
         </div>
-        
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h2 class="h5 mb-0">Managed Associations</h2>
-                    <span class="badge bg-primary">{{ associations.count }}</span>
-                </div>
-                <div class="card-body">
-                    {% if associations %}
-                        <div class="list-group">
-                            {% for association in associations %}
-                                <a href="{% url 'association' %}?association_id={{ association.id }}" class="list-group-item list-group-item-action">
-                                    <div class="d-flex w-100 justify-content-between">
-                                        <h5 class="mb-1">{{ association.association_name }}</h5>
-                                        <small>{{ association.association_type|title }}</small>
-                                    </div>
-                                    <p class="mb-1">{{ association.city }}, {{ association.state }}</p>
-                                    <small>EIN: {{ association.ein }}</small>
-                                </a>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        <p class="text-muted">No associations are managed by this company.</p>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="mt-4">
-        <a href="{% url 'management_company_list' %}" class="btn btn-secondary">Back to List</a>
     </div>
 </div>
 {% endblock %}

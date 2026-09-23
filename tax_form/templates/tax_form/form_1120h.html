@@ -5,115 +5,160 @@
 {% block title %}Form 1120-H{% endblock %}
 
 {% block content %}
-<h2 class="mb-4">Form 1120-H</h2>
-
-<form method="post" class="mb-4">
-    {% csrf_token %}
-    <div class="row g-3">
-        <div class="col-md-4">
-            {{ form.association.label_tag }}
-            {{ form.association }}
-        </div>
-        <div class="col-md-4">
-            {{ form.tax_year.label_tag }}
-            {{ form.tax_year }}
-        </div>
-        <div class="col-md-4">
-            {{ form.preparer.label_tag }}
-            {{ form.preparer }}
-        </div>
+<div class="page-header">
+    <div>
+        <p class="page-eyebrow">Tax returns</p>
+        <h1 class="page-title">Form 1120-H</h1>
+        <p class="page-subtitle">
+            {% if association %}{{ association.association_name }} · Tax year {{ financial.tax_year }}{% else %}Calculate, download or save an association's federal return.{% endif %}
+        </p>
     </div>
-    
-    <div class="mt-3">
-        <button type="submit" class="btn btn-primary">Calculate</button>
-        <button type="submit" name="download_pdf" class="btn btn-secondary">Download PDF</button>
-        <button type="submit" name="save_pdf" class="btn btn-success">Save Return to System</button>
+    {% if association %}
+    <div class="page-actions">
+        <a href="{% url 'association' %}?association_id={{ association.id }}&tax_year={{ financial.tax_year }}" class="btn btn-secondary"><i class="fa-solid fa-building"></i> Association</a>
+        <a href="{% url 'create_financial' %}?association={{ association.id }}&tax_year={{ financial.tax_year }}" class="btn btn-secondary"><i class="fa-solid fa-calculator"></i> Edit financials</a>
+    </div>
+    {% endif %}
+</div>
+
+<form method="post" class="card mb-4">
+    {% csrf_token %}
+    <div class="card-body">
+        <div class="row g-3 align-items-end">
+            <div class="col-lg-5 col-xxl-4">
+                <label for="{{ form.association.id_for_label }}" class="form-label">Association</label>
+                {{ form.association }}
+            </div>
+            <div class="col-sm-6 col-lg-2">
+                <label for="{{ form.tax_year.id_for_label }}" class="form-label">Tax year</label>
+                {{ form.tax_year }}
+            </div>
+            <div class="col-sm-6 col-lg-3 col-xxl-2">
+                <label for="{{ form.preparer.id_for_label }}" class="form-label">Preparer</label>
+                {{ form.preparer }}
+            </div>
+            <div class="col-lg-12 col-xxl-4">
+                <div class="d-flex flex-wrap gap-2 justify-content-xxl-end">
+                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-calculator"></i> Calculate</button>
+                    <button type="submit" name="download_pdf" class="btn btn-secondary"><i class="fa-solid fa-download"></i> Download PDF</button>
+                    <button type="submit" name="save_pdf" class="btn btn-success"><i class="fa-solid fa-floppy-disk"></i> Save to system</button>
+                </div>
+            </div>
+        </div>
     </div>
 </form>
 
 {% if completed_tax_return and completed_tax_return.sent_tax_return_pdf %}
-<div class="card mt-3 border-success">
-    <div class="card-body d-flex align-items-center justify-content-between">
-        <div>
-            <strong>Stored Return:</strong> {{ completed_tax_return.sent_tax_return_pdf.name|slice:"-40:" }}
-            {% if completed_tax_return.reviewed %}
-                <span class="badge bg-success ms-2">Reviewed</span>
-            {% endif %}
-        </div>
-        <div>
-            <a href="{{ completed_tax_return.sent_tax_return_pdf.url }}" class="btn btn-sm btn-outline-secondary" target="_blank">View</a>
-            <form method="post" action="{% url 'delete_completed_return' completed_tax_return.financial.id %}" class="d-inline ms-1">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this stored return?')">Delete</button>
-            </form>
-        </div>
+<div class="alert alert-success d-flex flex-wrap align-items-center justify-content-between gap-2 mb-4">
+    <div>
+        <i class="fa-solid fa-circle-check me-1"></i>
+        <strong>Saved return:</strong> {{ completed_tax_return.sent_tax_return_pdf.name|slice:"-40:" }}
+        {% if completed_tax_return.reviewed %}<span class="badge bg-success ms-2">Reviewed</span>{% endif %}
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ completed_tax_return.sent_tax_return_pdf.url }}" class="btn btn-sm btn-secondary" target="_blank"><i class="fa-regular fa-file-pdf"></i> View</a>
+        <form method="post" action="{% url 'delete_completed_return' completed_tax_return.financial.id %}" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this stored return?')">Delete</button>
+        </form>
     </div>
 </div>
 {% endif %}
 
 {% if financial_info %}
-<div class="card mt-4">
-    <div class="card-header">
-        <h3>Financial Information for {{ association.association_name }} ({{ financial.tax_year }})</h3>
-    </div>
-    <div class="card-body">
-        <div class="row">
-            <div class="col-md-6">
-                <h4>Income</h4>
-                <table class="table">
-                    <tr><td>Total Non-Taxable Income:</td><td>${{ financial_info.total_exempt_income|default_if_none:0|intcomma }}</td></tr>
-                    <tr><td>Interest Income:</td><td>${{ financial_info.interest_income|default_if_none:0|intcomma }}</td></tr>
-                    <tr><td>Dividend Income:</td><td>${{ financial_info.dividend_income|default_if_none:0|intcomma }}</td></tr>
-                    <tr><td>Rental Income:</td><td>${{ financial_info.rental_income|default_if_none:0|intcomma }}</td></tr>
-                    <tr><td>Other Taxable Income:</td><td>${{ financial_info.total_other_income|default_if_none:0|intcomma }}</td></tr>
-                    <tr><td><strong>Total Non-Exempt Income (Taxable):</strong></td><td><strong>${{ financial_info.gross_income|default_if_none:0|intcomma }}</strong></td></tr>
-                </table>
+<div class="row g-4">
+    <div class="col-xxl-8">
+        <div class="card h-100">
+            <div class="card-header">
+                <h2 class="card-title">Return calculation</h2>
             </div>
-            <div class="col-md-6">
-                <h4>Expenses and Deductions</h4>
-                <table class="table">
-                    <tr><td>Total Expenses:</td><td>${{ financial_info.total_expenses|default_if_none:0|intcomma }}</td></tr>
-                    <tr><td>Expenses (90% Test):</td><td>${{ financial_info.expenses_lineC|default_if_none:0|intcomma }}</td></tr>
-                    <tr><td>Other Deductions:</td><td>${{ financial_info.other_deductions|default_if_none:0|intcomma }}</td></tr>
-                    <tr><td><strong>Total Deductions:</strong></td><td><strong>${{ financial_info.total_deductions|default_if_none:0|intcomma }}</strong></td></tr>
-                </table>
+            <div class="card-body">
+                <div class="row g-4">
+                    <div class="col-lg-6">
+                        <div class="card-section-title">Income</div>
+                        <table class="table table-sm table-money">
+                            <tr><td>Exempt function income (not taxed)</td><td>${{ financial_info.total_exempt_income|default_if_none:0|intcomma }}</td></tr>
+                            <tr><td>Interest income</td><td>${{ financial_info.interest_income|default_if_none:0|intcomma }}</td></tr>
+                            <tr><td>Dividend income</td><td>${{ financial_info.dividend_income|default_if_none:0|intcomma }}</td></tr>
+                            <tr><td>Rental income</td><td>${{ financial_info.rental_income|default_if_none:0|intcomma }}</td></tr>
+                            <tr><td>Other taxable income</td><td>${{ financial_info.total_other_income|default_if_none:0|intcomma }}</td></tr>
+                            <tr class="total"><td>Total non-exempt income</td><td>${{ financial_info.gross_income|default_if_none:0|intcomma }}</td></tr>
+                        </table>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="card-section-title">Expenses &amp; deductions</div>
+                        <table class="table table-sm table-money">
+                            <tr><td>Total expenses</td><td>${{ financial_info.total_expenses|default_if_none:0|intcomma }}</td></tr>
+                            <tr><td>Expenses (90% test)</td><td>${{ financial_info.expenses_lineC|default_if_none:0|intcomma }}</td></tr>
+                            <tr><td>Other deductions</td><td>${{ financial_info.other_deductions|default_if_none:0|intcomma }}</td></tr>
+                            <tr class="total"><td>Total deductions</td><td>${{ financial_info.total_deductions|default_if_none:0|intcomma }}</td></tr>
+                        </table>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="card-section-title">Tax</div>
+                        <table class="table table-sm table-money">
+                            <tr><td>Taxable income before $100 deduction</td><td>${{ financial_info.taxable_income_before_100|default_if_none:0|intcomma }}</td></tr>
+                            <tr><td>Taxable income</td><td>${{ financial_info.taxable_income|default_if_none:0|intcomma }}</td></tr>
+                            <tr class="total"><td>Total tax</td><td>${{ financial_info.total_tax|default_if_none:0|intcomma }}</td></tr>
+                        </table>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="card-section-title">Payments &amp; balance</div>
+                        <table class="table table-sm table-money">
+                            <tr><td>Total payments</td><td>${{ financial_info.total_payments|default_if_none:0|intcomma }}</td></tr>
+                            <tr><td>Amount owed</td><td>${{ financial_info.amount_owed|default_if_none:0|intcomma }}</td></tr>
+                            <tr><td>Overpayment</td><td>${{ financial_info.overpayment|default_if_none:0|intcomma }}</td></tr>
+                            <tr><td>Refunded amount</td><td>${{ financial_info.refunded|default_if_none:0|intcomma }}</td></tr>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="row mt-4">
-            <div class="col-md-6">
-                <h4>Tax Calculations</h4>
-                <table class="table">
-                    <tr><td>Taxable Income (Before $100 Deduction):</td><td>${{ financial_info.taxable_income_before_100|default_if_none:0|intcomma }}</td></tr>
-                    <tr><td>Taxable Income:</td><td>${{ financial_info.taxable_income|default_if_none:0|intcomma }}</td></tr>
-                    <tr><td><strong>Total Tax:</strong></td><td><strong>${{ financial_info.total_tax|default_if_none:0|intcomma }}</strong></td></tr>
-                </table>
+    </div>
+
+    <div class="col-xxl-4">
+        <div class="row g-4">
+            <div class="col-md-6 col-xxl-12">
+                <div class="card">
+                    <div class="card-header"><h2 class="card-title">Summary</h2></div>
+                    <div class="card-body">
+                        <div class="kv-row"><span class="kv-label">Taxable income</span><span class="kv-value tabular">${{ financial_info.taxable_income|default_if_none:0|intcomma }}</span></div>
+                        <div class="kv-row"><span class="kv-label">Total tax</span><span class="kv-value tabular fw-semibold">${{ financial_info.total_tax|default_if_none:0|intcomma }}</span></div>
+                        <div class="kv-row mb-3"><span class="kv-label">Payments</span><span class="kv-value tabular">${{ financial_info.total_payments|default_if_none:0|intcomma }}</span></div>
+                        {% if financial_info.amount_owed > 0 %}
+                            <div class="amount-callout owed"><span>Amount owed</span><span class="amount">${{ financial_info.amount_owed|intcomma }}</span></div>
+                        {% elif financial_info.overpayment > 0 %}
+                            <div class="amount-callout refund"><span>Overpayment</span><span class="amount">${{ financial_info.overpayment|intcomma }}</span></div>
+                        {% else %}
+                            <div class="amount-callout neutral"><span>Balance due</span><span class="amount">$0</span></div>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
-            <div class="col-md-6">
-                <h4>Payments and Balance</h4>
-                <table class="table">
-                    <tr><td>Total Payments:</td><td>${{ financial_info.total_payments|default_if_none:0|intcomma }}</td></tr>
-                    <tr><td>Amount Owed:</td><td>${{ financial_info.amount_owed|default_if_none:0|intcomma }}</td></tr>
-                    <tr><td>Overpayment:</td><td>${{ financial_info.overpayment|default_if_none:0|intcomma }}</td></tr>
-                    <tr><td>Refunded Amount:</td><td>${{ financial_info.refunded|default_if_none:0|intcomma }}</td></tr>
-                </table>
+
+            {% if preparer %}
+            <div class="col-md-6 col-xxl-12">
+                <div class="card">
+                    <div class="card-header"><h2 class="card-title">Preparer</h2></div>
+                    <div class="card-body">
+                        <div class="kv-row"><span class="kv-label">Name</span><span class="kv-value">{{ preparer.name }}</span></div>
+                        <div class="kv-row"><span class="kv-label">PTIN</span><span class="kv-value">{{ preparer.ptin }}</span></div>
+                        <div class="kv-row"><span class="kv-label">Firm</span><span class="kv-value">{{ preparer.firm_name }}</span></div>
+                        <div class="kv-row"><span class="kv-label">Firm EIN</span><span class="kv-value">{{ preparer.firm_ein }}</span></div>
+                        <div class="kv-row"><span class="kv-label">Address</span><span class="kv-value">{{ preparer.firm_address }}</span></div>
+                        <div class="kv-row"><span class="kv-label">Phone</span><span class="kv-value">{{ preparer.firm_phone }}</span></div>
+                    </div>
+                </div>
             </div>
+            {% endif %}
         </div>
     </div>
 </div>
-{% endif %}
-
-{% if preparer %}
-<div class="card mt-4">
-    <div class="card-header">
-        <h3>Preparer Information</h3>
-    </div>
-    <div class="card-body">
-        <p><strong>Name:</strong> {{ preparer.name }}</p>
-        <p><strong>PTIN:</strong> {{ preparer.ptin }}</p>
-        <p><strong>Firm Name:</strong> {{ preparer.firm_name }}</p>
-        <p><strong>Firm EIN:</strong> {{ preparer.firm_ein }}</p>
-        <p><strong>Firm Address:</strong> {{ preparer.firm_address }}</p>
-        <p><strong>Firm Phone:</strong> {{ preparer.firm_phone }}</p>
+{% else %}
+<div class="card">
+    <div class="empty-state">
+        <i class="fa-solid fa-file-invoice-dollar d-block"></i>
+        Choose an association, tax year and preparer, then press <strong>Calculate</strong> to see the return.
     </div>
 </div>
 {% endif %}

@@ -1,60 +1,55 @@
 {% extends "tax_form/base.html" %}
-{% load crispy_forms_tags %}
 {% load static %}
 
-{% block title %}Upload Signed Engagement Letter{% endblock %}
+{% block title %}Upload signed engagement letter{% endblock %}
 
 {% block content %}
-<div class="container mt-5 upload-page">
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <div class="card">
-                <div class="card-header">
-                    <h2 class="h4 mb-0">Upload Signed Engagement Letter</h2>
-                </div>
-                <div class="card-body">
-                    <div class="mb-4">
-                        <h5>Association: {{ letter.association.association_name }}</h5>
-                        <p>Tax Year: {{ letter.tax_year }}</p>
-                    </div>
+<div class="content-narrow upload-page">
+    <a href="{% url 'engagement_letter' %}" class="back-link"><i class="fa-solid fa-arrow-left"></i> Engagement letters</a>
+    <div class="page-header">
+        <div>
+            <p class="page-eyebrow">Engagement letter · {{ letter.tax_year }}</p>
+            <h1 class="page-title">Upload signed letter</h1>
+            <p class="page-subtitle">{{ letter.association.association_name }}</p>
+        </div>
+    </div>
 
-                    <form method="post" action="{% url 'upload_signed_engagement_letter' letter.id %}" enctype="multipart/form-data" id="uploadForm">
-                        {% csrf_token %}
-                        
-                        <div class="mb-4">
-                            <label class="form-label">Signed PDF</label>
-                            <div class="drop-zone" id="singleDropZone">
-                                <span class="drop-zone__prompt">Drop file here or click to browse</span>
-                                <input type="file" name="signed_pdf" class="drop-zone__input" id="signedPdfInput" accept=".pdf" required>
-                            </div>
-                            <div id="fileInfo" class="mt-2 d-none">
-                                <span class="badge bg-primary">Selected: <span id="fileName"></span></span>
-                            </div>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="signed_by" class="form-label">Signed By (Optional)</label>
-                                <input type="text" class="form-control" id="signed_by" name="signed_by">
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="signer_title" class="form-label">Signer Title (Optional)</label>
-                                <input type="text" class="form-control" id="signer_title" name="signer_title">
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="date_signed" class="form-label">Date Signed (Optional)</label>
-                            <input type="date" class="form-control" id="date_signed" name="date_signed" value="{{ today|date:'Y-m-d' }}">
-                        </div>
-                        
-                        <div class="d-flex justify-content-between mt-4">
-                            <a href="{% url 'engagement_letter' %}" class="btn btn-secondary">Cancel</a>
-                            <button type="submit" class="btn btn-primary">Upload</button>
-                        </div>
-                    </form>
+    <div class="card">
+        <div class="card-body">
+            <form method="post" action="{% url 'upload_signed_engagement_letter' letter.id %}" enctype="multipart/form-data" id="uploadForm">
+                {% csrf_token %}
+
+                <div class="mb-4">
+                    <label class="form-label">Signed PDF</label>
+                    <div class="drop-zone" id="singleDropZone">
+                        <span class="drop-zone__prompt"><i class="fa-solid fa-file-arrow-up d-block mb-2 fs-4"></i>Drop the signed PDF here or click to browse</span>
+                        <input type="file" name="signed_pdf" class="drop-zone__input" id="signedPdfInput" accept=".pdf" required>
+                    </div>
+                    <div id="fileInfo" class="mt-2 d-none">
+                        <span class="badge bg-primary">Selected: <span id="fileName"></span></span>
+                    </div>
                 </div>
-            </div>
+
+                <div class="row g-3">
+                    <div class="col-md-5">
+                        <label for="signed_by" class="form-label">Signed by <span class="text-secondary fw-normal">(optional)</span></label>
+                        <input type="text" class="form-control" id="signed_by" name="signed_by">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="signer_title" class="form-label">Title <span class="text-secondary fw-normal">(optional)</span></label>
+                        <input type="text" class="form-control" id="signer_title" name="signer_title">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="date_signed" class="form-label">Date signed</label>
+                        <input type="date" class="form-control" id="date_signed" name="date_signed" value="{{ today|date:'Y-m-d' }}">
+                    </div>
+                </div>
+
+                <div class="form-actions mt-4">
+                    <a href="{% url 'engagement_letter' %}" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-upload"></i> Upload</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

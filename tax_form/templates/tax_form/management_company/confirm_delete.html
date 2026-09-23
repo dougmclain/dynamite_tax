@@ -4,32 +4,33 @@
 {% block title %}Delete {{ company.name }}{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <div class="card">
-                <div class="card-header bg-danger text-white">
-                    <h1 class="h3 mb-0">Confirm Deletion</h1>
+<div class="content-narrow">
+    <a href="{% url 'management_company_detail' pk=company.id %}" class="back-link"><i class="fa-solid fa-arrow-left"></i> {{ company.name }}</a>
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Delete management company?</h1>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <p class="fs-6">This permanently deletes <strong>{{ company.name }}</strong>.</p>
+
+            {% if associations_count > 0 %}
+                <div class="alert alert-warning">
+                    <i class="fa-solid fa-triangle-exclamation me-1"></i>
+                    {{ associations_count }} association{{ associations_count|pluralize }} {{ associations_count|pluralize:"is,are" }} assigned to this company.
+                    After deleting it, {{ associations_count|pluralize:"that association,those associations" }} will be marked as self-managed.
                 </div>
-                <div class="card-body">
-                    <p class="lead">Are you sure you want to delete the management company <strong>{{ company.name }}</strong>?</p>
-                    
-                    {% if associations_count > 0 %}
-                        <div class="alert alert-warning">
-                            <strong>Warning:</strong> This management company is currently assigned to {{ associations_count }} association{{ associations_count|pluralize }}. 
-                            If you delete this company, those associations will be marked as self-managed.
-                        </div>
-                    {% endif %}
-                    
-                    <form method="post">
-                        {% csrf_token %}
-                        <div class="d-flex justify-content-between mt-4">
-                            <a href="{% url 'management_company_detail' pk=company.id %}" class="btn btn-secondary">Cancel</a>
-                            <button type="submit" class="btn btn-danger">Delete</button>
-                        </div>
-                    </form>
+            {% endif %}
+
+            <form method="post">
+                {% csrf_token %}
+                <div class="form-actions mt-4">
+                    <a href="{% url 'management_company_detail' pk=company.id %}" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-danger">Delete company</button>
                 </div>
-            </div>
+            </form>
         </div>
     </div>
 </div>

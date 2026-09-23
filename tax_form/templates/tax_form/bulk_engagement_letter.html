@@ -4,13 +4,20 @@
 {% block title %}Bulk Create Engagement Letters{% endblock %}
 
 {% block content %}
-<div class="bulk-engagement-container mt-5">
-    <h2 class="mb-4">Bulk Create Engagement Letters</h2>
+<div class="bulk-engagement-container">
+    <a href="{% url 'engagement_letter' %}" class="back-link"><i class="fa-solid fa-arrow-left"></i> Engagement letters</a>
+    <div class="page-header">
+        <div>
+            <p class="page-eyebrow">Clients</p>
+            <h1 class="page-title">Bulk create engagement letters</h1>
+            <p class="page-subtitle">Roll last year's clients forward: pick a source year, review the list, and create next year's letters in one step.</p>
+        </div>
+    </div>
 
     <!-- Year Selection Form -->
     <div class="card mb-4">
         <div class="card-header">
-            <h3 class="card-title h5 mb-0">Filter Options</h3>
+            <h2 class="card-title">Who to include</h2>
         </div>
         <div class="card-body">
             <form method="get">
@@ -68,8 +75,8 @@
                 </div>
                 <div class="row">
                     <div class="col-12">
-                        <button type="submit" class="btn btn-primary">Preview Associations</button>
-                        <a href="{% url 'bulk_engagement_letter' %}" class="btn btn-outline-secondary ms-2">Clear Filters</a>
+                        <button type="submit" class="btn btn-primary">Preview associations</button>
+                        <a href="{% url 'bulk_engagement_letter' %}" class="btn btn-secondary ms-2">Reset</a>
                     </div>
                 </div>
             </form>
@@ -77,27 +84,31 @@
     </div>
 
     <!-- Summary Stats -->
-    <div class="card mb-4">
-        <div class="card-body">
-            <div class="row text-center">
-                <div class="col-md-{% if show_all_associations %}4{% else %}3{% endif %}">
-                    <h4 class="text-primary">{{ total_associations }}</h4>
-                    <p class="mb-0">Total Associations</p>
-                </div>
-                {% if not show_all_associations %}
-                <div class="col-md-3">
-                    <h4 class="text-info">{{ total_filed }}</h4>
-                    <p class="mb-0">Filed in {{ source_year }}</p>
-                </div>
-                {% endif %}
-                <div class="col-md-{% if show_all_associations %}4{% else %}3{% endif %}">
-                    <h4 class="text-success">{{ can_create_count }}</h4>
-                    <p class="mb-0">Ready to create for {{ target_year }}</p>
-                </div>
-                <div class="col-md-{% if show_all_associations %}4{% else %}3{% endif %}">
-                    <h4 class="text-secondary">{{ already_exists_count }}</h4>
-                    <p class="mb-0">Already have {{ target_year }} letters</p>
-                </div>
+    <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-xl">
+            <div class="stat-tile">
+                <div class="stat-label">Associations</div>
+                <div class="stat-value">{{ total_associations }}</div>
+            </div>
+        </div>
+        {% if not show_all_associations %}
+        <div class="col-sm-6 col-xl">
+            <div class="stat-tile">
+                <div class="stat-label">Filed in {{ source_year }}</div>
+                <div class="stat-value">{{ total_filed }}</div>
+            </div>
+        </div>
+        {% endif %}
+        <div class="col-sm-6 col-xl">
+            <div class="stat-tile">
+                <div class="stat-label">Ready to create for {{ target_year }}</div>
+                <div class="stat-value text-brand">{{ can_create_count }}</div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl">
+            <div class="stat-tile">
+                <div class="stat-label">Already have {{ target_year }} letters</div>
+                <div class="stat-value">{{ already_exists_count }}</div>
             </div>
         </div>
     </div>
@@ -106,10 +117,10 @@
     {% if preview_data %}
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
-            <h3 class="card-title h5 mb-0">{% if show_all_associations %}All Associations{% else %}Associations with {{ source_year }} Financial Data{% endif %}</h3>
-            <div>
-                <button type="button" class="btn btn-sm btn-outline-primary" id="select-all">Select All Available</button>
-                <button type="button" class="btn btn-sm btn-outline-secondary" id="deselect-all">Deselect All</button>
+            <h2 class="card-title">{% if show_all_associations %}All associations{% else %}Associations with {{ source_year }} financial data{% endif %}</h2>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-sm btn-outline-primary" id="select-all">Select all available</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="deselect-all">Clear</button>
             </div>
         </div>
         <div class="card-body p-0">
@@ -209,7 +220,7 @@
                     <div>
                         <a href="{% url 'engagement_letter' %}" class="btn btn-secondary me-2">Cancel</a>
                         <button type="submit" class="btn btn-primary" id="create-btn" disabled>
-                            Create Engagement Letters
+                            Create engagement letters
                         </button>
                     </div>
                 </div>
@@ -230,48 +241,7 @@
 
 {% block extra_css %}
 <style>
-    /* Override parent container for wider layout */
-    main.container:has(.bulk-engagement-container) {
-        max-width: 1400px;
-        width: 100%;
-        margin: 0 auto;
-        padding-left: 20px;
-        padding-right: 20px;
-    }
-
-    @media (min-width: 1200px) {
-        main.container:has(.bulk-engagement-container) {
-            padding-left: 40px;
-            padding-right: 40px;
-        }
-    }
-
-    .bulk-engagement-container {
-        width: 100%;
-    }
-
-    .card {
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        border: none;
-    }
-
-    .card-header {
-        background-color: #f7f7f7;
-    }
-
-    #associationTable th {
-        background-color: #f0f0f0;
-        position: sticky;
-        top: 0;
-    }
-
-    #associationTable tbody tr:hover {
-        background-color: #f8f9fa;
-    }
-
-    .table-secondary {
-        opacity: 0.7;
-    }
+    #associationTable .table-secondary > td { opacity: 0.7; }
 </style>
 {% endblock %}
 

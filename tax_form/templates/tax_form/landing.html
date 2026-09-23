@@ -1,0 +1,406 @@
+{% extends "tax_form/public_base.html" %}
+{% load static %}
+
+{% block title %}HOA Tax Help — Form 1120-H tax returns for HOAs and condo associations{% endblock %}
+
+{% block extra_head %}
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "ProfessionalService",
+    "name": "HOA Tax Help",
+    "url": "https://hoataxhelp.com/",
+    "logo": "https://hoataxhelp.com{% static 'images/hoatax_logo.png' %}",
+    "description": "Form 1120-H federal tax returns, Form 7004 extensions and state returns for homeowners and condominium associations.",
+    "email": "{{ site_contact_email }}",
+    "telephone": "{{ site_contact_phone }}",
+    "address": {"@type": "PostalAddress", "postOfficeBoxNumber": "8", "addressLocality": "Vancouver", "addressRegion": "WA", "postalCode": "98666", "addressCountry": "US"},
+    "parentOrganization": {"@type": "Organization", "name": "Dynamite Management, LLC"}
+}
+</script>
+{% endblock %}
+
+{% block body %}
+<a class="skip-link" href="#content">Skip to content</a>
+
+<!-- Navigation -->
+<header class="site-nav">
+    <nav class="navbar navbar-expand-lg">
+        <div class="container-xl">
+            <a class="navbar-brand" href="{% url 'index' %}">
+                <img src="{% static 'images/hoataxhelp_logo.png' %}" alt="HOA Tax Help" class="site-logo">
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#siteNav" aria-controls="siteNav" aria-expanded="false" aria-label="Toggle navigation">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            <div class="collapse navbar-collapse" id="siteNav">
+                <ul class="navbar-nav mx-auto">
+                    <li class="nav-item"><a class="nav-link" href="#how-it-works">How it works</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#services">Services</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#who-we-help">Who we help</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#faq">FAQ</a></li>
+                </ul>
+                <div class="nav-cta">
+                    {% if user.is_authenticated %}
+                        <a class="btn btn-primary" href="{% url 'dashboard' %}">Open dashboard <i class="fa-solid fa-arrow-right"></i></a>
+                    {% else %}
+                        <a class="btn btn-link nav-signin" href="{% url 'login' %}">Sign in</a>
+                        <a class="btn btn-primary" href="#get-started">Get started</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+</header>
+
+<main id="content">
+
+<!-- Hero -->
+<section class="hero">
+    <svg class="hero-roof" viewBox="0 0 800 300" aria-hidden="true" focusable="false">
+        <path d="M20 280 L400 30 L780 280" />
+        <path d="M580 150 L580 60 L640 60 L640 190" />
+    </svg>
+    <div class="container-xl position-relative">
+        <div class="row align-items-center g-5">
+            <div class="col-lg-6">
+                <span class="eyebrow-pill"><i class="fa-solid fa-house-chimney"></i> Tax returns for HOAs &amp; condo associations</span>
+                <h1 class="hero-title">Your association's tax return, <span class="text-brand-gradient">handled.</span></h1>
+                <p class="hero-lead">
+                    HOA Tax Help prepares and files Form 1120-H, extensions and state returns for homeowners and
+                    condominium associations. Send us your year-end financials and we take it from there.
+                </p>
+                <div class="hero-ctas">
+                    <a href="#get-started" class="btn btn-primary btn-lg">Get started <i class="fa-solid fa-arrow-right"></i></a>
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'dashboard' %}" class="btn btn-secondary btn-lg">Open dashboard</a>
+                    {% else %}
+                        <a href="{% url 'login' %}" class="btn btn-secondary btn-lg">Client sign in</a>
+                    {% endif %}
+                </div>
+                <ul class="hero-points">
+                    <li><i class="fa-solid fa-circle-check"></i> Flat fee per association</li>
+                    <li><i class="fa-solid fa-circle-check"></i> Management company portfolios welcome</li>
+                    <li><i class="fa-solid fa-circle-check"></i> From the team behind HOA Fiscal</li>
+                </ul>
+            </div>
+
+            <div class="col-lg-6">
+                <div class="return-preview" aria-label="Example of a prepared Form 1120-H summary">
+                    <div class="rp-card">
+                        <div class="rp-head">
+                            <div>
+                                <div class="rp-form">Form 1120-H · Tax year 2025</div>
+                                <div class="rp-name">Maple Ridge Homeowners Association</div>
+                            </div>
+                            <span class="rp-status"><i class="fa-solid fa-pen-nib"></i> Ready to sign</span>
+                        </div>
+
+                        <div class="rp-section">Qualification tests</div>
+                        <ul class="rp-tests">
+                            <li><span><i class="fa-solid fa-check"></i> Exempt function income ≥ 60%</span><strong>99%</strong></li>
+                            <li><span><i class="fa-solid fa-check"></i> Spending on association property ≥ 90%</span><strong>98%</strong></li>
+                            <li><span><i class="fa-solid fa-check"></i> Residential units ≥ 85%</span><strong>100%</strong></li>
+                        </ul>
+
+                        <div class="rp-section">Tax calculation</div>
+                        <table class="rp-table">
+                            <tr><td>Dues &amp; assessments <span class="rp-note">not taxed</span></td><td>$412,300</td></tr>
+                            <tr><td>Interest income</td><td>$3,840</td></tr>
+                            <tr><td>Specific deduction</td><td>−$100</td></tr>
+                            <tr class="rp-sub"><td>Taxable income</td><td>$3,740</td></tr>
+                            <tr class="rp-total"><td>Tax at 30%</td><td>$1,122</td></tr>
+                        </table>
+
+                        <div class="rp-foot">
+                            <div><span>Due date</span><strong>Apr 15, 2026</strong></div>
+                            <div><span>Prepared by</span><strong>HOA Tax Help</strong></div>
+                        </div>
+                    </div>
+                    <div class="rp-chip rp-chip-top"><i class="fa-solid fa-file-signature"></i> Engagement letter signed</div>
+                    <div class="rp-chip rp-chip-bottom"><i class="fa-solid fa-shield-halved"></i> Reviewed before it goes out</div>
+                    <p class="rp-caption">Sample figures for illustration</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Coverage strip -->
+<section class="coverage">
+    <div class="container-xl">
+        <ul class="coverage-list">
+            <li><i class="fa-solid fa-file-invoice-dollar"></i> Form 1120-H</li>
+            <li><i class="fa-solid fa-clock-rotate-left"></i> Form 7004 extensions</li>
+            <li><i class="fa-solid fa-landmark"></i> State association returns</li>
+            <li><i class="fa-solid fa-file-signature"></i> Engagement letters</li>
+            <li><i class="fa-solid fa-box-archive"></i> Year-over-year records</li>
+        </ul>
+    </div>
+</section>
+
+<!-- How it works -->
+<section class="section" id="how-it-works">
+    <div class="container-xl">
+        <div class="section-head">
+            <span class="section-kicker">How it works</span>
+            <h2>Four steps, once a year</h2>
+            <p>Most associations spend a few minutes with us. We handle the forms, the math and the deadlines.</p>
+        </div>
+        <ol class="steps">
+            <li class="step">
+                <span class="step-num">1</span>
+                <h3>Send your year-end financials</h3>
+                <p>Upload your income statement or P&amp;L. We pull out dues, interest, rental income and expenses, then review every number.</p>
+            </li>
+            <li class="step">
+                <span class="step-num">2</span>
+                <h3>We prepare the return</h3>
+                <p>We run the 1120-H qualification tests, apply every deduction you're entitled to and prepare any required state return.</p>
+            </li>
+            <li class="step">
+                <span class="step-num">3</span>
+                <h3>You review and sign</h3>
+                <p>Your board gets a clear summary with the tax due or refund. Sign the return and send it back.</p>
+            </li>
+            <li class="step">
+                <span class="step-num">4</span>
+                <h3>Filed and on record</h3>
+                <p>We track filing and keep your returns on file, so next year starts with last year's numbers already in place.</p>
+            </li>
+        </ol>
+    </div>
+</section>
+
+<!-- Services -->
+<section class="section section-alt" id="services">
+    <div class="container-xl">
+        <div class="section-head">
+            <span class="section-kicker">Services</span>
+            <h2>Everything your association files at tax time</h2>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-6 col-lg-4">
+                <div class="feature">
+                    <span class="feature-icon"><i class="fa-solid fa-file-invoice-dollar"></i></span>
+                    <h3>Form 1120-H returns</h3>
+                    <p>The simplified federal return for homeowners associations, so dues and assessments stay untaxed and only investment and other non-member income is taxed.</p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <div class="feature">
+                    <span class="feature-icon"><i class="fa-solid fa-clock-rotate-left"></i></span>
+                    <h3>Form 7004 extensions</h3>
+                    <p>Need more time? We file the automatic six-month extension and estimate any tax due so there are no late-payment surprises.</p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <div class="feature">
+                    <span class="feature-icon"><i class="fa-solid fa-landmark"></i></span>
+                    <h3>State returns</h3>
+                    <p>Some states require their own association return. We prepare it alongside your federal return, quoted up front.</p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <div class="feature">
+                    <span class="feature-icon"><i class="fa-solid fa-magnifying-glass-dollar"></i></span>
+                    <h3>Qualification check</h3>
+                    <p>Every year we confirm your association still meets the 60% income, 90% spending and 85% residential tests before choosing 1120-H.</p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <div class="feature">
+                    <span class="feature-icon"><i class="fa-solid fa-file-signature"></i></span>
+                    <h3>Engagement letters</h3>
+                    <p>A clear letter for each association and year that spells out the scope and the flat fee before any work begins.</p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <div class="feature">
+                    <span class="feature-icon"><i class="fa-solid fa-city"></i></span>
+                    <h3>Portfolio filing</h3>
+                    <p>Management companies send one batch for every association they manage. We keep deadlines, letters and returns organized by company.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Who we help -->
+<section class="section" id="who-we-help">
+    <div class="container-xl">
+        <div class="section-head">
+            <span class="section-kicker">Who we help</span>
+            <h2>Built for volunteer boards and busy managers</h2>
+        </div>
+        <div class="row g-4">
+            <div class="col-lg-6">
+                <div class="audience">
+                    <div class="audience-icon"><i class="fa-solid fa-people-roof"></i></div>
+                    <h3>Board treasurers &amp; self-managed associations</h3>
+                    <p>You volunteered to keep the books, not to become a tax expert. We explain what's owed in plain language and make sure the return goes out on time.</p>
+                    <ul class="check-list">
+                        <li>Plain-English summary for the board</li>
+                        <li>Due dates and extensions tracked for you</li>
+                        <li>Prior-year returns kept on file</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="audience">
+                    <div class="audience-icon"><i class="fa-solid fa-briefcase"></i></div>
+                    <h3>Community management companies</h3>
+                    <p>Hand off every association in your portfolio at once. We track each fiscal year end, extension and signature so nothing slips.</p>
+                    <ul class="check-list">
+                        <li>Returns and letters grouped by company</li>
+                        <li>Fiscal years that end in any month</li>
+                        <li>One packet of engagement letters per company</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Roadmap -->
+<section class="roadmap" id="file-it-yourself">
+    <div class="container-xl">
+        <div class="row align-items-center g-4">
+            <div class="col-lg-7">
+                <span class="roadmap-badge">Coming soon</span>
+                <h2>Prepare and e-file it yourself</h2>
+                <p>
+                    We're building a guided, do-it-yourself version of HOA Tax Help. Board officers will be able to enter their
+                    association's numbers, see the 1120-H calculated as they go, and file directly with the IRS.
+                </p>
+            </div>
+            <div class="col-lg-5">
+                <div class="roadmap-card">
+                    <ul class="roadmap-list">
+                        <li><i class="fa-solid fa-user-plus"></i> Create your own account in minutes</li>
+                        <li><i class="fa-solid fa-list-check"></i> Step-by-step interview, no tax jargon</li>
+                        <li><i class="fa-solid fa-paper-plane"></i> File electronically with the IRS</li>
+                    </ul>
+                    <a class="btn btn-light w-100" href="mailto:{{ site_contact_email }}?subject=HOA%20Tax%20Help%20early%20access">
+                        <i class="fa-solid fa-envelope"></i> Join the early-access list
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- FAQ -->
+<section class="section" id="faq">
+    <div class="container-xl">
+        <div class="section-head">
+            <span class="section-kicker">FAQ</span>
+            <h2>Common questions</h2>
+        </div>
+        <div class="row g-3 g-lg-4">
+            <div class="col-lg-6">
+                <details class="faq" open>
+                    <summary>Does our association have to file a tax return?</summary>
+                    <p>Most homeowners and condominium associations must file a federal income tax return every year, even when they owe no tax. Many qualify for the simpler Form 1120-H, and we'll confirm whether yours does.</p>
+                </details>
+                <details class="faq">
+                    <summary>What is Form 1120-H?</summary>
+                    <p>A simplified return that qualifying associations can choose each year. Member dues and assessments are not taxed. Other income, such as bank interest or rent from non-members, is taxed at a flat 30% after a $100 specific deduction (32% for timeshare associations).</p>
+                </details>
+                <details class="faq">
+                    <summary>How do we know if we qualify?</summary>
+                    <p>In general, at least 60% of gross income must come from member dues, fees and assessments; at least 90% of spending must go to acquiring, building, managing and maintaining association property; and for condominium and residential associations at least 85% of units must be used as residences. We check all three for you.</p>
+                </details>
+            </div>
+            <div class="col-lg-6">
+                <details class="faq">
+                    <summary>When is the return due?</summary>
+                    <p>By the 15th day of the fourth month after your association's fiscal year ends: April 15 for calendar-year associations. Form 7004 gives an automatic six-month extension to file, but any tax owed is still due by the original date.</p>
+                </details>
+                <details class="faq">
+                    <summary>What do you need from us?</summary>
+                    <p>Your year-end income statement (P&amp;L), your EIN and mailing address, and last year's return if we didn't prepare it. We'll follow up if anything is unclear.</p>
+                </details>
+                <details class="faq">
+                    <summary>What does it cost?</summary>
+                    <p>A flat fee per association, confirmed in your engagement letter before we start. Any state return is quoted separately. Management companies with several associations can ask us about portfolio pricing.</p>
+                </details>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Get started -->
+<section class="section section-alt" id="get-started">
+    <div class="container-xl">
+        <div class="cta-panel">
+            <div class="row align-items-center g-4">
+                <div class="col-lg-7">
+                    <h2>Ready to take this year's return off your plate?</h2>
+                    <p>Tell us your association's name and fiscal year end. We'll reply with an engagement letter that shows your flat fee.</p>
+                </div>
+                <div class="col-lg-5">
+                    <div class="cta-actions">
+                        <a class="btn btn-primary btn-lg" href="mailto:{{ site_contact_email }}?subject=HOA%20tax%20return%20request">
+                            <i class="fa-solid fa-envelope"></i> Email {{ site_contact_email }}
+                        </a>
+                        <a class="btn btn-secondary btn-lg" href="tel:{{ site_contact_phone }}">
+                            <i class="fa-solid fa-phone"></i> Call {{ site_contact_phone }}
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+</main>
+
+<!-- Footer -->
+<footer class="site-footer">
+    <div class="container-xl">
+        <div class="row g-4">
+            <div class="col-lg-5">
+                <img src="{% static 'images/hoataxhelp_logo.png' %}" alt="HOA Tax Help" class="footer-logo">
+                <p class="footer-blurb">Federal and state tax returns for homeowners and condominium associations.</p>
+            </div>
+            <div class="col-6 col-lg-3">
+                <h3 class="footer-heading">Explore</h3>
+                <ul class="footer-links">
+                    <li><a href="#how-it-works">How it works</a></li>
+                    <li><a href="#services">Services</a></li>
+                    <li><a href="#faq">FAQ</a></li>
+                    <li><a href="{% url 'login' %}">Client sign in</a></li>
+                </ul>
+            </div>
+            <div class="col-6 col-lg-4">
+                <h3 class="footer-heading">Contact</h3>
+                <ul class="footer-links">
+                    <li><a href="mailto:{{ site_contact_email }}">{{ site_contact_email }}</a></li>
+                    <li><a href="tel:{{ site_contact_phone }}">{{ site_contact_phone }}</a></li>
+                    <li>PO Box 8, Vancouver, WA 98666</li>
+                    <li><a href="https://hoafiscal.com" rel="noopener">HOA Fiscal: accounting for associations</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <span>&copy; {% now "Y" %} HOA Tax Help is operated by Dynamite Management, LLC. All rights reserved.</span>
+            <span>We are not affiliated with the IRS.</span>
+        </div>
+    </div>
+</footer>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Close the mobile menu after choosing a section link
+    document.querySelectorAll('#siteNav .nav-link').forEach(function (link) {
+        link.addEventListener('click', function () {
+            var menu = document.getElementById('siteNav');
+            if (menu.classList.contains('show')) {
+                bootstrap.Collapse.getOrCreateInstance(menu).hide();
+            }
+        });
+    });
+</script>
+{% endblock %}

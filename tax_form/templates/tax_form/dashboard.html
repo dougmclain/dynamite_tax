@@ -3,163 +3,153 @@
 {% load static %}
 {% load custom_filters %}
 
-{% block title %}Association Dashboard{% endblock %}
-
-{% block main_class %}container-fluid{% endblock %}
+{% block title %}Dashboard{% endblock %}
 
 {% block extra_css %}
 <link href="{% static 'css/dashboard.css' %}" rel="stylesheet">
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid dashboard-container mt-5">
-    <h1 class="mb-4">Association Dashboard</h1>
-    
-    <div class="row justify-content-center">
-        <div class="col-12">
-            <form method="get" class="mb-4 dashboard-filters">
-                <div class="row">
-                    <div class="col-md-4">
-                        <label for="tax_year" class="form-label">Select Tax Year:</label>
-                        <select name="tax_year" id="tax_year" class="form-select">
-                            {% for year in available_years %}
-                                <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>{{ year }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="col-md-4">
-                        <label for="management_company" class="form-label">Management Company:</label>
-                        <select name="management_company" id="management_company" class="form-select">
-                            <option value="all" {% if selected_management_company == 'all' or not selected_management_company %}selected{% endif %}>All Companies</option>
-                            <option value="self" {% if selected_management_company == 'self' %}selected{% endif %}>Self-Managed</option>
-                            {% for company in management_companies %}
-                                <option value="{{ company.id }}" {% if selected_management_company == company.id|stringformat:"s" %}selected{% endif %}>{{ company.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="col-md-4 d-flex align-items-end">
-                        <div class="btn-group w-100">
-                            <button type="submit" class="btn btn-primary">Apply Filters</button>
-                            <div class="btn-group ms-2">
-                                <a href="{% url 'export_associations' %}?tax_year={{ selected_year }}&management_company={{ selected_management_company|default:'all' }}"
-                                   class="btn btn-success">
-                                    <i class="fas fa-file-export"></i> Export
-                                </a>
-                                <button type="button" class="btn btn-success dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <span class="visually-hidden">Toggle Dropdown</span>
-                                </button>
-                                <ul class="dropdown-menu dropdown-menu-end">
-                                    <li>
-                                        <a class="dropdown-item" href="{% url 'export_associations' %}?tax_year={{ selected_year }}&management_company={{ selected_management_company|default:'all' }}&format=csv">
-                                            <i class="fas fa-file-csv"></i> Export Filing List (CSV)
-                                        </a>
-                                    </li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li>
-                                        <a class="dropdown-item" href="{% url 'export_completed_returns' %}?source_year={{ selected_year }}&management_company={{ selected_management_company|default:'all' }}">
-                                            <i class="fas fa-file-excel"></i> Export Completed Returns (Excel)
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item" href="{% url 'export_completed_returns' %}?source_year={{ selected_year|add:'-1' }}&target_year={{ selected_year }}&management_company={{ selected_management_company|default:'all' }}">
-                                            <i class="fas fa-file-excel"></i> Export {{ selected_year|add:'-1' }} Returns with {{ selected_year }} Todo
-                                        </a>
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </form>
-
-            <h2 class="h4 mb-3">Tax Year {{ selected_year }} {% if selected_management_company and selected_management_company != 'all' %}
-                <span class="filter-indicator">
-                    {% if selected_management_company == 'self' %}
-                        (Self-Managed Only)
-                    {% else %}
-                        {% for company in management_companies %}
-                            {% if selected_management_company == company.id|stringformat:"s" %}
-                                ({{ company.name }} Only)
-                            {% endif %}
-                        {% endfor %}
-                    {% endif %}
-                </span>
-            {% endif %}</h2>
-
-            <div class="card mb-4">
-                <div class="card-body">
-                    <h3 class="card-title h5">Summary</h3>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <div class="card bg-light mb-2">
-                                <div class="card-body py-2">
-                                    <h5 class="mb-0">Association Counts</h5>
-                                    <p class="mb-1">Total: <span id="summary-total">{{ total_associations }}</span></p>
-                                    <p class="mb-1">To File: <span id="summary-to-file">{{ associations_to_file }}</span></p>
-                                    <p class="mb-0">Not Filing: <span id="summary-not-filing">{{ total_associations|subtract:associations_to_file }}</span></p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="card bg-light mb-2">
-                                <div class="card-body py-2">
-                                    <h5 class="mb-0">Return Status</h5>
-                                    <p class="mb-1">Filed: <span id="summary-filed">{{ filed_returns }}</span></p>
-                                    <p class="mb-1">Sent for Signature: <span id="summary-sent">{{ sent_returns }}</span></p>
-                                    <p class="mb-1">Reviewed: <span id="summary-reviewed">{{ reviewed_returns }}</span></p>
-                                    <p class="mb-0">Unfiled: <span id="summary-unfiled">{{ unfiled_returns }}</span></p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="card bg-light mb-2">
-                                <div class="card-body py-2">
-                                    <h5 class="mb-0">Engagement Letters</h5>
-                                    <p class="mb-1">Signed: <span id="summary-signed">{{ signed_engagement_letters }}</span></p>
-                                    <p class="mb-0">Needed: <span id="summary-needed">{{ engagement_letters_needed }}</span></p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="card bg-light mb-2">
-                                <div class="card-body py-2">
-                                    <h5 class="mb-0">Invoicing</h5>
-                                    <p class="mb-1">Paid: <span id="summary-paid">{{ paid_associations }}</span></p>
-                                    <p class="mb-1">Invoiced: <span id="summary-invoiced">{{ invoiced_associations }}</span></p>
-                                    <p class="mb-0">To Invoice: <span id="summary-to-invoice">{{ uninvoiced_associations }}</span></p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+<div class="dashboard-container">
+    <div class="page-header">
+        <div>
+            <p class="page-eyebrow">Tax year {{ selected_year }}</p>
+            <h1 class="page-title">Dashboard</h1>
+            <p class="page-subtitle">
+                Filing progress for
+                {% if selected_management_company == 'self' %}
+                    self-managed associations.
+                {% elif selected_management_company and selected_management_company != 'all' %}
+                    {% for company in management_companies %}{% if selected_management_company == company.id|stringformat:"s" %}{{ company.name }}.{% endif %}{% endfor %}
+                {% else %}
+                    all associations.
+                {% endif %}
+                Click a row to open the association.
+            </p>
+        </div>
+        <div class="page-actions">
+            <div class="btn-group">
+                <a href="{% url 'export_associations' %}?tax_year={{ selected_year }}&management_company={{ selected_management_company|default:'all' }}"
+                   class="btn btn-secondary">
+                    <i class="fa-solid fa-file-export"></i> Export
+                </a>
+                <button type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+                    <span class="visually-hidden">More export options</span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li>
+                        <a class="dropdown-item" href="{% url 'export_associations' %}?tax_year={{ selected_year }}&management_company={{ selected_management_company|default:'all' }}&format=csv">
+                            <i class="fa-solid fa-file-csv"></i> Export filing list (CSV)
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <a class="dropdown-item" href="{% url 'export_completed_returns' %}?source_year={{ selected_year }}&management_company={{ selected_management_company|default:'all' }}">
+                            <i class="fa-solid fa-file-excel"></i> Export completed returns (Excel)
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="{% url 'export_completed_returns' %}?source_year={{ selected_year|add:'-1' }}&target_year={{ selected_year }}&management_company={{ selected_management_company|default:'all' }}">
+                            <i class="fa-solid fa-file-excel"></i> Export {{ selected_year|add:'-1' }} returns with {{ selected_year }} to-do
+                        </a>
+                    </li>
+                </ul>
             </div>
+        </div>
+    </div>
 
-            <div class="card mb-4">
-                <div class="card-header">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <h3 class="card-title h5 mb-0">Association List</h3>
-                        <button class="btn btn-sm btn-outline-secondary" id="clear-filters">Clear Filters</button>
-                    </div>
+    <form method="get" class="filter-bar">
+        <div class="filter-field">
+            <label for="tax_year" class="form-label">Tax year</label>
+            <select name="tax_year" id="tax_year" class="form-select">
+                {% for year in available_years %}
+                    <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>{{ year }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="filter-field grow">
+            <label for="management_company" class="form-label">Management company</label>
+            <select name="management_company" id="management_company" class="form-select">
+                <option value="all" {% if selected_management_company == 'all' or not selected_management_company %}selected{% endif %}>All companies</option>
+                <option value="self" {% if selected_management_company == 'self' %}selected{% endif %}>Self-managed</option>
+                {% for company in management_companies %}
+                    <option value="{{ company.id }}" {% if selected_management_company == company.id|stringformat:"s" %}selected{% endif %}>{{ company.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="filter-actions">
+            <button type="submit" class="btn btn-primary">Apply</button>
+        </div>
+    </form>
+
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-xl-3">
+            <div class="stat-tile">
+                <div class="stat-label"><span class="stat-icon"><i class="fa-solid fa-building"></i></span> Associations to file</div>
+                <div class="stat-value" id="summary-to-file">{{ associations_to_file }}</div>
+                <ul class="stat-list">
+                    <li><span>Total associations</span><span id="summary-total">{{ total_associations }}</span></li>
+                    <li><span>Not filing</span><span id="summary-not-filing">{{ total_associations|subtract:associations_to_file }}</span></li>
+                </ul>
+            </div>
+        </div>
+        <div class="col-6 col-xl-3">
+            <div class="stat-tile">
+                <div class="stat-label"><span class="stat-icon"><i class="fa-solid fa-file-circle-check"></i></span> Returns filed</div>
+                <div class="stat-value" id="summary-filed">{{ filed_returns }}</div>
+                <ul class="stat-list">
+                    <li><span>Sent for signature</span><span id="summary-sent">{{ sent_returns }}</span></li>
+                    <li><span>Reviewed</span><span id="summary-reviewed">{{ reviewed_returns }}</span></li>
+                    <li><span>Unfiled</span><span id="summary-unfiled">{{ unfiled_returns }}</span></li>
+                </ul>
+            </div>
+        </div>
+        <div class="col-6 col-xl-3">
+            <div class="stat-tile">
+                <div class="stat-label"><span class="stat-icon"><i class="fa-solid fa-file-signature"></i></span> Engagement letters signed</div>
+                <div class="stat-value" id="summary-signed">{{ signed_engagement_letters }}</div>
+                <ul class="stat-list">
+                    <li><span>Still needed</span><span id="summary-needed">{{ engagement_letters_needed }}</span></li>
+                </ul>
+            </div>
+        </div>
+        <div class="col-6 col-xl-3">
+            <div class="stat-tile">
+                <div class="stat-label"><span class="stat-icon"><i class="fa-solid fa-receipt"></i></span> Invoices paid</div>
+                <div class="stat-value" id="summary-paid">{{ paid_associations }}</div>
+                <ul class="stat-list">
+                    <li><span>Invoiced</span><span id="summary-invoiced">{{ invoiced_associations }}</span></li>
+                    <li><span>To invoice</span><span id="summary-to-invoice">{{ uninvoiced_associations }}</span></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="card association-list-card">
+        <div class="card-header">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <div class="d-flex flex-wrap align-items-center gap-2">
+                    <h2 class="card-title me-2">Associations</h2>
                     <div class="d-flex flex-wrap gap-1" id="filter-row">
                         <div class="dropdown filter-dropdown">
-                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside">Filing Status</button>
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside">Filing status</button>
                             <div class="dropdown-menu p-2" data-filter="filing-status">
-                                <label class="dropdown-item-check"><input type="checkbox" value="will_file" checked> Will File</label>
-                                <label class="dropdown-item-check"><input type="checkbox" value="not_filing"> Not Filing</label>
+                                <label class="dropdown-item-check"><input type="checkbox" value="will_file" checked> Will file</label>
+                                <label class="dropdown-item-check"><input type="checkbox" value="not_filing"> Not filing</label>
                             </div>
                         </div>
                         <div class="dropdown filter-dropdown">
-                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside">Return Sent</button>
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside">Return sent</button>
                             <div class="dropdown-menu p-2" data-filter="sent">
                                 <label class="dropdown-item-check"><input type="checkbox" value="sent"> Sent</label>
-                                <label class="dropdown-item-check"><input type="checkbox" value="not_sent"> Not Sent</label>
+                                <label class="dropdown-item-check"><input type="checkbox" value="not_sent"> Not sent</label>
                             </div>
                         </div>
                         <div class="dropdown filter-dropdown">
-                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside">Return Filed</button>
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside">Return filed</button>
                             <div class="dropdown-menu p-2" data-filter="filed">
                                 <label class="dropdown-item-check"><input type="checkbox" value="filed"> Filed</label>
-                                <label class="dropdown-item-check"><input type="checkbox" value="not_filed"> Not Filed</label>
+                                <label class="dropdown-item-check"><input type="checkbox" value="not_filed"> Not filed</label>
                             </div>
                         </div>
                         <div class="dropdown filter-dropdown">
@@ -167,7 +157,7 @@
                             <div class="dropdown-menu p-2" data-filter="reviewed">
                                 <label class="dropdown-item-check"><input type="checkbox" value="reviewed"> Reviewed</label>
                                 <label class="dropdown-item-check"><input type="checkbox" value="pending"> Pending</label>
-                                <label class="dropdown-item-check"><input type="checkbox" value="none"> Not Started</label>
+                                <label class="dropdown-item-check"><input type="checkbox" value="none"> Not started</label>
                             </div>
                         </div>
                         <div class="dropdown filter-dropdown">
@@ -176,7 +166,7 @@
                                 <label class="dropdown-item-check"><input type="checkbox" value="signed"> Signed</label>
                                 <label class="dropdown-item-check"><input type="checkbox" value="sent"> Sent</label>
                                 <label class="dropdown-item-check"><input type="checkbox" value="pending"> Pending</label>
-                                <label class="dropdown-item-check"><input type="checkbox" value="not_created"> Not Created</label>
+                                <label class="dropdown-item-check"><input type="checkbox" value="not_created"> Not created</label>
                             </div>
                         </div>
                         <div class="dropdown filter-dropdown">
@@ -184,18 +174,18 @@
                             <div class="dropdown-menu p-2" data-filter="invoice">
                                 <label class="dropdown-item-check"><input type="checkbox" value="paid"> Paid</label>
                                 <label class="dropdown-item-check"><input type="checkbox" value="invoiced"> Invoiced</label>
-                                <label class="dropdown-item-check"><input type="checkbox" value="not_invoiced"> Not Invoiced</label>
+                                <label class="dropdown-item-check"><input type="checkbox" value="not_invoiced"> Not invoiced</label>
                             </div>
                         </div>
                         <div class="dropdown filter-dropdown">
-                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside">Balance Due</button>
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside">Balance due</button>
                             <div class="dropdown-menu p-2" data-filter="balance">
-                                <label class="dropdown-item-check"><input type="checkbox" value="due"> Tax Due</label>
-                                <label class="dropdown-item-check"><input type="checkbox" value="none"> No Tax Due</label>
+                                <label class="dropdown-item-check"><input type="checkbox" value="due"> Tax due</label>
+                                <label class="dropdown-item-check"><input type="checkbox" value="none"> No tax due</label>
                             </div>
                         </div>
                         <div class="dropdown filter-dropdown">
-                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside">Fiscal Year End</button>
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside">Fiscal year end</button>
                             <div class="dropdown-menu p-2" data-filter="fiscal-month">
                                 <label class="dropdown-item-check"><input type="checkbox" value="1"> January</label>
                                 <label class="dropdown-item-check"><input type="checkbox" value="2"> February</label>
@@ -213,116 +203,124 @@
                         </div>
                     </div>
                 </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover" id="associationTable">
-                            <thead>
-                                <tr>
-                                    <th class="sortable" data-sort="name">Association Name</th>
-                                    <th>Management</th>
-                                    <th>Fiscal Year End</th>
-                                    <th>Filing Status</th>
-                                    <th class="sortable" data-sort="sent">Tax Return Sent</th>
-                                    <th class="sortable" data-sort="return">Tax Return Filed</th>
-                                    <th>Reviewed</th>
-                                    <th>Engagement Letter</th>
-                                    <th>Invoice Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for data in dashboard_data %}
-                                <tr class="clickable-row {% if not data.prepare_return %}not-filing{% endif %}"
-                                    data-href="{% url 'association' %}?association_id={{ data.association.id }}&tax_year={{ selected_year }}"
-                                    data-filing-status="{% if data.prepare_return %}will_file{% else %}not_filing{% endif %}"
-                                    data-sent="{% if data.tax_return_sent_date %}sent{% else %}not_sent{% endif %}"
-                                    data-filed="{% if data.tax_return_filed %}filed{% else %}not_filed{% endif %}"
-                                    data-reviewed="{% if data.tax_return_reviewed %}reviewed{% elif data.has_stored_return %}pending{% else %}none{% endif %}"
-                                    data-engagement="{% with letter=data.engagement_letter %}{% if letter %}{% if letter.status == 'signed' %}signed{% elif letter.status == 'sent' %}sent{% else %}pending{% endif %}{% else %}not_created{% endif %}{% endwith %}"
-                                    data-invoice="{% if data.payment_received_date %}paid{% elif data.invoice_sent_date or data.invoiced %}invoiced{% elif data.prepare_return %}not_invoiced{% else %}na{% endif %}"
-                                    data-balance="{% if data.amount_owed > 0 %}due{% else %}none{% endif %}"
-                                    data-fiscal-month="{{ data.association.fiscal_year_end_month }}">
-                                    <td data-name="{{ data.association.association_name }}" title="{{ data.association.association_name }}">
-                                        {{ data.association.association_name }}
-                                    </td>
-                                    <td title="{{ data.management_info }}" class="management-column">
-                                        {{ data.management_info }}
-                                    </td>
-                                    <td title="{{ data.fiscal_year_end|date:'F d, Y' }}">
-                                        {{ data.fiscal_year_end|date:"F d, Y" }}
-                                    </td>
-                                    <td>
-                                        {% if data.prepare_return %}
-                                            <a href="/filing-status/{{ data.association.id }}/{{ selected_year }}/"
-                                               onclick="event.stopPropagation();" class="text-decoration-none">
-                                                <span class="badge bg-success">Will File</span>
-                                            </a>
-                                        {% else %}
-                                            <a href="/filing-status/{{ data.association.id }}/{{ selected_year }}/"
-                                               onclick="event.stopPropagation();" class="text-decoration-none">
-                                                <span class="badge bg-danger" title="{{ data.not_filing_reason }}">Not Filing</span>
-                                            </a>
-                                        {% endif %}
-                                    </td>
-                                    <td data-sent="{{ data.tax_return_sent_date|date:'Y-m-d'|default:'9999-12-31' }}">
-                                        {% if data.tax_return_sent_date %}
-                                            <span class="badge bg-info">{{ data.tax_return_sent_date|date:"F d, Y" }}</span>
-                                        {% else %}
-                                            <span class="badge bg-secondary">Not Sent</span>
-                                        {% endif %}
-                                    </td>
-                                    <td data-return="{{ data.tax_return_prepared_date|date:'Y-m-d'|default:'9999-12-31' }}">
-                                        {% if data.tax_return_filed %}
-                                            <span class="badge bg-success">{{ data.filing_status_display }}</span>
-                                        {% else %}
-                                            <span class="badge bg-secondary">Not Filed</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if data.tax_return_reviewed %}
-                                            <span class="badge bg-success" title="{{ data.tax_return_reviewed_date|date:'F d, Y'|default:'' }}">Reviewed</span>
-                                        {% elif data.has_stored_return %}
-                                            <span class="badge bg-warning">Pending</span>
-                                        {% else %}
-                                            <span class="badge bg-light text-muted">-</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% with letter=data.engagement_letter %}
-                                            {% if letter %}
-                                                {% if letter.status == 'signed' %}
-                                                    <span class="badge bg-success">Signed</span>
-                                                {% elif letter.status == 'sent' %}
-                                                    <span class="badge bg-info">Sent</span>
-                                                {% else %}
-                                                    <span class="badge bg-warning">Pending</span>
-                                                {% endif %}
-                                            {% else %}
-                                                <span class="badge bg-secondary">Not Created</span>
-                                            {% endif %}
-                                        {% endwith %}
-                                    </td>
-                                    <td>
-                                        {% if data.payment_received_date %}
-                                            <span class="badge bg-success">Paid {{ data.payment_received_date|date:"n/j" }}</span>
-                                        {% elif data.invoice_sent_date %}
-                                            <span class="badge bg-info">Invoiced {{ data.invoice_sent_date|date:"n/j" }}</span>
-                                        {% elif data.invoiced %}
-                                            <span class="badge bg-info">Invoiced</span>
-                                        {% else %}
-                                            {% if data.prepare_return %}
-                                                <span class="badge bg-secondary">Not Invoiced</span>
-                                            {% else %}
-                                                <span class="badge bg-light text-dark">N/A</span>
-                                            {% endif %}
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+                <button class="btn btn-sm btn-link text-secondary text-decoration-none" id="clear-filters"><i class="fa-solid fa-xmark"></i> Clear filters</button>
             </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive table-scroll">
+                <table class="table table-hover" id="associationTable">
+                    <thead>
+                        <tr>
+                            <th class="sortable" data-sort="name">Association</th>
+                            <th>Management</th>
+                            <th>Fiscal year end</th>
+                            <th>Filing status</th>
+                            <th class="sortable" data-sort="sent">Return sent</th>
+                            <th class="sortable" data-sort="return">Return filed</th>
+                            <th>Reviewed</th>
+                            <th>Engagement letter</th>
+                            <th>Invoice</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for data in dashboard_data %}
+                        <tr class="clickable-row {% if not data.prepare_return %}not-filing{% endif %}"
+                            data-href="{% url 'association' %}?association_id={{ data.association.id }}&tax_year={{ selected_year }}"
+                            data-filing-status="{% if data.prepare_return %}will_file{% else %}not_filing{% endif %}"
+                            data-sent="{% if data.tax_return_sent_date %}sent{% else %}not_sent{% endif %}"
+                            data-filed="{% if data.tax_return_filed %}filed{% else %}not_filed{% endif %}"
+                            data-reviewed="{% if data.tax_return_reviewed %}reviewed{% elif data.has_stored_return %}pending{% else %}none{% endif %}"
+                            data-engagement="{% with letter=data.engagement_letter %}{% if letter %}{% if letter.status == 'signed' %}signed{% elif letter.status == 'sent' %}sent{% else %}pending{% endif %}{% else %}not_created{% endif %}{% endwith %}"
+                            data-invoice="{% if data.payment_received_date %}paid{% elif data.invoice_sent_date or data.invoiced %}invoiced{% elif data.prepare_return %}not_invoiced{% else %}na{% endif %}"
+                            data-balance="{% if data.amount_owed > 0 %}due{% else %}none{% endif %}"
+                            data-fiscal-month="{{ data.association.fiscal_year_end_month }}">
+                            <td data-name="{{ data.association.association_name }}" title="{{ data.association.association_name }}" class="association-name">
+                                {{ data.association.association_name }}
+                            </td>
+                            <td title="{{ data.management_info }}" class="management-column">
+                                {{ data.management_info }}
+                            </td>
+                            <td class="text-nowrap" title="{{ data.fiscal_year_end|date:'F d, Y' }}">
+                                {{ data.fiscal_year_end|date:"M j, Y" }}
+                            </td>
+                            <td>
+                                {% if data.prepare_return %}
+                                    <a href="{% url 'edit_filing_status' data.association.id selected_year %}"
+                                       onclick="event.stopPropagation();" class="text-decoration-none">
+                                        <span class="badge bg-success">Will file</span>
+                                    </a>
+                                {% else %}
+                                    <a href="{% url 'edit_filing_status' data.association.id selected_year %}"
+                                       onclick="event.stopPropagation();" class="text-decoration-none">
+                                        <span class="badge bg-danger" title="{{ data.not_filing_reason }}">Not filing</span>
+                                    </a>
+                                {% endif %}
+                            </td>
+                            <td data-sent="{{ data.tax_return_sent_date|date:'Y-m-d'|default:'9999-12-31' }}">
+                                {% if data.tax_return_sent_date %}
+                                    <span class="badge bg-info">{{ data.tax_return_sent_date|date:"M j, Y" }}</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Not sent</span>
+                                {% endif %}
+                            </td>
+                            <td data-return="{{ data.tax_return_prepared_date|date:'Y-m-d'|default:'9999-12-31' }}">
+                                {% if data.tax_return_filed %}
+                                    <span class="badge bg-success">{{ data.filing_status_display }}</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Not filed</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if data.tax_return_reviewed %}
+                                    <span class="badge bg-success" title="{{ data.tax_return_reviewed_date|date:'F d, Y'|default:'' }}">Reviewed</span>
+                                {% elif data.has_stored_return %}
+                                    <span class="badge bg-warning">Pending</span>
+                                {% else %}
+                                    <span class="badge bg-light">–</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% with letter=data.engagement_letter %}
+                                    {% if letter %}
+                                        {% if letter.status == 'signed' %}
+                                            <span class="badge bg-success">Signed</span>
+                                        {% elif letter.status == 'sent' %}
+                                            <span class="badge bg-info">Sent</span>
+                                        {% else %}
+                                            <span class="badge bg-warning">Pending</span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="badge bg-secondary">Not created</span>
+                                    {% endif %}
+                                {% endwith %}
+                            </td>
+                            <td>
+                                {% if data.payment_received_date %}
+                                    <span class="badge bg-success">Paid {{ data.payment_received_date|date:"n/j" }}</span>
+                                {% elif data.invoice_sent_date %}
+                                    <span class="badge bg-info">Invoiced {{ data.invoice_sent_date|date:"n/j" }}</span>
+                                {% elif data.invoiced %}
+                                    <span class="badge bg-info">Invoiced</span>
+                                {% else %}
+                                    {% if data.prepare_return %}
+                                        <span class="badge bg-secondary">Not invoiced</span>
+                                    {% else %}
+                                        <span class="badge bg-light">N/A</span>
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% if not dashboard_data %}
+            <div class="empty-state">
+                <i class="fa-solid fa-building d-block"></i>
+                No associations for {{ selected_year }} yet.
+                <a href="{% url 'create_association' %}">Add an association</a> to get started.
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>

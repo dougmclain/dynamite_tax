@@ -5,174 +5,187 @@
 {% block title %}Engagement Letters{% endblock %}
 
 {% block content %}
-<div class="engagement-container mt-5">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="mb-0">Engagement Letters</h2>
-        <div>
-            <a href="{% url 'engagement_letter_template' %}" class="btn btn-outline-primary me-2">
-                <i class="fas fa-file-alt"></i> Edit Templates
-            </a>
-            <a href="{% url 'bulk_engagement_letter' %}" class="btn btn-success">
-                <i class="fas fa-copy"></i> Bulk Create for New Year
-            </a>
+<div class="page-header">
+    <div>
+        <p class="page-eyebrow">Clients</p>
+        <h1 class="page-title">Engagement letters</h1>
+        <p class="page-subtitle">Create, send and track the signed letter for each association and tax year.</p>
+    </div>
+    <div class="page-actions">
+        <a href="{% url 'engagement_letter_template' %}" class="btn btn-secondary">
+            <i class="fa-solid fa-file-lines"></i> Edit templates
+        </a>
+        <a href="{% url 'bulk_engagement_letter' %}" class="btn btn-primary">
+            <i class="fa-solid fa-copy"></i> Bulk create for new year
+        </a>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Create New Engagement Letter -->
+    <div class="{% if management_companies %}col-xxl-7{% else %}col-12{% endif %}">
+        <div class="card h-100">
+            <div class="card-header">
+                <h2 class="card-title">New engagement letter</h2>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        <div class="col-lg-6 col-xxl-5">
+                            {{ form.association|as_crispy_field }}
+                        </div>
+                        <div class="col-sm-6 col-lg-3 col-xxl-2">
+                            {{ form.tax_year|as_crispy_field }}
+                        </div>
+                        <div class="col-sm-6 col-lg-3 col-xxl-2">
+                            {{ form.price|as_crispy_field }}
+                        </div>
+                        <div class="col-sm-6 col-lg-3 col-xxl-3">
+                            {{ form.state_fee|as_crispy_field }}
+                        </div>
+                        <div class="col-sm-6 col-lg-5 col-xxl-6">
+                            {{ form.override_filing_state|as_crispy_field }}
+                        </div>
+                        <div class="col-lg-4 col-xxl-6 d-flex align-items-end justify-content-lg-end">
+                            <button type="submit" class="btn btn-primary mb-3">Generate engagement letter</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 
-    <!-- Create New Engagement Letter -->
-    <div class="card mb-4">
-                <div class="card-header">
-                    <h3 class="card-title h5 mb-0">Create New Engagement Letter</h3>
-                </div>
-                <div class="card-body">
-                    <form method="post">
-                        {% csrf_token %}
-                        <div class="row">
-                            <div class="col-md-4">
-                                {{ form.association|as_crispy_field }}
-                            </div>
-                            <div class="col-md-2">
-                                {{ form.tax_year|as_crispy_field }}
-                            </div>
-                            <div class="col-md-2">
-                                {{ form.price|as_crispy_field }}
-                            </div>
-                            <div class="col-md-2">
-                                {{ form.state_fee|as_crispy_field }}
-                            </div>
-                            <div class="col-md-2">
-                                {{ form.override_filing_state|as_crispy_field }}
-                            </div>
-                        </div>
-                        <div class="mt-3">
-                            <button type="submit" class="btn btn-primary">Generate Engagement Letter</button>
-                        </div>
-                    </form>
-                </div>
+    <!-- Download All for Management Company -->
+    {% if management_companies %}
+    <div class="col-xxl-5">
+        <div class="card h-100">
+            <div class="card-header">
+                <h2 class="card-title">Download all for a management company</h2>
             </div>
-            
-            <!-- Download All for Management Company -->
-            {% if management_companies %}
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h3 class="card-title h5 mb-0">Download All for Management Company</h3>
-                </div>
-                <div class="card-body">
-                    <form method="get" action="{% url 'download_company_engagement_letters' %}" class="row align-items-end">
-                        <div class="col-md-4">
-                            <label for="company-select" class="form-label">Management Company</label>
-                            <select name="management_company" id="company-select" class="form-select" required>
-                                <option value="">-- Select Company --</option>
-                                {% for company in management_companies %}
-                                    <option value="{{ company.id }}">{{ company.name }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <label for="company-tax-year" class="form-label">Tax Year</label>
-                            <select name="tax_year" id="company-tax-year" class="form-select" required>
-                                {% for year in tax_years %}
-                                    <option value="{{ year }}">{{ year }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-download"></i> Download All for Company
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-            {% endif %}
-
-            <!-- Existing Engagement Letters -->
-            {% if engagement_letters %}
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h3 class="card-title h5 mb-0">Existing Engagement Letters</h3>
-                    <div class="d-flex align-items-center gap-2">
-                        <select id="filter-tax-year" class="form-select form-select-sm" style="width: auto;">
-                            <option value="">All Years</option>
-                            {% for year in tax_years %}
-                                <option value="{{ year }}">{{ year }}</option>
-                            {% endfor %}
-                        </select>
-                        <select id="filter-management-company" class="form-select form-select-sm" style="width: auto;">
-                            <option value="">All Companies</option>
-                            <option value="self-managed">Self-Managed</option>
+            <div class="card-body">
+                <form method="get" action="{% url 'download_company_engagement_letters' %}" class="row g-3 align-items-end">
+                    <div class="col-sm-7">
+                        <label for="company-select" class="form-label">Management company</label>
+                        <select name="management_company" id="company-select" class="form-select" required>
+                            <option value="">Select a company…</option>
                             {% for company in management_companies %}
                                 <option value="{{ company.id }}">{{ company.name }}</option>
                             {% endfor %}
                         </select>
-                        <button type="button" class="btn btn-sm btn-outline-primary" id="select-all-letters">Select All</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" id="deselect-all-letters">Deselect All</button>
-                        <button type="button" class="btn btn-sm btn-success" id="download-combined-pdf" disabled>
-                            <i class="fas fa-file-pdf"></i> Download Selected as Combined PDF
+                    </div>
+                    <div class="col-sm-5">
+                        <label for="company-tax-year" class="form-label">Tax year</label>
+                        <select name="tax_year" id="company-tax-year" class="form-select" required>
+                            {% for year in tax_years %}
+                                <option value="{{ year }}">{{ year }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-secondary">
+                            <i class="fa-solid fa-download"></i> Download combined PDF
                         </button>
                     </div>
-                </div>
-                <div class="card-body">
-                    <div class="mb-2">
-                        <span id="selected-letters-count">0 letters selected</span>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="table table-hover" id="engagement-letters-table">
-                            <thead>
-                                <tr>
-                                    <th style="width: 40px;">
-                                        <input type="checkbox" class="form-check-input" id="select-all-checkbox" title="Select all visible">
-                                    </th>
-                                    <th>Association</th>
-                                    <th>Tax Year</th>
-                                    <th>Price</th>
-                                    <th>Created</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for letter in engagement_letters %}
-                                <tr data-tax-year="{{ letter.tax_year }}" data-letter-id="{{ letter.id }}" data-management-company="{{ letter.association.management_company.id|default:'self-managed' }}">
-                                    <td>
-                                        <input type="checkbox" class="form-check-input letter-checkbox" value="{{ letter.id }}">
-                                    </td>
-                                    <td>{{ letter.association.association_name }}</td>
-                                    <td>{{ letter.tax_year }}</td>
-                                    <td>${{ letter.price }}{% if letter.state_fee %} + ${{ letter.state_fee }}{% endif %}</td>
-                                    <td>{{ letter.date_created|date:"M d, Y" }}</td>
-                                    <td>
-                                        {% if letter.status == 'signed' %}
-                                            <span class="badge bg-success">Signed</span>
-                                        {% elif letter.status == 'sent' %}
-                                            <span class="badge bg-info">Sent</span>
-                                        {% else %}
-                                            <span class="badge bg-warning">Pending</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        <div class="d-flex flex-wrap gap-1">
-                                            <a href="{% url 'preview_engagement_letter' letter.id %}" class="btn btn-sm btn-outline-secondary" target="_blank" title="Preview">Preview</a>
-                                            <a href="{% url 'edit_engagement_letter' letter.id %}" class="btn btn-sm btn-outline-primary" title="Edit">Edit</a>
-                                            <a href="{% url 'download_engagement_letter' letter.id %}" class="btn btn-sm btn-primary" title="Download">Download</a>
-                                            <a href="{% url 'upload_signed_engagement_letter' letter.id %}" class="btn btn-sm btn-outline-success" title="Upload Signed">Upload Signed</a>
-                                            {% if letter.signed_pdf %}
-                                            <a href="{% url 'download_signed_engagement_letter' letter.id %}" class="btn btn-sm btn-success" title="Download Signed PDF">Signed PDF</a>
-                                            {% endif %}
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+                </form>
             </div>
-    {% else %}
-    <div class="alert alert-info">
-        No engagement letters have been created yet.
+        </div>
     </div>
     {% endif %}
 </div>
+
+<!-- Existing Engagement Letters -->
+{% if engagement_letters %}
+<div class="card">
+    <div class="card-header">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <div>
+                <h2 class="card-title">All letters</h2>
+                <div class="card-subtitle-sm"><span id="selected-letters-count">0 letters selected</span></div>
+            </div>
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                <select id="filter-tax-year" class="form-select form-select-sm" style="width: auto;" aria-label="Filter by tax year">
+                    <option value="">All years</option>
+                    {% for year in tax_years %}
+                        <option value="{{ year }}">{{ year }}</option>
+                    {% endfor %}
+                </select>
+                <select id="filter-management-company" class="form-select form-select-sm" style="width: auto;" aria-label="Filter by management company">
+                    <option value="">All companies</option>
+                    <option value="self-managed">Self-managed</option>
+                    {% for company in management_companies %}
+                        <option value="{{ company.id }}">{{ company.name }}</option>
+                    {% endfor %}
+                </select>
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="select-all-letters">Select all</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="deselect-all-letters">Clear</button>
+                <button type="button" class="btn btn-sm btn-primary" id="download-combined-pdf" disabled>
+                    <i class="fa-solid fa-file-pdf"></i> Download selected as one PDF
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover" id="engagement-letters-table">
+                <thead>
+                    <tr>
+                        <th style="width: 40px;">
+                            <input type="checkbox" class="form-check-input" id="select-all-checkbox" title="Select all visible" aria-label="Select all visible">
+                        </th>
+                        <th>Association</th>
+                        <th>Tax year</th>
+                        <th>Fee</th>
+                        <th>Created</th>
+                        <th>Status</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for letter in engagement_letters %}
+                    <tr data-tax-year="{{ letter.tax_year }}" data-letter-id="{{ letter.id }}" data-management-company="{{ letter.association.management_company.id|default:'self-managed' }}">
+                        <td>
+                            <input type="checkbox" class="form-check-input letter-checkbox" value="{{ letter.id }}" aria-label="Select {{ letter.association.association_name }}">
+                        </td>
+                        <td class="fw-semibold text-ink">{{ letter.association.association_name }}</td>
+                        <td>{{ letter.tax_year }}</td>
+                        <td class="tabular">${{ letter.price }}{% if letter.state_fee %} + ${{ letter.state_fee }} state{% endif %}</td>
+                        <td class="text-nowrap">{{ letter.date_created|date:"M j, Y" }}</td>
+                        <td>
+                            {% if letter.status == 'signed' %}
+                                <span class="badge bg-success">Signed</span>
+                            {% elif letter.status == 'sent' %}
+                                <span class="badge bg-info">Sent</span>
+                            {% else %}
+                                <span class="badge bg-warning">Pending</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="d-flex flex-wrap gap-1 justify-content-end">
+                                <a href="{% url 'preview_engagement_letter' letter.id %}" class="btn btn-sm btn-outline-secondary" target="_blank" title="Preview"><i class="fa-regular fa-eye"></i> Preview</a>
+                                <a href="{% url 'edit_engagement_letter' letter.id %}" class="btn btn-sm btn-outline-secondary" title="Edit"><i class="fa-solid fa-pen"></i> Edit</a>
+                                <a href="{% url 'download_engagement_letter' letter.id %}" class="btn btn-sm btn-outline-secondary" title="Download"><i class="fa-solid fa-download"></i> Download</a>
+                                <a href="{% url 'upload_signed_engagement_letter' letter.id %}" class="btn btn-sm btn-outline-primary" title="Upload signed copy"><i class="fa-solid fa-upload"></i> Upload signed</a>
+                                {% if letter.signed_pdf %}
+                                <a href="{% url 'download_signed_engagement_letter' letter.id %}" class="btn btn-sm btn-success" title="Download signed PDF"><i class="fa-solid fa-file-signature"></i> Signed PDF</a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="card">
+    <div class="empty-state">
+        <i class="fa-solid fa-file-signature d-block"></i>
+        No engagement letters yet. Create one above, or use <a href="{% url 'bulk_engagement_letter' %}">bulk create</a>.
+    </div>
+</div>
+{% endif %}
 
 <!-- Hidden form for combined PDF download -->
 <form id="combined-pdf-form" method="post" action="{% url 'download_combined_engagement_letters' %}" style="display: none;">
@@ -289,46 +302,4 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
-{% endblock %}
-
-
-{% block extra_css %}
-<style>
-    /* Override parent container for wider layout */
-    main.container:has(.engagement-container) {
-        max-width: 1600px;
-        width: 100%;
-        margin: 0 auto;
-        padding-left: 20px;
-        padding-right: 20px;
-    }
-
-    @media (min-width: 1200px) {
-        main.container:has(.engagement-container) {
-            padding-left: 40px;
-            padding-right: 40px;
-        }
-    }
-
-    @media (min-width: 1800px) {
-        main.container:has(.engagement-container) {
-            max-width: 1700px;
-        }
-    }
-
-    .engagement-container {
-        width: 100%;
-    }
-
-    .card {
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        border: none;
-    }
-    .card-header {
-        background-color: #f7f7f7;
-    }
-    .btn {
-        margin-top: 10px;
-    }
-</style>
 {% endblock %}

@@ -2,260 +2,211 @@
 {% load static %}
 {% load crispy_forms_tags %}
 
-{% block title %}{% if is_update %}Update{% else %}Create{% endif %} Financial Information{% endblock %}
+{% block title %}{% if is_update %}Update{% else %}Enter{% endif %} financial data{% endblock %}
 
 {% block content %}
-<h2 class="mb-4">{% if is_update %}Update{% else %}Create{% endif %} Financial Information</h2>
+<div class="page-header">
+    <div>
+        <p class="page-eyebrow">Tax returns</p>
+        <h1 class="page-title">Financial data</h1>
+        <p class="page-subtitle">
+            {% if association and tax_year %}
+                {{ association.association_name }} · Tax year {{ tax_year }}
+            {% else %}
+                Choose an association and tax year to enter its year-end numbers.
+            {% endif %}
+        </p>
+    </div>
+    {% if association and tax_year %}
+    <div class="page-actions">
+        <a href="{% url 'association' %}?association_id={{ association.id }}&tax_year={{ tax_year }}" class="btn btn-secondary"><i class="fa-solid fa-building"></i> Association</a>
+        <a href="{% url 'form_1120h' %}?association_id={{ association.id }}&tax_year={{ tax_year }}" class="btn btn-secondary"><i class="fa-solid fa-file-invoice-dollar"></i> Form 1120-H</a>
+    </div>
+    {% endif %}
+</div>
 
 {% if not association or not tax_year %}
-<div class="card mb-4">
-    <div class="card-body">
-        <form method="get">
-            <div class="row">
-                <div class="col-md-5">
-                    {{ form.association|as_crispy_field }}
-                </div>
-                <div class="col-md-5">
-                    {{ form.tax_year|as_crispy_field }}
-                </div>
-                <div class="col-md-2 d-flex align-items-end">
-                    <button type="submit" class="btn btn-primary">Select</button>
-                </div>
-            </div>
-        </form>
+<form method="get" class="filter-bar">
+    <div class="filter-field grow">
+        {{ form.association|as_crispy_field }}
     </div>
-</div>
+    <div class="filter-field">
+        {{ form.tax_year|as_crispy_field }}
+    </div>
+    <div class="filter-actions mb-3">
+        <button type="submit" class="btn btn-primary">Continue</button>
+    </div>
+</form>
 {% endif %}
 
 {% if association and tax_year %}
-<form method="post" class="mb-4">
-    {% csrf_token %}
-    
-    <div class="card">
-        <div class="card-header">
-            <h3>General Information</h3>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    <p><strong>Association:</strong> {{ association.association_name }}</p>
-                    <input type="hidden" name="association" value="{{ association.id }}">
-                </div>
-                <div class="col-md-6">
-                    <p><strong>Tax Year:</strong> {{ tax_year }}</p>
-                    <input type="hidden" name="tax_year" value="{{ tax_year }}">
-                </div>
-            </div>
-            <div class="row mt-3">
-                <div class="col-md-4">
-                    {{ form.name_change|as_crispy_field }}
-                </div>
-                <div class="col-md-4">
-                    {{ form.address_change|as_crispy_field }}
-                </div>
-                <div class="col-md-4">
-                    {{ form.amended_return|as_crispy_field }}
-                </div>
-            </div>
-        </div>
+{# Switcher uses plain controls, not a form: financial_form.js attaches to the first form on the page. #}
+<div class="filter-bar" id="financial-switcher">
+    <div class="filter-field grow">
+        <label for="switch-association" class="form-label">Association</label>
+        <select id="switch-association" class="form-select">
+            {% for a in form.fields.association.queryset %}
+                <option value="{{ a.id }}" {% if a.id == association.id %}selected{% endif %}>{{ a.association_name }}</option>
+            {% endfor %}
+        </select>
     </div>
+    <div class="filter-field" style="flex-basis: 140px;">
+        <label for="switch-year" class="form-label">Tax year</label>
+        <input type="number" id="switch-year" class="form-control" value="{{ tax_year }}" min="2000" max="2100">
+    </div>
+    <div class="filter-actions">
+        <button type="button" class="btn btn-secondary" id="switch-go">Switch</button>
+    </div>
+</div>
 
-    <!-- AI PDF Extraction -->
-    <div class="card mt-4" id="ai-extract-card">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <h3>Extract from PDF</h3>
-            <span class="badge bg-info">AI-Powered</span>
-        </div>
-        <div class="card-body">
-            <p class="text-muted mb-3">
-                Upload a financial statement PDF (P&L, income statement, etc.) and let AI extract the data into the form below.
-            </p>
-            <div class="drop-zone mb-3" id="aiPdfDropZone">
-                <span class="drop-zone__prompt">Drop financial PDF here or click to browse</span>
-                <input type="file" class="drop-zone__input" id="ai_pdf_file" accept=".pdf">
-            </div>
-            <div id="ai-extract-status" class="d-none mb-3">
-                <div id="ai-extract-loading" class="d-none">
-                    <div class="d-flex align-items-center">
-                        <div class="spinner-border spinner-border-sm text-primary me-2" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                        </div>
-                        <span>Analyzing PDF with AI... This may take 10-30 seconds.</span>
+<form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="association" value="{{ association.id }}">
+    <input type="hidden" name="tax_year" value="{{ tax_year }}">
+
+    <div class="row g-4">
+        <div class="col-xl-8">
+            <div class="card mb-4">
+                <div class="card-header"><h2 class="card-title">Return details</h2></div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">{{ form.name_change|as_crispy_field }}</div>
+                        <div class="col-md-4">{{ form.address_change|as_crispy_field }}</div>
+                        <div class="col-md-4">{{ form.amended_return|as_crispy_field }}</div>
                     </div>
                 </div>
-                <div id="ai-extract-success" class="alert alert-success d-none mb-0">
-                    <strong>Extraction complete!</strong> <span id="ai-fields-filled"></span> fields were populated. Please review the values below before saving.
-                </div>
-                <div id="ai-extract-error" class="alert alert-danger d-none mb-0">
-                    <strong>Extraction failed:</strong> <span id="ai-error-message"></span>
-                </div>
             </div>
-            <button type="button" class="btn btn-primary" id="ai-extract-btn" disabled>
-                Extract Financial Data
-            </button>
-        </div>
-    </div>
 
-    <div class="card mt-4">
-        <div class="card-header">
-            <h3>Exempt Income</h3>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-4">
-                    {{ form.member_assessments|as_crispy_field }}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h2 class="card-title">Exempt function income</h2>
+                    <div class="card-subtitle-sm">Dues, assessments and fees paid by members. Not taxed on Form 1120-H.</div>
                 </div>
-                <div class="col-md-4">
-                    {{ form.capital_contribution|as_crispy_field }}
-                </div>
-                <div class="col-md-4">
-                    {{ form.moving_fees|as_crispy_field }}
-                </div>
-            </div>
-            <div class="row mt-3">
-                <div class="col-md-4">
-                    {{ form.utilities|as_crispy_field }}
-                </div>
-                <div class="col-md-4">
-                    {{ form.late_fees|as_crispy_field }}
-                </div>
-                <div class="col-md-4">
-                    {{ form.fines|as_crispy_field }}
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">{{ form.member_assessments|as_crispy_field }}</div>
+                        <div class="col-md-4">{{ form.capital_contribution|as_crispy_field }}</div>
+                        <div class="col-md-4">{{ form.moving_fees|as_crispy_field }}</div>
+                        <div class="col-md-4">{{ form.utilities|as_crispy_field }}</div>
+                        <div class="col-md-4">{{ form.late_fees|as_crispy_field }}</div>
+                        <div class="col-md-4">{{ form.fines|as_crispy_field }}</div>
+                        <div class="col-md-4">{{ form.other_exempt_income|as_crispy_field }}</div>
+                    </div>
                 </div>
             </div>
-            <div class="row mt-3">
-                <div class="col-md-12">
-                    {{ form.other_exempt_income|as_crispy_field }}
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <div class="card mt-4">
-        <div class="card-header">
-            <h3>Non-Exempt Income</h3>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-4">
-                    {{ form.interest|as_crispy_field }}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h2 class="card-title">Non-exempt income</h2>
+                    <div class="card-subtitle-sm">Interest, dividends, rent and other income from non-members. This is what gets taxed.</div>
                 </div>
-                <div class="col-md-4">
-                    {{ form.dividends|as_crispy_field }}
-                </div>
-                <div class="col-md-4">
-                    {{ form.rentals|as_crispy_field }}
-                </div>
-            </div>
-            <div class="row mt-3">
-                <div class="col-md-6">
-                    {{ form.non_exempt_income_description1|as_crispy_field }}
-                </div>
-                <div class="col-md-6">
-                    {{ form.non_exempt_income_amount1|as_crispy_field }}
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">{{ form.interest|as_crispy_field }}</div>
+                        <div class="col-md-4">{{ form.dividends|as_crispy_field }}</div>
+                        <div class="col-md-4">{{ form.rentals|as_crispy_field }}</div>
+                    </div>
+                    <div class="card-section-title mt-4">Other non-exempt income</div>
+                    <div class="row g-3">
+                        <div class="col-md-8">{{ form.non_exempt_income_description1|as_crispy_field }}</div>
+                        <div class="col-md-4">{{ form.non_exempt_income_amount1|as_crispy_field }}</div>
+                        <div class="col-md-8">{{ form.non_exempt_income_description2|as_crispy_field }}</div>
+                        <div class="col-md-4">{{ form.non_exempt_income_amount2|as_crispy_field }}</div>
+                        <div class="col-md-8">{{ form.non_exempt_income_description3|as_crispy_field }}</div>
+                        <div class="col-md-4">{{ form.non_exempt_income_amount3|as_crispy_field }}</div>
+                    </div>
                 </div>
             </div>
-            <div class="row mt-3">
-                <div class="col-md-6">
-                    {{ form.non_exempt_income_description2|as_crispy_field }}
-                </div>
-                <div class="col-md-6">
-                    {{ form.non_exempt_income_amount2|as_crispy_field }}
-                </div>
-            </div>
-            <div class="row mt-3">
-                <div class="col-md-6">
-                    {{ form.non_exempt_income_description3|as_crispy_field }}
-                </div>
-                <div class="col-md-6">
-                    {{ form.non_exempt_income_amount3|as_crispy_field }}
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <div class="card mt-4">
-        <div class="card-header">
-            <h3>Expenses</h3>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    {{ form.total_expenses|as_crispy_field }}
-                </div>
-                <div class="col-md-6">
-                    {{ form.tax_preparation|as_crispy_field }}
-                </div>
-            </div>
-            <div class="row mt-3">
-                <div class="col-md-4">
-                    {{ form.state_local_taxes|as_crispy_field }}
-                </div>
-                <div class="col-md-4">
-                    {{ form.management_fees|as_crispy_field }}
-                </div>
-                <div class="col-md-4">
-                    {{ form.administration_fees|as_crispy_field }}
-                </div>
-                <div class="col-md-4">
-                    {{ form.audit_fees|as_crispy_field }}
+            <div class="card mb-4">
+                <div class="card-header"><h2 class="card-title">Expenses</h2></div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">{{ form.total_expenses|as_crispy_field }}</div>
+                        <div class="col-md-6">{{ form.tax_preparation|as_crispy_field }}</div>
+                        <div class="col-md-6 col-xxl-3">{{ form.state_local_taxes|as_crispy_field }}</div>
+                        <div class="col-md-6 col-xxl-3">{{ form.management_fees|as_crispy_field }}</div>
+                        <div class="col-md-6 col-xxl-3">{{ form.administration_fees|as_crispy_field }}</div>
+                        <div class="col-md-6 col-xxl-3">{{ form.audit_fees|as_crispy_field }}</div>
+                        <div class="col-md-6">{{ form.allocated_rental_expenses|as_crispy_field }}</div>
+                    </div>
+                    <div class="card-section-title mt-4">Other non-exempt expenses</div>
+                    <div class="row g-3">
+                        <div class="col-md-8">{{ form.non_exempt_expense_description1|as_crispy_field }}</div>
+                        <div class="col-md-4">{{ form.non_exempt_expense_amount1|as_crispy_field }}</div>
+                        <div class="col-md-8">{{ form.non_exempt_expense_description2|as_crispy_field }}</div>
+                        <div class="col-md-4">{{ form.non_exempt_expense_amount2|as_crispy_field }}</div>
+                        <div class="col-md-8">{{ form.non_exempt_expense_description3|as_crispy_field }}</div>
+                        <div class="col-md-4">{{ form.non_exempt_expense_amount3|as_crispy_field }}</div>
+                    </div>
                 </div>
             </div>
-            <div class="row mt-3">
-                <div class="col-md-12">
-                    {{ form.allocated_rental_expenses|as_crispy_field }}
-                </div>
-            </div>
-            <div class="row mt-3">
-                <div class="col-md-6">
-                    {{ form.non_exempt_expense_description1|as_crispy_field }}
-                </div>
-                <div class="col-md-6">
-                    {{ form.non_exempt_expense_amount1|as_crispy_field }}
-                </div>
-            </div>
-            <div class="row mt-3">
-                <div class="col-md-6">
-                    {{ form.non_exempt_expense_description2|as_crispy_field }}
-                </div>
-                <div class="col-md-6">
-                    {{ form.non_exempt_expense_amount2|as_crispy_field }}
-                </div>
-            </div>
-            <div class="row mt-3">
-                <div class="col-md-6">
-                    {{ form.non_exempt_expense_description3|as_crispy_field }}
-                </div>
-                <div class="col-md-6">
-                    {{ form.non_exempt_expense_amount3|as_crispy_field }}
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <div class="card mt-4">
-        <div class="card-header">
-            <h3>Payments</h3>
+            <div class="card mb-4">
+                <div class="card-header"><h2 class="card-title">Payments &amp; credits</h2></div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">{{ form.prior_year_over_payment|as_crispy_field }}</div>
+                        <div class="col-md-4">{{ form.extension_payment|as_crispy_field }}</div>
+                        <div class="col-md-4">{{ form.estimated_payment|as_crispy_field }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions d-xl-none mb-4">
+                <a href="{% url 'association' %}?association_id={{ association.id }}&tax_year={{ tax_year }}" class="btn btn-secondary">Cancel</a>
+                <button type="submit" class="btn btn-primary btn-lg">{% if is_update %}Update{% else %}Save{% endif %} financial data</button>
+            </div>
         </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-4">
-                    {{ form.prior_year_over_payment|as_crispy_field }}
+
+        <div class="col-xl-4">
+            <div class="sticky-xl">
+                <!-- AI PDF Extraction -->
+                <div class="card mb-4" id="ai-extract-card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h2 class="card-title">Fill from a PDF</h2>
+                        <span class="badge bg-info"><i class="fa-solid fa-wand-magic-sparkles"></i> AI</span>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-secondary small mb-3">
+                            Drop in an income statement or P&amp;L and we'll fill in the form. Review the numbers before saving.
+                        </p>
+                        <div class="drop-zone mb-3" id="aiPdfDropZone">
+                            <span class="drop-zone__prompt"><i class="fa-solid fa-file-arrow-up d-block mb-2 fs-4"></i>Drop a financial PDF here or click to browse</span>
+                            <input type="file" class="drop-zone__input" id="ai_pdf_file" accept=".pdf">
+                        </div>
+                        <div id="ai-extract-status" class="d-none mb-3">
+                            <div id="ai-extract-loading" class="d-none">
+                                <div class="d-flex align-items-center small">
+                                    <div class="spinner-border spinner-border-sm text-success me-2" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <span>Reading the PDF… this can take 10–30 seconds.</span>
+                                </div>
+                            </div>
+                            <div id="ai-extract-success" class="alert alert-success d-none mb-0">
+                                <strong>Done.</strong> <span id="ai-fields-filled"></span> fields were filled in. Review them before saving.
+                            </div>
+                            <div id="ai-extract-error" class="alert alert-danger d-none mb-0">
+                                <strong>Couldn't read the PDF:</strong> <span id="ai-error-message"></span>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-outline-primary w-100" id="ai-extract-btn" disabled>
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> Extract financial data
+                        </button>
+                    </div>
                 </div>
-                <div class="col-md-4">
-                    {{ form.extension_payment|as_crispy_field }}
-                </div>
-                <div class="col-md-4">
-                    {{ form.estimated_payment|as_crispy_field }}
+
+                <div class="card d-none d-xl-block">
+                    <div class="card-body">
+                        <div class="kv-row"><span class="kv-label">Association</span><span class="kv-value fw-semibold">{{ association.association_name }}</span></div>
+                        <div class="kv-row"><span class="kv-label">Tax year</span><span class="kv-value">{{ tax_year }}</span></div>
+                        <button type="submit" class="btn btn-primary btn-lg w-100 mt-3">{% if is_update %}Update{% else %}Save{% endif %} financial data</button>
+                        <a href="{% url 'association' %}?association_id={{ association.id }}&tax_year={{ tax_year }}" class="btn btn-link w-100 text-secondary mt-1">Cancel</a>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-
-    <div class="mt-4">
-        <button type="submit" class="btn btn-primary">
-            {% if is_update %}Update{% else %}Save{% endif %} Financial Information
-        </button>
     </div>
 </form>
 {% endif %}
@@ -283,6 +234,15 @@
                 element.classList.add('dollar-input');
             }
         });
+
+        const switchGo = document.getElementById('switch-go');
+        if (switchGo) {
+            switchGo.addEventListener('click', function() {
+                const assoc = document.getElementById('switch-association').value;
+                const year = document.getElementById('switch-year').value;
+                window.location.href = '?association=' + encodeURIComponent(assoc) + '&tax_year=' + encodeURIComponent(year);
+            });
+        }
     });
 </script>
 {% endblock %}

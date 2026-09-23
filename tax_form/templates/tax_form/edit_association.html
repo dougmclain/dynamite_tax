@@ -1,234 +1,48 @@
 {% extends "tax_form/base.html" %}
-{% load crispy_forms_tags %}
 {% load static %}
 
-{% block title %}Edit Association - {{ association.association_name }}{% endblock %}
+{% block title %}Edit {{ association.association_name }}{% endblock %}
 
 {% block extra_css %}
 <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
 {% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <h1 class="mb-4">Edit Association: {{ association.association_name }}</h1>
-            <form method="post" class="mb-4">
-                {% csrf_token %}
-                
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h2 class="h5 mb-0">Association Information</h2>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                {{ form.association_name|as_crispy_field }}
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                {{ form.ein|as_crispy_field }}
-                            </div>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                {{ form.formation_date|as_crispy_field }}
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                {{ form.association_type|as_crispy_field }}
-                            </div>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                {{ form.fiscal_year_end_month|as_crispy_field }}
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <div class="form-check mt-4">
-                                    {{ form.zoned }}
-                                    <label class="form-check-label" for="{{ form.zoned.id_for_label }}">
-                                        {{ form.zoned.label }}
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h2 class="h5 mb-0">Address</h2>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                {{ form.care_of|as_crispy_field }}
-                                <small class="text-muted">e.g., management company name. Leave blank if mail goes directly to the association.</small>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-8 mb-3">
-                                {{ form.mailing_address|as_crispy_field }}
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                {{ form.room_suite|as_crispy_field }}
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-5 mb-3">
-                                {{ form.city|as_crispy_field }}
-                            </div>
-                            <div class="col-md-3 mb-3">
-                                {{ form.state|as_crispy_field }}
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                {{ form.zipcode|as_crispy_field }}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h2 class="h5 mb-0">State Tax Filing</h2>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                {{ form.filing_state|as_crispy_field }}
-                                <small class="text-muted">If the property is located in a different state than the mailing address, select the state where the association needs to file state tax returns.</small>
-                            </div>
-                            <div class="col-md-6 mb-3" id="state-tax-id-field" style="{% if not form.filing_state.value %}display:none{% endif %}">
-                                {{ form.state_tax_id|as_crispy_field }}
-                                <small class="text-muted">State tax ID or corporate file/charter number assigned by the state.</small>
-                            </div>
-                        </div>
-                        <div id="state-filing-details" style="{% if not form.filing_state.value %}display:none{% endif %}">
-                            <div class="row">
-                                <div class="col-md-4 mb-3">
-                                    {{ form.naics_code|as_crispy_field }}
-                                    <small class="text-muted">e.g., 813990 for HOA/condo associations</small>
-                                </div>
-                            </div>
-                            <label class="form-label fw-bold">Where are accounting records kept?</label>
-                            <div class="row">
-                                <div class="col-md-4 mb-3">
-                                    {{ form.records_city|as_crispy_field }}
-                                </div>
-                                <div class="col-md-4 mb-3">
-                                    {{ form.records_state|as_crispy_field }}
-                                </div>
-                                <div class="col-md-4 mb-3">
-                                    {{ form.records_zip|as_crispy_field }}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h2 class="h5 mb-0">Contact Information</h2>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                {{ form.contact_first_name|as_crispy_field }}
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                {{ form.contact_last_name|as_crispy_field }}
-                            </div>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-12 mb-3">
-                                {{ form.contact_email|as_crispy_field }}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h2 class="h5 mb-0">Management</h2>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-12 mb-3">
-                                <div class="form-check">
-                                    {{ form.is_self_managed }}
-                                    <label class="form-check-label" for="{{ form.is_self_managed.id_for_label }}">
-                                        {{ form.is_self_managed.label }}
-                                    </label>
-                                    <div class="form-text">{{ form.is_self_managed.help_text }}</div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-10 mb-3 management-company-field">
-                                {{ form.management_company|as_crispy_field }}
-                            </div>
-                            <div class="col-md-2 mb-3 align-self-end management-company-field">
-                                <a href="{% url 'management_company_create' %}" class="btn btn-outline-primary" id="new-management-company-btn">
-                                    <i class="fas fa-plus"></i> New
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <input type="hidden" name="tax_year" value="{{ tax_year }}">
-                <button type="submit" class="btn btn-primary">Update Association</button>
-                <a href="{% url 'association' %}?association_id={{ association.id }}&tax_year={{ tax_year }}" class="btn btn-secondary">Cancel</a>
-            </form>
-        </div>
+<a href="{% url 'association' %}?association_id={{ association.id }}&tax_year={{ tax_year }}" class="back-link"><i class="fa-solid fa-arrow-left"></i> {{ association.association_name }}</a>
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Edit association</h1>
+        <p class="page-subtitle">{{ association.association_name }} · EIN {{ association.ein }}</p>
     </div>
 </div>
 
-<!-- Modal for adding a new management company -->
-<div class="modal fade" id="management-company-modal" tabindex="-1" aria-labelledby="managementCompanyModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="managementCompanyModalLabel">Add New Management Company</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form action="{% url 'management_company_create' %}" method="post" id="modal-management-company-form">
-                    {% csrf_token %}
-                    <div class="mb-3">
-                        <label for="modal-name" class="form-label">Name</label>
-                        <input type="text" class="form-control" id="modal-name" name="name" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="modal-contact-person" class="form-label">Contact Person</label>
-                        <input type="text" class="form-control" id="modal-contact-person" name="contact_person">
-                    </div>
-                    <div class="mb-3">
-                        <label for="modal-email" class="form-label">Email</label>
-                        <input type="email" class="form-control" id="modal-email" name="email">
-                    </div>
-                    <div class="mb-3">
-                        <label for="modal-phone" class="form-label">Phone</label>
-                        <input type="text" class="form-control" id="modal-phone" name="phone">
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary">Create</button>
-                    </div>
-                </form>
-            </div>
-        </div>
+{% if form.non_field_errors %}
+    <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+{% endif %}
+
+<form method="post">
+    {% csrf_token %}
+    {% include 'tax_form/partials/association_form_sections.html' %}
+    <input type="hidden" name="tax_year" value="{{ tax_year }}">
+    <div class="form-actions">
+        <a href="{% url 'association' %}?association_id={{ association.id }}&tax_year={{ tax_year }}" class="btn btn-secondary">Cancel</a>
+        <button type="submit" class="btn btn-primary btn-lg">Save changes</button>
     </div>
-</div>
+</form>
+
+{% include 'tax_form/partials/management_company_modal.html' %}
 {% endblock %}
 
 {% block extra_js %}
 <script src="{% static 'js/management_company.js' %}"></script>
 <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
 <script>
+    function toggleStateFiling(value) {
+        var show = value ? '' : 'none';
+        document.getElementById('state-tax-id-field').style.display = show;
+        document.getElementById('state-filing-details').style.display = show;
+    }
+
     // Initialize Tom Select on all .tom-select elements
     document.querySelectorAll('.tom-select').forEach(function(el) {
         var ts = new TomSelect(el, {
@@ -238,12 +52,13 @@
         });
         // Re-attach filing_state change handler via Tom Select
         if (el.id === 'id_filing_state') {
-            ts.on('change', function(value) {
-                var show = value ? '' : 'none';
-                document.getElementById('state-tax-id-field').style.display = show;
-                document.getElementById('state-filing-details').style.display = show;
-            });
+            ts.on('change', toggleStateFiling);
         }
     });
+
+    var filingState = document.getElementById('id_filing_state');
+    if (filingState && !filingState.tomselect) {
+        filingState.addEventListener('change', function () { toggleStateFiling(this.value); });
+    }
 </script>
 {% endblock %}

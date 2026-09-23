@@ -144,6 +144,9 @@ STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# Serve files straight from STATICFILES_DIRS too, so pages never pick up a stale
+# copy in STATIC_ROOT when collectstatic hasn't been run on the server.
+WHITENOISE_USE_FINDERS = True
 
 # Azure Storage Configuration
 USE_AZURE_STORAGE = env.bool('USE_AZURE_STORAGE', IS_PRODUCTION)  # Default to using Azure in production

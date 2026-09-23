@@ -1,11 +1,5 @@
 /* Styles specific to the export functionality */
 
-/* Container styles */
-.export-container {
-    max-width: 100%;
-    padding: 0 15px;
-}
-
 /* Table styles for export view */
 .export-table {
     font-size: 0.9rem;
@@ -24,12 +18,6 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-}
-
-/* Badge styling */
-.badge.bg-info {
-    font-size: 0.8rem;
-    font-weight: 500;
 }
 
 /* Export actions styling */
@@ -57,7 +45,7 @@
         padding: 0;
     }
     
-    .navbar, .export-actions, footer {
+    .export-actions, .back-link {
         display: none !important;
     }
     
@@ -110,16 +98,6 @@
     .table th:nth-child(6), .table td:nth-child(6) { width: 12% !important; }
     .table th:nth-child(7), .table td:nth-child(7) { width: 12% !important; }
     .table th:nth-child(8), .table td:nth-child(8) { width: 7% !important; }
-    
-    /* Add a title for printing */
-    .export-container:before {
-        content: "Associations To File - Tax Year";
-        display: block;
-        text-align: center;
-        font-size: 14pt;
-        font-weight: bold;
-        margin-bottom: 10px;
-    }
     
     /* Hide any unnecessary elements */
     .badge, .btn {

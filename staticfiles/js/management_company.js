@@ -4,7 +4,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Get references to form elements
     const selfManagedCheckbox = document.getElementById('id_is_self_managed');
     const managementCompanySelect = document.getElementById('id_management_company');
-    const managementCompanyFormGroup = managementCompanySelect?.closest('.form-group') || 
+    // Hide the whole wrapper (select + "add" button) when the page has one
+    const managementCompanyFormGroup = managementCompanySelect?.closest('.management-company-field') ||
+                                       managementCompanySelect?.closest('.form-group') ||
                                        managementCompanySelect?.closest('.mb-3');
 
     // If elements exist, set up the toggle behavior
@@ -38,7 +40,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const modal = new bootstrap.Modal(managementCompanyModal);
             
             // Show modal when button is clicked
-            newManagementCompanyBtn.addEventListener('click', function() {
+            newManagementCompanyBtn.addEventListener('click', function(e) {
+                // The button is a link to the full create page; open the modal instead
+                e.preventDefault();
                 modal.show();
             });
             

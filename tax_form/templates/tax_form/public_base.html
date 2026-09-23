@@ -6,13 +6,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}HOA Tax Help{% endblock %}</title>
     <meta name="description" content="{% block meta_description %}HOA Tax Help prepares and files Form 1120-H federal tax returns, Form 7004 extensions and state returns for homeowners and condominium associations.{% endblock %}">
-    <link rel="canonical" href="https://hoataxhelp.com{{ request.path }}">
+    <link rel="canonical" href="{{ request.scheme }}://{{ request.get_host }}{{ request.path }}">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="HOA Tax Help">
     <meta property="og:title" content="{% block og_title %}HOA Tax Help — Form 1120-H tax returns for HOAs and condos{% endblock %}">
     <meta property="og:description" content="Year-end tax returns for homeowners and condominium associations: Form 1120-H, extensions and state returns, prepared by specialists.">
-    <meta property="og:url" content="https://hoataxhelp.com{{ request.path }}">
-    <meta property="og:image" content="https://hoataxhelp.com{% static 'images/hoatax_logo.png' %}">
+    <meta property="og:url" content="{{ request.scheme }}://{{ request.get_host }}{{ request.path }}">
+    <meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{% static 'images/hoatax_logo.png' %}">
     <link rel="icon" type="image/png" sizes="32x32" href="{% static 'images/favicon-32x32.png' %}">
     <link rel="icon" type="image/png" sizes="16x16" href="{% static 'images/favicon-16x16.png' %}">
     <link rel="apple-touch-icon" href="{% static 'images/apple-touch-icon.png' %}">

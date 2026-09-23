@@ -235,37 +235,20 @@ class Association(models.Model):
             check_date += timedelta(days=1)
         return check_date
 
-    def get_tax_return_due_date(self, tax_year):
+    def _fifteenth_of_month_after_fye(self, tax_year, months_after):
         fiscal_year_end = self.get_fiscal_year_end(tax_year)
-        due_date = fiscal_year_end + timedelta(days=106)  # 3.5 months (approximately 106 days)
-        
-        # Adjust for leap years if necessary
-        if calendar.isleap(due_date.year) and due_date >= date(due_date.year, 3, 1):
-            due_date += timedelta(days=1)
-        
-        # Adjust for weekends
-        due_date = self.adjust_for_weekend(due_date)
-        
-        return due_date
+        month_index = fiscal_year_end.month - 1 + months_after
+        return date(fiscal_year_end.year + month_index // 12, month_index % 12 + 1, 15)
+
+    def get_tax_return_due_date(self, tax_year):
+        """Form 1120-H is due the 15th day of the 4th month after the tax year ends
+        (April 15 for a December year end), moved to Monday if it falls on a weekend."""
+        return self.adjust_for_weekend(self._fifteenth_of_month_after_fye(tax_year, 4))
 
     def get_extended_due_date(self, tax_year):
-        original_due_date = self.get_tax_return_due_date(tax_year)
-        
-        # Calculate the target month and day for the extended due date
-        target_month = 10  # October
-        target_day = 15
-        
-        # Create the extended due date
-        extended_due_date = date(original_due_date.year, target_month, target_day)
-        
-        # If the original due date is after April 15 due to weekends,
-        # but October 15 is a weekday, we keep October 15
-        if original_due_date.month == 4 and original_due_date.day > 15:
-            if extended_due_date.weekday() < 5:  # If Oct 15 is a weekday
-                return extended_due_date
-        
-        # Otherwise, adjust for weekends
-        return self.adjust_for_weekend(extended_due_date)
+        """Form 7004 extends the filing deadline six months: the 15th day of the
+        10th month after the tax year ends (October 15 for a December year end)."""
+        return self.adjust_for_weekend(self._fifteenth_of_month_after_fye(tax_year, 10))
 
 class Financial(models.Model):
     association = models.ForeignKey('Association', on_delete=models.CASCADE)
